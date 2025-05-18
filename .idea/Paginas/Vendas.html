@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendas a prazo - Vendas a Crédito</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0A2463;
+            --accent: #FFC107;
+            --background: #F7F7F9;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+        }
+
+        .sidebar {
+            background-color: var(--primary);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        .header {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-accent {
+            background-color: var(--accent);
+            color: #000;
+        }
+
+        .btn-accent:hover {
+            background-color: #e0a800;
+        }
+
+        .card {
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .status-pending {
+            color: #FFC107;
+            border-color: #FFC107;
+        }
+
+        .status-partial {
+            color: #0A2463;
+            border-color: #0A2463;
+        }
+
+        .status-paid {
+            color: #6c757d;
+            border-color: #6c757d;
+        }
+
+        .modal-header {
+            background: linear-gradient(90deg, #0A2463 0%, #FFC107 100%);
+            color: white;
+        }
+
+        .toast {
+            animation: fadeInOut 3s ease-in-out;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            90% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(20px); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.2s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            width: 120px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -60px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+<div class="flex">
+    <!-- Sidebar -->
+    <div class="sidebar w-64 min-h-screen fixed hidden md:block">
+        <div class="p-4">
+            <h1 class="text-xl font-semibold">Vendas a Prazo</h1>
+        </div>
+        <nav class="mt-6">
+            <div class="px-4 py-3 hover:bg-blue-900 cursor-pointer flex items-center">
+                <span class="material-icons mr-3">dashboard</span>
+                <span>Dashboard</span>
+            </div>
+            <div class="px-4 py-3 bg-blue-900 cursor-pointer flex items-center">
+                <span class="material-icons mr-3">credit_card</span>
+                <span>Vendas a Crédito</span>
+            </div>
+            <div class="px-4 py-3 hover:bg-blue-900 cursor-pointer flex items-center">
+                <span class="material-icons mr-3">people</span>
+                <span>Clientes</span>
+            </div>
+            <div class="px-4 py-3 hover:bg-blue-900 cursor-pointer flex items-center">
+                <span class="material-icons mr-3">receipt</span>
+                <span>Relatórios</span>
+            </div>
+            <div class="px-4 py-3 hover:bg-blue-900 cursor-pointer flex items-center">
+                <span class="material-icons mr-3">settings</span>
+                <span>Configurações</span>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Mobile sidebar toggle -->
+    <div class="md:hidden fixed top-4 left-4 z-50">
+        <button id="sidebarToggle" class="p-2 rounded-md bg-blue-900 text-white">
+            <span class="material-icons">menu</span>
+        </button>
+    </div>
+
+    <!-- Mobile sidebar (hidden by default) -->
+    <div id="mobileSidebar" class="sidebar w-64 min-h-screen fixed transform -translate-x-full md:hidden z-40">
+        <div class="p-4 flex justify-between items-center">
+            <h1 class="text-xl font-semibold">FiadaManager</h1>
+            <button id="closeSidebar" class="p-1 rounded-md hover:bg-blue-800">
+                <span class="material-icons">close</span>
+            </button>
+        </div>
+        <nav class="mt-6">
+            <div class="px-4 py-3 hover:bg-blue-900 cursor-pointer flex items-center">
+                <span class="material-icons mr-3">dashboard</span>
+                <span>Dashboard</span>
+            </div>
+            <div class="px-4 py-3 bg-blue-900 cursor-pointer flex items-center">
+                <span class="material-icons mr-3">credit_card</span>
+                <span>Vendas a Crédito</span>
+            </div>
+            <div class="px-4 py-3 hover:bg-blue-900 cursor-pointer flex items-center">
+                <span class="material-icons mr-3">people</span>
+                <span>Clientes</span>
+            </div>
+            <div class="px-4 py-3 hover:bg-blue-900 cursor-pointer flex items-center">
+                <span class="material-icons mr-3">receipt</span>
+                <span>Relatórios</span>
+            </div>
+            <div class="px-4 py-3 hover:bg-blue-900 cursor-pointer flex items-center">
+                <span class="material-icons mr-3">settings</span>
+                <span>Configurações</span>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main content -->
+    <div class="flex-1 md:ml-64">
+        <!-- Header -->
+        <header class="header p-4 flex justify-between items-center">
+            <h1 class="text-xl font-semibold">Vendas a Crédito</h1>
+            <button id="newSaleBtn" class="btn-accent px-4 py-2 rounded-md font-medium flex items-center">
+                <span class="material-icons mr-2">add</span>
+                Nova Venda
+            </button>
+        </header>
+
+        <!-- Main content area -->
+        <main class="p-4">
+            <!-- Filter section -->
+            <div class="mb-6 bg-white p-4 rounded-lg shadow">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div class="mb-4 md:mb-0">
+                        <label for="statusFilter" class="block text-sm font-medium text-gray-700 mb-1">Filtrar por status:</label>
+                        <select id="statusFilter" class="p-2 border rounded-md w-full md:w-auto">
+                            <option value="all">Todos</option>
+                            <option value="pending">Pendente</option>
+                            <option value="partial">Parcial</option>
+                            <option value="paid">Quitado</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Buscar:</label>
+                        <div class="flex">
+                            <input type="text" id="search" placeholder="Cliente ou ID" class="p-2 border rounded-l-md w-full">
+                            <button class="bg-gray-200 px-3 rounded-r-md">
+                                <span class="material-icons">search</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sales cards -->
+            <div id="salesContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Cards will be dynamically inserted here -->
+            </div>
+
+            <!-- Empty state -->
+            <div id="emptyState" class="hidden text-center py-12">
+                <span class="material-icons text-gray-400 text-6xl">credit_card_off</span>
+                <h3 class="mt-4 text-lg font-medium text-gray-900">Nenhuma venda encontrada</h3>
+                <p class="mt-1 text-gray-500">Comece criando uma nova venda a crédito</p>
+                <button id="emptyStateBtn" class="btn-accent px-4 py-2 rounded-md font-medium mt-4 flex items-center mx-auto">
+                    <span class="material-icons mr-2">add</span>
+                    Nova Venda
+                </button>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- Add/Edit Sale Modal -->
+<div id="saleModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg w-full max-w-2xl mx-4">
+        <div class="modal-header rounded-t-lg p-4">
+            <h2 class="text-xl font-semibold" id="modalTitle">Nova Venda a Crédito</h2>
+        </div>
+        <div class="p-6">
+            <form id="saleForm">
+                <input type="hidden" id="saleId">
+                <div class="mb-4">
+                    <div class="relative">
+                        <select id="clientSelect" class="peer p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                            <option value="" selected disabled></option>
+                            <option value="1">João Silva</option>
+                            <option value="2">Maria Souza</option>
+                            <option value="3">Carlos Oliveira</option>
+                            <option value="4">Ana Santos</option>
+                        </select>
+                        <label for="clientSelect" class="absolute left-3 -top-2.5 bg-white px-1 text-sm text-gray-500 transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-gray-500">Cliente *</label>
+                    </div>
+                    <div id="clientError" class="text-red-500 text-sm mt-1 hidden">Por favor, selecione um cliente</div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="relative">
+                        <input type="date" id="saleDate" class="peer p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                        <label for="saleDate" class="absolute left-3 -top-2.5 bg-white px-1 text-sm text-gray-500 transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-gray-500">Data *</label>
+                    </div>
+                    <div id="dateError" class="text-red-500 text-sm mt-1 hidden">Por favor, informe uma data válida</div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="relative">
+                        <input type="number" id="saleValue" step="0.01" min="0" class="peer p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder=" ">
+                        <label for="saleValue" class="absolute left-3 -top-2.5 bg-white px-1 text-sm text-gray-500 transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-gray-500">Valor (R$) *</label>
+                    </div>
+                    <div id="valueError" class="text-red-500 text-sm mt-1 hidden">Por favor, informe um valor válido</div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="relative">
+                        <textarea id="saleDescription" rows="3" class="peer p-3 w-full border rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder=" "></textarea>
+                        <label for="saleDescription" class="absolute left-3 -top-2.5 bg-white px-1 text-sm text-gray-500 transition-all peer-placeholder-shown:top-3 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-2.5 peer-focus:text-sm peer-focus:text-gray-500">Descrição (opcional)</label>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="flex justify-end p-4 border-t">
+            <button id="cancelSaleBtn" class="px-4 py-2 border rounded-md mr-2 hover:bg-gray-50">Cancelar</button>
+            <button id="saveSaleBtn" class="btn-accent px-4 py-2 rounded-md font-medium">Salvar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast notification -->
+<div id="toast" class="fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-md hidden">
+    <div class="flex items-center">
+        <span id="toastIcon" class="material-icons mr-2"></span>
+        <span id="toastMessage"></span>
+    </div>
+</div>
+
+<script>
+    // Sample data
+    let sales = [
+        { id: 1, clientId: 1, clientName: "João Silva", date: "2023-05-15", value: 1250.75, description: "Compra de materiais de construção", status: "pending" },
+        { id: 2, clientId: 2, clientName: "Maria Souza", date: "2023-05-10", value: 890.50, description: "Reforma do banheiro", status: "partial" },
+        { id: 3, clientId: 3, clientName: "Carlos Oliveira", date: "2023-05-05", value: 3200.00, description: "Instalação elétrica", status: "paid" },
+        { id: 4, clientId: 4, clientName: "Ana Santos", date: "2023-05-01", value: 750.00, description: "Pintura interna", status: "pending" },
+        { id: 5, clientId: 1, clientName: "João Silva", date: "2023-04-28", value: 1500.00, description: "Troca de piso", status: "partial" },
+        { id: 6, clientId: 3, clientName: "Carlos Oliveira", date: "2023-04-20", value: 2200.00, description: "Construção de muro", status: "paid" }
+    ];
+
+    // Clients data
+    const clients = [
+        { id: 1, name: "João Silva" },
+        { id: 2, name: "Maria Souza" },
+        { id: 3, name: "Carlos Oliveira" },
+        { id: 4, name: "Ana Santos" }
+    ];
+
+    // DOM elements
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const closeSidebar = document.getElementById('closeSidebar');
+    const mobileSidebar = document.getElementById('mobileSidebar');
+    const newSaleBtn = document.getElementById('newSaleBtn');
+    const emptyStateBtn = document.getElementById('emptyStateBtn');
+    const saleModal = document.getElementById('saleModal');
+    const cancelSaleBtn = document.getElementById('cancelSaleBtn');
+    const saveSaleBtn = document.getElementById('saveSaleBtn');
+    const saleForm = document.getElementById('saleForm');
+    const salesContainer = document.getElementById('salesContainer');
+    const emptyState = document.getElementById('emptyState');
+    const statusFilter = document.getElementById('statusFilter');
+    const searchInput = document.getElementById('search');
+    const toast = document.getElementById('toast');
+    const toastIcon = document.getElementById('toastIcon');
+    const toastMessage = document.getElementById('toastMessage');
+
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', () => {
+        // Load sales from localStorage if available
+        const savedSales = localStorage.getItem('fiadaManagerSales');
+        if (savedSales) {
+            sales = JSON.parse(savedSales);
+        }
+
+        renderSales();
+
+        // Set today's date as default in the form
+        document.getElementById('saleDate').valueAsDate = new Date();
+    });
+
+    // Sidebar toggle for mobile
+    sidebarToggle.addEventListener('click', () => {
+        mobileSidebar.classList.remove('transform', '-translate-x-full');
+        mobileSidebar.classList.add('transform', 'translate-x-0');
+    });
+
+    closeSidebar.addEventListener('click', () => {
+        mobileSidebar.classList.remove('transform', 'translate-x-0');
+        mobileSidebar.classList.add('transform', '-translate-x-full');
+    });
+
+    // New sale button
+    newSaleBtn.addEventListener('click', openNewSaleModal);
+    emptyStateBtn.addEventListener('click', openNewSaleModal);
+
+    function openNewSaleModal() {
+        document.getElementById('modalTitle').textContent = 'Nova Venda a Crédito';
+        document.getElementById('saleId').value = '';
+        document.getElementById('clientSelect').value = '';
+        document.getElementById('saleDate').valueAsDate = new Date();
+        document.getElementById('saleValue').value = '';
+        document.getElementById('saleDescription').value = '';
+
+        // Reset errors
+        document.getElementById('clientError').classList.add('hidden');
+        document.getElementById('dateError').classList.add('hidden');
+        document.getElementById('valueError').classList.add('hidden');
+
+        saleModal.classList.remove('hidden');
+    }
+
+    // Cancel sale
+    cancelSaleBtn.addEventListener('click', () => {
+        saleModal.classList.add('hidden');
+    });
+
+    // Save sale
+    saveSaleBtn.addEventListener('click', () => {
+        if (validateForm()) {
+            const saleId = document.getElementById('saleId').value;
+            const clientId = parseInt(document.getElementById('clientSelect').value);
+            const client = clients.find(c => c.id === clientId);
+            const date = document.getElementById('saleDate').value;
+            const value = parseFloat(document.getElementById('saleValue').value);
+            const description = document.getElementById('saleDescription').value;
+
+            if (saleId) {
+                // Edit existing sale
+                const index = sales.findIndex(s => s.id === parseInt(saleId));
+                if (index !== -1) {
+                    sales[index] = {
+                        ...sales[index],
+                        clientId,
+                        clientName: client.name,
+                        date,
+                        value,
+                        description
+                    };
+                }
+                showToast('edit_success', 'Venda atualizada com sucesso!');
+            } else {
+                // Add new sale
+                const newId = sales.length > 0 ? Math.max(...sales.map(s => s.id)) + 1 : 1;
+                sales.push({
+                    id: newId,
+                    clientId,
+                    clientName: client.name,
+                    date,
+                    value,
+                    description,
+                    status: 'pending'
+                });
+                showToast('add_success', 'Venda adicionada com sucesso!');
+            }
+
+            // Save to localStorage
+            localStorage.setItem('fiadaManagerSales', JSON.stringify(sales));
+
+            // Close modal and refresh list
+            saleModal.classList.add('hidden');
+            renderSales();
+        }
+    });
+
+    // Form validation
+    function validateForm() {
+        let isValid = true;
+
+        // Client validation
+        const clientSelect = document.getElementById('clientSelect');
+        if (!clientSelect.value) {
+            document.getElementById('clientError').classList.remove('hidden');
+            clientSelect.classList.add('border-red-500');
+            isValid = false;
+        } else {
+            document.getElementById('clientError').classList.add('hidden');
+            clientSelect.classList.remove('border-red-500');
+        }
+
+        // Date validation
+        const saleDate = document.getElementById('saleDate');
+        if (!saleDate.value) {
+            document.getElementById('dateError').classList.remove('hidden');
+            saleDate.classList.add('border-red-500');
+            isValid = false;
+        } else {
+            document.getElementById('dateError').classList.add('hidden');
+            saleDate.classList.remove('border-red-500');
+        }
+
+        // Value validation
+        const saleValue = document.getElementById('saleValue');
+        if (!saleValue.value || parseFloat(saleValue.value) <= 0) {
+            document.getElementById('valueError').classList.remove('hidden');
+            saleValue.classList.add('border-red-500');
+            isValid = false;
+        } else {
+            document.getElementById('valueError').classList.add('hidden');
+            saleValue.classList.remove('border-red-500');
+        }
+
+        return isValid;
+    }
+
+    // Render sales list
+    function renderSales() {
+        const filterStatus = statusFilter.value;
+        const searchTerm = searchInput.value.toLowerCase();
+
+        let filteredSales = sales;
+
+        // Apply status filter
+        if (filterStatus !== 'all') {
+            filteredSales = filteredSales.filter(sale => sale.status === filterStatus);
+        }
+
+        // Apply search filter
+        if (searchTerm) {
+            filteredSales = filteredSales.filter(sale =>
+                sale.clientName.toLowerCase().includes(searchTerm) ||
+                `#FV-${sale.id.toString().padStart(3, '0')}`.toLowerCase().includes(searchTerm)
+            );
+        }
+
+        // Clear container
+        salesContainer.innerHTML = '';
+
+        // Show empty state if no sales
+        if (filteredSales.length === 0) {
+            emptyState.classList.remove('hidden');
+            salesContainer.classList.add('hidden');
+        } else {
+            emptyState.classList.add('hidden');
+            salesContainer.classList.remove('hidden');
+
+            // Add sales cards
+            filteredSales.forEach(sale => {
+                const card = document.createElement('div');
+                card.className = 'card bg-white rounded-lg p-4 fade-in';
+
+                // Format date
+                const dateObj = new Date(sale.date);
+                const formattedDate = dateObj.toLocaleDateString('pt-BR');
+
+                // Format value
+                const formattedValue = sale.value.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                });
+
+                // Status badge
+                let statusText = '';
+                let statusClass = '';
+                let tooltipText = '';
+
+                switch (sale.status) {
+                    case 'pending':
+                        statusText = 'Pendente';
+                        statusClass = 'status-pending';
+                        tooltipText = 'Pagamento ainda não realizado';
+                        break;
+                    case 'partial':
+                        statusText = 'Parcial';
+                        statusClass = 'status-partial';
+                        tooltipText = 'Pagamento parcial realizado';
+                        break;
+                    case 'paid':
+                        statusText = 'Quitado';
+                        statusClass = 'status-paid';
+                        tooltipText = 'Pagamento completo realizado';
+                        break;
+                }
+
+                card.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="font-bold">#FV-${sale.id.toString().padStart(3, '0')}</span>
+                            <span class="tooltip">
+                                <span class="text-xs px-2 py-1 rounded-full border ${statusClass}">${statusText}</span>
+                                <span class="tooltip-text">${tooltipText}</span>
+                            </span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="material-icons align-text-bottom text-gray-400 text-sm">person</span>
+                            <span class="text-gray-700 ml-1">${sale.clientName}</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="material-icons align-text-bottom text-gray-400 text-sm">event</span>
+                            <span class="text-gray-700 ml-1">${formattedDate}</span>
+                        </div>
+                        <div class="mb-3">
+                            <span class="material-icons align-text-bottom text-gray-400 text-sm">attach_money</span>
+                            <span class="text-gray-700 ml-1 font-medium">${formattedValue}</span>
+                        </div>
+                        ${sale.description ? `<p class="text-gray-500 text-sm mb-3">${sale.description}</p>` : ''}
+                        <div class="flex justify-end space-x-2">
+                            <button class="edit-btn p-1 text-gray-500 hover:text-yellow-600" data-id="${sale.id}">
+                                <span class="material-icons text-base">edit</span>
+                            </button>
+                            <button class="delete-btn p-1 text-gray-500 hover:text-red-500" data-id="${sale.id}">
+                                <span class="material-icons text-base">delete</span>
+                            </button>
+                        </div>
+                    `;
+
+                salesContainer.appendChild(card);
+            });
+
+            // Add event listeners to edit and delete buttons
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.getAttribute('data-id'));
+                    editSale(id);
+                });
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.currentTarget.getAttribute('data-id'));
+                    deleteSale(id);
+                });
+            });
+        }
+    }
+
+    // Edit sale
+    function editSale(id) {
+        const sale = sales.find(s => s.id === id);
+        if (sale) {
+            document.getElementById('modalTitle').textContent = 'Editar Venda a Crédito';
+            document.getElementById('saleId').value = sale.id;
+            document.getElementById('clientSelect').value = sale.clientId;
+            document.getElementById('saleDate').value = sale.date;
+            document.getElementById('saleValue').value = sale.value;
+            document.getElementById('saleDescription').value = sale.description || '';
+
+            // Reset errors
+            document.getElementById('clientError').classList.add('hidden');
+            document.getElementById('dateError').classList.add('hidden');
+            document.getElementById('valueError').classList.add('hidden');
+
+            saleModal.classList.remove('hidden');
+        }
+    }
+
+    // Delete sale
+    function deleteSale(id) {
+        if (confirm('Tem certeza que deseja excluir esta venda?')) {
+            sales = sales.filter(s => s.id !== id);
+
+            // Save to localStorage
+            localStorage.setItem('fiadaManagerSales', JSON.stringify(sales));
+
+            showToast('delete_success', 'Venda excluída com sucesso!');
+            renderSales();
+        }
+    }
+
+    // Show toast notification
+    function showToast(type, message) {
+        toastIcon.textContent = '';
+
+        switch (type) {
+            case 'add_success':
+                toastIcon.textContent = 'check_circle';
+                toastIcon.classList.add('text-green-400');
+                break;
+            case 'edit_success':
+                toastIcon.textContent = 'check_circle';
+                toastIcon.classList.add('text-green-400');
+                break;
+            case 'delete_success':
+                toastIcon.textContent = 'delete';
+                toastIcon.classList.add('text-red-400');
+                break;
+        }
+
+        toastMessage.textContent = message;
+        toast.classList.remove('hidden');
+
+        setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 3000);
+    }
+
+    // Filter and search events
+    statusFilter.addEventListener('change', renderSales);
+    searchInput.addEventListener('input', renderSales);
+</script>
+</body>
+</html>

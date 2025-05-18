@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FiadaManager - Sistema de Gestão de Vendas Fiadas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0A2463;
+            --accent: #FFC107;
+            --bg: #F7F7F9;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            background-color: var(--bg);
+            color: #333;
+        }
+
+        .sidebar {
+            width: 240px;
+            background-color: var(--primary);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            transition: all 0.3s;
+        }
+
+        .sidebar-item {
+            padding: 12px 16px;
+            margin: 4px 0;
+            border-left: 4px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .sidebar-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-item.active {
+            border-left: 4px solid var(--accent);
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .topbar {
+            height: 56px;
+            background-color: var(--primary);
+            position: fixed;
+            left: 240px;
+            right: 0;
+            z-index: 1000;
+        }
+
+        .main-content {
+            margin-left: 240px;
+            padding: 72px 24px 24px;
+        }
+
+        .card {
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: all 0.2s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .badge-status {
+            border: 1px solid;
+            background-color: transparent;
+        }
+
+        .badge-pending {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .badge-partial {
+            border-color: #0A2463;
+            color: #0A2463;
+        }
+
+        .badge-paid {
+            border-color: #6c757d;
+            color: #6c757d;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background-color: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 100;
+        }
+
+        .modal-header-gradient {
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            color: white;
+        }
+
+        .btn-accent {
+            background-color: var(--accent);
+            color: #333;
+            font-weight: 500;
+        }
+
+        .btn-accent:hover {
+            background-color: #e0a800;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(10, 36, 99, 0.1);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .debt-amount {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .progress-bar-accent {
+            background-color: var(--accent);
+        }
+
+        .notification-timeline {
+            position: relative;
+            border-left: 2px solid var(--primary);
+            padding-left: 20px;
+        }
+
+        .notification-timeline::before {
+            content: '';
+            position: absolute;
+            left: -6px;
+            top: 0;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--primary);
+        }
+
+        .fade-in {
+            animation: fadeIn 0.2s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+
+        .invalid-feedback {
+            color: #dc3545;
+            font-size: 0.875em;
+        }
+
+        @media (max-width: 767.98px) {
+            .main-content {
+                margin-left: 0;
+                padding: 72px 16px 16px;
+            }
+
+            .topbar {
+                left: 0;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                z-index: 1050;
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0,0,0,0.5);
+                z-index: 1040;
+                display: none;
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="d-flex align-items-center justify-content-center py-4">
+        <h4 class="mb-0 fw-semibold">Vendas a Prazo</h4>
+    </div>
+    <div class="px-3">
+        <div class="sidebar-item active">
+            <a href="#dashboard" class="text-white text-decoration-none d-flex align-items-center">
+                <span class="material-icons me-3">dashboard</span>
+                <span>Dashboard</span>
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="Paginas/Clientes.html" class="text-white text-decoration-none d-flex align-items-center">
+                <span class="material-icons me-3">people</span>
+                <span>Clientes</span>
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="Paginas/Vendas.html" class="text-white text-decoration-none d-flex align-items-center">
+                <span class="material-icons me-3">credit_card</span>
+                <span>Vendas a Crédito</span>
+            </a>
+        </div>
+
+        <div class="sidebar-item">
+            <a href="Paginas/Relatorio.html" class="text-white text-decoration-none d-flex align-items-center">
+                <span class="material-icons me-3">account_balance</span>
+                <span>Relatório</span>
+            </a>
+        </div>
+        <div class="sidebar-item">
+            <a href="Paginas/Notificacao.html" class="text-white text-decoration-none d-flex align-items-center">
+                <span class="material-icons me-3">notifications</span>
+                <span>Notificações</span>
+                <span class="badge bg-danger rounded-pill ms-auto">3</span>
+            </a>
+        </div>
+
+    </div>
+</div>
+
+<!-- Sidebar Overlay (Mobile) -->
+<div class="sidebar-overlay"></div>
+
+<!-- Topbar -->
+<div class="topbar d-flex align-items-center px-3 shadow-sm">
+    <button class="btn btn-sm d-md-none me-2 text-white" id="sidebarToggle">
+        <span class="material-icons">menu</span>
+    </button>
+    <h5 class="text-white mb-0 d-none d-md-block">Dashboard</h5>
+    <div class="ms-auto d-flex align-items-center">
+        <button class="btn btn-sm text-white me-2">
+            <span class="material-icons">help_outline</span>
+        </button>
+        <div class="dropdown">
+            <button class="btn btn-sm text-white dropdown-toggle d-flex align-items-center" data-bs-toggle="dropdown">
+                <div class="avatar me-2">AD</div>
+                <span>Admin</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="#"><span class="material-icons me-2">person</span> Perfil</a></li>
+                <li><a class="dropdown-item" href="#"><span class="material-icons me-2">settings</span> Configurações</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#"><span class="material-icons me-2">logout</span> Sair</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Dashboard Section -->
+    <section id="dashboard" class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-semibold mb-0">Visão Geral</h4>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary me-2">
+                    <span class="material-icons">filter_alt</span> Filtrar
+                </button>
+                <button class="btn btn-sm btn-outline-secondary">
+                    <span class="material-icons">calendar_today</span> Hoje
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 bg-white p-4 h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h6 class="text-muted mb-1">Saldo Pendente</h6>
+                            <h3 class="mb-0">R$ 24.580,00</h3>
+                        </div>
+                        <span class="material-icons text-primary">account_balance_wallet</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar progress-bar-accent" role="progressbar" style="width: 65%;"></div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">65% do limite total</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-white p-4 h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h6 class="text-muted mb-1">Vendas este mês</h6>
+                            <h3 class="mb-0">R$ 12.340,00</h3>
+                        </div>
+                        <span class="material-icons text-primary">receipt</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar progress-bar-accent" role="progressbar" style="width: 45%;"></div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">+12% em relação ao mês passado</small>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-white p-4 h-100">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h6 class="text-muted mb-1">Pagamentos recebidos</h6>
+                            <h3 class="mb-0">R$ 8.720,00</h3>
+                        </div>
+                        <span class="material-icons text-primary">payments</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar progress-bar-accent" role="progressbar" style="width: 35%;"></div>
+                    </div>
+                    <small class="text-muted mt-2 d-block">35% do saldo pendente</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-8">
+                <div class="card border-0 bg-white p-4 h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-semibold mb-0">Vendas Recentes</h5>
+                        <button class="btn btn-sm btn-outline-secondary">Ver todas</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Cliente</th>
+                                <th>Data</th>
+                                <th>Valor</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>#FV-0012</td>
+                                <td>João Silva</td>
+                                <td>15/06/2023</td>
+                                <td>R$ 1.250,00</td>
+                                <td><span class="badge badge-status badge-pending">Pendente</span></td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-secondary">
+                                        <span class="material-icons">visibility</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>#FV-0011</td>
+                                <td>Maria Souza</td>
+                                <td>14/06/2023</td>
+                                <td>R$ 890,00</td>
+                                <td><span class="badge badge-status badge-partial">Parcial</span></td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-secondary">
+                                        <span class="material-icons">visibility</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>#FV-0010</td>
+                                <td>Carlos Oliveira</td>
+                                <td>10/06/2023</td>
+                                <td>R$ 2.150,00</td>
+                                <td><span class="badge badge-status badge-paid">Quitado</span></td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-secondary">
+                                        <span class="material-icons">visibility</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 bg-white p-4 h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-semibold mb-0">Clientes em Atraso</h5>
+                        <button class="btn btn-sm btn-outline-secondary">Ver todos</button>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex align-items-center px-0">
+                            <div class="avatar me-3">JS</div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0">João Silva</h6>
+                                <small class="text-muted">Vencido há 5 dias</small>
+                            </div>
+                            <div class="debt-amount">R$ 1.250,00</div>
+                        </div>
+                        <div class="list-group-item d-flex align-items-center px-0">
+                            <div class="avatar me-3">AS</div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0">Ana Santos</h6>
+                                <small class="text-muted">Vencido há 3 dias</small>
+                            </div>
+                            <div class="debt-amount">R$ 890,00</div>
+                        </div>
+                        <div class="list-group-item d-flex align-items-center px-0">
+                            <div class="avatar me-3">PF</div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0">Pedro Ferreira</h6>
+                                <small class="text-muted">Vencido hoje</small>
+                            </div>
+                            <div class="debt-amount">R$ 1.750,00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Clientes Section -->
+    <section id="clientes" class="mb-5 d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-semibold mb-0">Clientes</h4>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary me-2">
+                    <span class="material-icons">search</span> Buscar
+                </button>
+                <button class="btn btn-sm btn-accent" data-bs-toggle="modal" data-bs-target="#addClientModal">
+                    <span class="material-icons">add</span> Novo Cliente
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-4" id="clientCards">
+            <div class="col-md-4 col-lg-3 fade-in">
+                <div class="card border-0 bg-white p-3 h-100">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="avatar me-3">JS</div>
+                        <div>
+                            <h5 class="mb-0">João Silva</h5>
+                            <small class="text-muted">(11) 98765-4321</small>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block">Saldo devedor</small>
+                            <div class="debt-amount">R$ 1.250,00</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary">
+                            <span class="material-icons">visibility</span> Detalhes
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-3 fade-in">
+                <div class="card border-0 bg-white p-3 h-100">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="avatar me-3">MS</div>
+                        <div>
+                            <h5 class="mb-0">Maria Souza</h5>
+                            <small class="text-muted">(11) 98765-1234</small>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block">Saldo devedor</small>
+                            <div class="debt-amount">R$ 890,00</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary">
+                            <span class="material-icons">visibility</span> Detalhes
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-3 fade-in">
+                <div class="card border-0 bg-white p-3 h-100">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="avatar me-3">CO</div>
+                        <div>
+                            <h5 class="mb-0">Carlos Oliveira</h5>
+                            <small class="text-muted">(11) 98765-5678</small>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block">Saldo devedor</small>
+                            <div class="debt-amount">R$ 0,00</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary">
+                            <span class="material-icons">visibility</span> Detalhes
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-3 fade-in">
+                <div class="card border-0 bg-white p-3 h-100">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="avatar me-3">AS</div>
+                        <div>
+                            <h5 class="mb-0">Ana Santos</h5>
+                            <small class="text-muted">(11) 98765-8765</small>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted d-block">Saldo devedor</small>
+                            <div class="debt-amount">R$ 890,00</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary">
+                            <span class="material-icons">visibility</span> Detalhes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Vendas Section -->
+    <section id="vendas" class="mb-5 d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-semibold mb-0">Vendas a Crédito</h4>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary me-2">
+                    <span class="material-icons">filter_alt</span> Filtrar
+                </button>
+                <button class="btn btn-sm btn-outline-secondary">
+                    <span class="material-icons">download</span> Exportar
+                </button>
+            </div>
+        </div>
+
+        <div class="card border-0 bg-white p-4">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Cliente</th>
+                        <th>Data</th>
+                        <th>Valor</th>
+                        <th>Status</th>
+                        <th>Vencimento</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>#FV-0012</td>
+                        <td>João Silva</td>
+                        <td>15/06/2023</td>
+                        <td>R$ 1.250,00</td>
+                        <td><span class="badge badge-status badge-pending">Pendente</span></td>
+                        <td>15/07/2023</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-secondary me-1">
+                                <span class="material-icons">edit</span>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger">
+                                <span class="material-icons">delete</span>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>#FV-0011</td>
+                        <td>Maria Souza</td>
+                        <td>14/06/2023</td>
+                        <td>R$ 890,00</td>
+                        <td><span class="badge badge-status badge-partial">Parcial</span></td>
+                        <td>14/07/2023</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-secondary me-1">
+                                <span class="material-icons">edit</span>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger">
+                                <span class="material-icons">delete</span>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>#FV-0010</td>
+                        <td>Carlos Oliveira</td>
+                        <td>10/06/2023</td>
+                        <td>R$ 2.150,00</td>
+                        <td><span class="badge badge-status badge-paid">Quitado</span></td>
+                        <td>10/07/2023</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-secondary me-1">
+                                <span class="material-icons">edit</span>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger">
+                                <span class="material-icons">delete</span>
+                            </button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FAB Button -->
+        <button class="fab" data-bs-toggle="modal" data-bs-target="#addSaleModal">
+            <span class="material-icons text-dark">add</span>
+        </button>
+    </section>
+
+    <!-- Pagamentos Section -->
+    <section id="pagamentos" class="mb-5 d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-semibold mb-0">Pagamentos</h4>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary me-2">
+                    <span class="material-icons">calendar_today</span> Período
+                </button>
+                <button class="btn btn-sm btn-outline-secondary">
+                    <span class="material-icons">download</span> Exportar
+                </button>
+            </div>
+        </div>
+
+        <div class="accordion" id="paymentsAccordion">
+            <div class="accordion-item border-0 mb-3">
+                <h2 class="accordion-header">
+                    <button class="accordion-button bg-white shadow-sm rounded" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne">
+                        <div class="d-flex align-items-center w-100">
+                            <div class="avatar me-3">JS</div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0">João Silva</h6>
+                                <small class="text-muted">(11) 98765-4321</small>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted d-block">Total devido</small>
+                                <div class="debt-amount">R$ 1.250,00</div>
+                            </div>
+                        </div>
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#paymentsAccordion">
+                    <div class="accordion-body pt-0">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <small class="text-muted d-block">Total pago</small>
+                                <div>R$ 0,00</div>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted d-block">Saldo devedor</small>
+                                <div class="debt-amount">R$ 1.250,00</div>
+                            </div>
+                        </div>
+                        <div class="progress mb-4" style="height: 6px;">
+                            <div class="progress-bar progress-bar-accent" role="progressbar" style="width: 0%;"></div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">Histórico de Pagamentos</h6>
+                            <button class="btn btn-sm btn-accent" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+                                <span class="material-icons">add</span> Registrar Pagamento
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Valor</th>
+                                    <th>Método</th>
+                                    <th>Comprovante</th>
+                                    <th></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">Nenhum pagamento registrado</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="accordion-item border-0 mb-3">
+                <h2 class="accordion-header">
+                    <button class="accordion-button bg-white shadow-sm rounded collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                        <div class="d-flex align-items-center w-100">
+                            <div class="avatar me-3">MS</div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0">Maria Souza</h6>
+                                <small class="text-muted">(11) 98765-1234</small>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted d-block">Total devido</small>
+                                <div class="debt-amount">R$ 890,00</div>
+                            </div>
+                        </div>
+                    </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#paymentsAccordion">
+                    <div class="accordion-body pt-0">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <small class="text-muted d-block">Total pago</small>
+                                <div>R$ 450,00</div>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted d-block">Saldo devedor</small>
+                                <div class="debt-amount">R$ 440,00</div>
+                            </div>
+                        </div>
+                        <div class="progress mb-4" style="height: 6px;">
+                            <div class="progress-bar progress-bar-accent" role="progressbar" style="width: 50.56%;"></div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">Histórico de Pagamentos</h6>
+                            <button class="btn btn-sm btn-accent" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+                                <span class="material-icons">add</span> Registrar Pagamento
+                            </button>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Valor</th>
+                                    <th>Método</th>
+                                    <th>Comprovante</th>
+                                    <th></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <td>10/06/2023</td>
+                                    <td>R$ 450,00</td>
+                                    <td>PIX</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-link p-0">ver_comprovante.pdf</button>
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-1">
+                                            <span class="material-icons">edit</span>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger">
+                                            <span class="material-icons">delete</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Limites Section -->
+    <section id="limites" class="mb-5 d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-semibold mb-0">Limites de Crédito</h4>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary me-2">
+                    <span class="material-icons">search</span> Buscar
+                </button>
+                <button class="btn btn-sm btn-outline-secondary">
+                    <span class="material-icons">download</span> Exportar
+                </button>
+            </div>
+        </div>
+
+        <div class="card border-0 bg-white p-4">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                    <tr>
+                        <th>Cliente</th>
+                        <th>Limite Atual</th>
+                        <th>Uso</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar me-3">JS</div>
+                                <div>João Silva</div>
+                            </div>
+                        </td>
+                        <td>R$ 2.000,00</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                    <div class="progress-bar progress-bar-accent" role="progressbar" style="width: 62.5%;"></div>
+                                </div>
+                                <span>62.5%</span>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-success">Normal</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-secondary">
+                                <span class="material-icons">edit</span>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar me-3">MS</div>
+                                <div>Maria Souza</div>
+                            </div>
+                        </td>
+                        <td>R$ 1.500,00</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                    <div class="progress-bar progress-bar-accent" role="progressbar" style="width: 59.33%;"></div>
+                                </div>
+                                <span>59.33%</span>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-success">Normal</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-secondary">
+                                <span class="material-icons">edit</span>
+                            </button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar me-3">AS</div>
+                                <div>Ana Santos</div>
+                            </div>
+                        </td>
+                        <td>R$ 1.000,00</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1 me-2" style="height: 6px;">
+                                    <div class="progress-bar progress-bar-accent bg-warning" role="progressbar" style="width: 89%;"></div>
+                                </div>
+                                <span>89%</span>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-warning text-dark">Atenção</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-secondary">
+                                <span class="material-icons">edit</span>
+                            </button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Toast Alert -->
+        <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+            <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header bg-warning text-dark">
+                    <span class="material-icons me-2">warning</span>
+                    <strong class="me-auto">Atenção</strong>
+                    <small>Agora</small>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    Ana Santos está utilizando 89% do limite de crédito.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Notificações Section -->
+    <section id="notificacoes" class="mb-5 d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-semibold mb-0">Notificações</h4>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary me-2">
+                    <span class="material-icons">filter_alt</span> Filtrar
+                </button>
+                <button class="btn btn-sm btn-outline-secondary">
+                    <span class="material-icons">check</span> Marcar todas como lidas
+                </button>
+            </div>
+        </div>
+
+        <div class="notification-timeline">
+            <div class="card border-0 bg-white p-3 mb-3">
+                <div class="d-flex">
+                    <span class="material-icons text-primary me-3">notifications</span>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h6 class="mb-0">Pagamento em atraso</h6>
+                            <small class="text-muted">15/06/2023</small>
+                        </div>
+                        <p class="mb-1">João Silva possui um pagamento vencido no valor de R$ 1.250,00</p>
+                        <span class="badge bg-warning text-dark">Vencido</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 bg-white p-3 mb-3">
+                <div class="d-flex">
+                    <span class="material-icons text-primary me-3">notifications</span>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h6 class="mb-0">Limite de crédito próximo</h6>
+                            <small class="text-muted">14/06/2023</small>
+                        </div>
+                        <p class="mb-1">Ana Santos está utilizando 89% do limite de crédito</p>
+                        <span class="badge bg-warning text-dark">Atenção</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 bg-white p-3 mb-3">
+                <div class="d-flex">
+                    <span class="material-icons text-primary me-3">notifications</span>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h6 class="mb-0">Pagamento recebido</h6>
+                            <small class="text-muted">10/06/2023</small>
+                        </div>
+                        <p class="mb-1">Maria Souza realizou um pagamento de R$ 450,00 via PIX</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Configurações Section -->
+    <section id="configuracoes" class="mb-5 d-none">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-semibold mb-0">Configurações</h4>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="card border-0 bg-white p-4 h-100">
+                    <h5 class="fw-semibold mb-4">Configurações Gerais</h5>
+
+                    <div class="mb-3">
+                        <label class="form-label">Nome da Empresa</label>
+                        <input type="text" class="form-control" value="FiadaManager">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Moeda</label>
+                        <select class="form-select">
+                            <option selected>Real Brasileiro (R$)</option>
+                            <option>Dólar Americano ($)</option>
+                            <option>Euro (€)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Formato de Data</label>
+                        <select class="form-select">
+                            <option selected>DD/MM/AAAA</option>
+                            <option>MM/DD/AAAA</option>
+                            <option>AAAA-MM-DD</option>
+                        </select>
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="notificationsSwitch" checked>
+                        <label class="form-check-label" for="notificationsSwitch">Notificações por e-mail</label>
+                    </div>
+
+                    <button class="btn btn-accent">Salvar Configurações</button>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card border-0 bg-white p-4 h-100">
+                    <h5 class="fw-semibold mb-4">Segurança</h5>
+
+                    <div class="mb-3">
+                        <label class="form-label">Alterar Senha</label>
+                        <input type="password" class="form-control mb-2" placeholder="Senha atual">
+                        <input type="password" class="form-control mb-2" placeholder="Nova senha">
+                        <input type="password" class="form-control" placeholder="Confirmar nova senha">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Autenticação de Dois Fatores</label>
+                        <div class="d-flex align-items-center">
+                            <div class="form-check form-switch me-3">
+                                <input class="form-check-input" type="checkbox" id="2faSwitch">
+                                <label class="form-check-label" for="2faSwitch">Ativar 2FA</label>
+                            </div>
+                            <small class="text-muted">Recomendado para maior segurança</small>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-accent">Atualizar Segurança</button>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Modals -->
+
+<!-- Add Client Modal -->
+<div class="modal fade" id="addClientModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header modal-header-gradient">
+                <h5 class="modal-title text-white">Adicionar Cliente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="clientForm">
+                    <div class="mb-3">
+                        <label class="form-label">Nome Completo</label>
+                        <input type="text" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Telefone</label>
+                        <input type="tel" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">E-mail</label>
+                        <input type="email" class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">CPF/CNPJ</label>
+                        <input type="text" class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Endereço</label>
+                        <input type="text" class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Limite de Crédito</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="number" class="form-control" step="0.01" min="0">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="clientForm" class="btn btn-accent">Salvar Cliente</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Sale Modal -->
+<div class="modal fade" id="addSaleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header modal-header-gradient">
+                <h5 class="modal-title text-white">Nova Venda a Crédito</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="saleForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Cliente</label>
+                            <select class="form-select" required>
+                                <option value="" selected disabled>Selecione um cliente</option>
+                                <option>João Silva</option>
+                                <option>Maria Souza</option>
+                                <option>Carlos Oliveira</option>
+                                <option>Ana Santos</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Data da Venda</label>
+                            <input type="date" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Valor</label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" class="form-control" step="0.01" min="0" required>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Vencimento</label>
+                            <input type="date" class="form-control" required>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Descrição (Opcional)</label>
+                            <textarea class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="card border-0 bg-light p-3">
+                                <h6 class="fw-semibold mb-3">Itens da Venda</h6>
+
+                                <div class="table-responsive">
+                                    <table class="table table-sm mb-0">
+                                        <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Quantidade</th>
+                                            <th>Valor Unitário</th>
+                                            <th>Total</th>
+                                            <th></th>
+                                        </tr>
+                                        </thead>
+                                        <tbody id="saleItems">
+                                        <tr>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm" placeholder="Descrição">
+                                            </td>
+                                            <td>
+                                                <input type="number" class="form-control form-control-sm" min="1" value="1">
+                                            </td>
+                                            <td>
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text">R$</span>
+                                                    <input type="number" class="form-control" step="0.01" min="0">
+                                                </div>
+                                            </td>
+                                            <td>R$ 0,00</td>
+                                            <td class="text-end">
+                                                <button type="button" class="btn btn-sm btn-outline-danger">
+                                                    <span class="material-icons">delete</span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-3">
+                                    <span class="material-icons">add</span> Adicionar Item
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="saleForm" class="btn btn-accent">Registrar Venda</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Payment Modal -->
+<div class="modal fade" id="addPaymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header modal-header-gradient">
+                <h5 class="modal-title text-white">Registrar Pagamento</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="paymentForm">
+                    <div class="mb-3">
+                        <label class="form-label">Cliente</label>
+                        <select class="form-select" disabled>
+                            <option selected>João Silva</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Valor</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="number" class="form-control" step="0.01" min="0" max="1250" required>
+                        </div>
+                        <small class="text-muted">Saldo pendente: R$ 1.250,00</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Data do Pagamento</label>
+                        <input type="date" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Método de Pagamento</label>
+                        <select class="form-select" required>
+                            <option value="" selected disabled>Selecione</option>
+                            <option>Dinheiro</option>
+                            <option>PIX</option>
+                            <option>Cartão de Crédito</option>
+                            <option>Cartão de Débito</option>
+                            <option>Transferência Bancária</option>
+                            <option>Boleto</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Comprovante (Opcional)</label>
+                        <input type="file" class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Observações</label>
+                        <textarea class="form-control" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="paymentForm" class="btn btn-accent">Registrar Pagamento</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger">
+                    <span class="material-icons text-danger me-2">warning</span> Confirmação
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Excluir <strong id="itemToDelete">[Item]</strong>? Essa ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger">Excluir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script>
+    // Sidebar navigation
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mobile sidebar toggle
+        const sidebarToggle = document.getElementById('sidebarToggle');
+        const sidebar = document.querySelector('.sidebar');
+        const sidebarOverlay = document.querySelector('.sidebar-overlay');
+
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', function() {
+                sidebar.classList.toggle('show');
+                sidebarOverlay.classList.toggle('show');
+            });
+        }
+
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', function() {
+                sidebar.classList.remove('show');
+                sidebarOverlay.classList.remove('show');
+            });
+        }
+
+        // Navigation between sections
+        const sidebarItems = document.querySelectorAll('.sidebar-item');
+        const sections = document.querySelectorAll('section');
+
+        sidebarItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    // Remove active class from all items
+                    sidebarItems.forEach(i => i.classList.remove('active'));
+
+                    // Add active class to clicked item
+                    this.classList.add('active');
+
+                    // Hide all sections
+                    sections.forEach(section => section.classList.add('d-none'));
+
+                    // Show the selected section
+                    const target = e.target.getAttribute('href').substring(1);
+                    document.getElementById(target).classList.remove('d-none');
+
+                    // Close sidebar on mobile
+                    if (window.innerWidth < 768) {
+                        sidebar.classList.remove('show');
+                        sidebarOverlay.classList.remove('show');
+                    }
+                }
+            });
+        });
+
+        // Initialize Select2
+        $('.form-select').select2({
+            width: '100%',
+            dropdownParent: $('#addSaleModal')
+        });
+
+        // Form validation
+        const forms = document.querySelectorAll('form');
+        forms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Simple validation - check required fields
+                let isValid = true;
+                const requiredInputs = this.querySelectorAll('[required]');
+
+                requiredInputs.forEach(input => {
+                    if (!input.value.trim()) {
+                        input.classList.add('is-invalid');
+                        isValid = false;
+                    } else {
+                        input.classList.remove('is-invalid');
+                    }
+                });
+
+                if (isValid) {
+                    // Show success message
+                    const toast = new bootstrap.Toast(document.createElement('div'));
+                    const toastEl = document.createElement('div');
+                    toastEl.className = 'toast align-items-center text-white bg-success';
+                    toastEl.innerHTML = `
+                            <div class="d-flex">
+                                <div class="toast-body">
+                                    Operação realizada com sucesso!
+                                </div>
+                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                        `;
+                    document.body.appendChild(toastEl);
+
+                    const bsToast = new bootstrap.Toast(toastEl);
+                    bsToast.show();
+
+                    // Close modal if exists
+                    const modal = bootstrap.Modal.getInstance(this.closest('.modal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+
+                    // Remove toast after animation
+                    setTimeout(() => {
+                        toastEl.remove();
+                    }, 3000);
+                }
+            });
+        });
+
+        // Delete confirmation
+        const deleteButtons = document.querySelectorAll('[data-bs-target="#deleteModal"]');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const itemName = this.closest('tr').querySelector('td:first-child').textContent;
+                document.getElementById('itemToDelete').textContent = itemName;
+            });
+        });
+
+        // Simulate loading data
+        setTimeout(() => {
+            const loadingCards = document.querySelectorAll('.fade-in');
+            loadingCards.forEach(card => {
+                card.style.opacity = '1';
+            });
+        }, 300);
+    });
+</script>
+</body>
+</html>

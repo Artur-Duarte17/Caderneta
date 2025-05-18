@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clientes | FiadaManager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#0A2463',
+            accent: '#FFC107',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .floating-label-group {
+      position: relative;
+    }
+    .floating-label {
+      position: absolute;
+      pointer-events: none;
+      left: 12px;
+      top: 11px;
+      transition: 0.2s ease all;
+      color: #6b7280;
+      font-size: 12px;
+    }
+    input:focus ~ .floating-label,
+    input:not(:focus):valid ~ .floating-label,
+    textarea:focus ~ .floating-label,
+    textarea:not(:focus):valid ~ .floating-label {
+      top: -8px;
+      left: 10px;
+      font-size: 10px;
+      opacity: 1;
+      background: white;
+      padding: 0 4px;
+      color: #0A2463;
+    }
+    .toast {
+      animation: slideIn 0.5s forwards, fadeOut 0.5s 3s forwards;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0); }
+    }
+    @keyframes fadeOut {
+      from { opacity: 1; }
+      to { opacity: 0; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 font-sans">
+<!-- Main Layout -->
+<div class="flex h-screen overflow-hidden">
+  <!-- Sidebar -->
+  <div id="sidebar" class="hidden md:flex md:flex-shrink-0">
+    <div class="w-60 bg-primary text-white h-screen flex flex-col">
+      <div class="p-4 flex items-center border-b border-primary-light">
+        <span class="material-icons text-accent mr-2">store</span>
+        <h1 class="text-xl font-bold">Vendas a Prazo</h1>
+      </div>
+      <nav class="flex-1 overflow-y-auto">
+        <ul class="p-2">
+          <li class="mb-1">
+            <a href="#" class="flex items-center p-3 rounded hover:bg-primary-dark">
+              <span class="material-icons mr-3">dashboard</span>
+              Dashboard
+            </a>
+          </li>
+          <li class="mb-1">
+            <a href="#" class="flex items-center p-3 rounded bg-primary-dark">
+              <span class="material-icons mr-3 text-accent">people</span>
+              Clientes
+            </a>
+          </li>
+          <li class="mb-1">
+            <a href="#" class="flex items-center p-3 rounded hover:bg-primary-dark">
+              <span class="material-icons mr-3">receipt</span>
+              Vendas
+            </a>
+          </li>
+          <li class="mb-1">
+            <a href="#" class="flex items-center p-3 rounded hover:bg-primary-dark">
+              <span class="material-icons mr-3">paid</span>
+              Pagamentos
+            </a>
+          </li>
+          <li class="mb-1">
+            <a href="#" class="flex items-center p-3 rounded hover:bg-primary-dark">
+              <span class="material-icons mr-3">assessment</span>
+              Relatórios
+            </a>
+          </li>
+        </ul>
+      </nav>
+      <div class="p-4 border-t border-primary-light">
+        <div class="flex items-center">
+          <div class="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-primary font-bold">JD</div>
+          <div class="ml-3">
+            <p class="text-sm font-medium">John Doe</p>
+            <p class="text-xs text-gray-300">Admin</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <!-- Topbar -->
+    <header class="bg-primary text-white h-14 flex items-center justify-between px-4">
+      <div class="flex items-center">
+        <button id="sidebar-toggle" class="md:hidden mr-2 text-white focus:outline-none">
+          <span class="material-icons">menu</span>
+        </button>
+        <h1 class="text-xl font-semibold">Clientes</h1>
+      </div>
+      <button id="new-client-btn" class="bg-accent hover:bg-yellow-500 text-primary px-4 py-2 rounded font-medium flex items-center">
+        <span class="material-icons mr-1">add</span>
+        Novo Cliente
+      </button>
+    </header>
+
+    <!-- Content -->
+    <main class="flex-1 overflow-y-auto p-4">
+      <!-- Search Bar -->
+      <div class="mb-6 relative">
+        <div class="relative">
+          <input type="text" placeholder="Buscar por nome ou telefone"
+                 class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-accent focus:border-accent outline-none"
+                 aria-label="Buscar clientes">
+          <span class="material-icons absolute left-3 top-2.5 text-gray-400">search</span>
+        </div>
+      </div>
+
+      <!-- Client Cards Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <!-- Client Card 1 -->
+        <div class="bg-white rounded-lg shadow hover:shadow-lg transition transform hover:-translate-y-1">
+          <div class="p-4">
+            <div class="flex items-center mb-3">
+              <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg">JD</div>
+              <div class="ml-3">
+                <h3 class="font-bold">João da Silva</h3>
+                <p class="text-sm text-gray-600">(11) 98765-4321</p>
+              </div>
+            </div>
+            <div class="flex justify-between items-center mb-3">
+              <div>
+                <p class="text-sm text-gray-600">Saldo devedor</p>
+                <p class="font-bold text-red-500">R$ 1.250,00</p>
+              </div>
+              <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Parcial</span>
+            </div>
+            <div class="flex space-x-2">
+              <button class="btn-outline-secondary flex items-center justify-center w-full py-1.5 rounded">
+                <span class="material-icons mr-1 text-sm">visibility</span>
+                Detalhes
+              </button>
+              <button class="btn-outline-secondary flex items-center justify-center w-full py-1.5 rounded">
+                <span class="material-icons mr-1 text-sm">edit</span>
+                Editar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Client Card 2 -->
+        <div class="bg-white rounded-lg shadow hover:shadow-lg transition transform hover:-translate-y-1">
+          <div class="p-4">
+            <div class="flex items-center mb-3">
+              <div class="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg">MA</div>
+              <div class="ml-3">
+                <h3 class="font-bold">Maria Aparecida</h3>
+                <p class="text-sm text-gray-600">(11) 91234-5678</p>
+              </div>
+            </div>
+            <div class="flex justify-between items-center mb-3">
+              <div>
+                <p class="text-sm text-gray-600">Saldo devedor</p>
+                <p class="font-bold text-green-600">R$ 0,00</p>
+              </div>
+              <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Quitado</span>
+            </div>
+            <div class="flex space-x-2">
+              <button class="btn-outline-secondary flex items-center justify-center w-full py-1.5 rounded">
+                <span class="material-icons mr-1 text-sm">visibility</span>
+                Detalhes
+              </button>
+              <button class="btn-outline-secondary flex items-center justify-center w-full py-1.5 rounded">
+                <span class="material-icons mr-1 text-sm">edit</span>
+                Editar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Client Card 3 -->
+        <div class="bg-white rounded-lg shadow hover:shadow-lg transition transform hover:-translate-y-1">
+          <div class="p-4">
+            <div class="flex items-center mb-3">
+              <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-lg">PC</div>
+              <div class="ml-3">
+                <h3 class="font-bold">Pedro Cardoso</h3>
+                <p class="text-sm text-gray-600">(11) 99876-5432</p>
+              </div>
+            </div>
+            <div class="flex justify-between items-center mb-3">
+              <div>
+                <p class="text-sm text-gray-600">Saldo devedor</p>
+                <p class="font-bold text-red-500">R$ 2.450,00</p>
+              </div>
+              <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">Pendente</span>
+            </div>
+            <div class="flex space-x-2">
+              <button class="btn-outline-secondary flex items-center justify-center w-full py-1.5 rounded">
+                <span class="material-icons mr-1 text-sm">visibility</span>
+                Detalhes
+              </button>
+              <button class="btn-outline-secondary flex items-center justify-center w-full py-1.5 rounded">
+                <span class="material-icons mr-1 text-sm">edit</span>
+                Editar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Client Card 4 -->
+        <div class="bg-white rounded-lg shadow hover:shadow-lg transition transform hover:-translate-y-1">
+          <div class="p-4">
+            <div class="flex items-center mb-3">
+              <div class="w-12 h-12 rounded-full bg-purple-500 flex items-center justify-center text-white font-bold text-lg">AC</div>
+              <div class="ml-3">
+                <h3 class="font-bold">Ana Carolina</h3>
+                <p class="text-sm text-gray-600">(11) 94567-8901</p>
+              </div>
+            </div>
+            <div class="flex justify-between items-center mb-3">
+              <div>
+                <p class="text-sm text-gray-600">Saldo devedor</p>
+                <p class="font-bold text-yellow-600">R$ 350,00</p>
+              </div>
+              <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">Parcial</span>
+            </div>
+            <div class="flex space-x-2">
+              <button class="btn-outline-secondary flex items-center justify-center w-full py-1.5 rounded">
+                <span class="material-icons mr-1 text-sm">visibility</span>
+                Detalhes
+              </button>
+              <button class="btn-outline-secondary flex items-center justify-center w-full py-1.5 rounded">
+                <span class="material-icons mr-1 text-sm">edit</span>
+                Editar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- New Client Modal -->
+<div id="new-client-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+      <h2 class="text-xl font-bold text-primary">Novo Cliente</h2>
+      <button id="close-new-client-modal" class="text-gray-500 hover:text-gray-700">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="p-6">
+      <form id="client-form">
+        <!-- Client Info -->
+        <div class="mb-6">
+          <h3 class="text-lg font-medium text-primary mb-4">Informações do Cliente</h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Name -->
+            <div class="floating-label-group">
+              <input type="text" id="client-name" class="form-control w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-accent focus:border-accent outline-none" required>
+              <label class="floating-label">Nome Completo*</label>
+            </div>
+
+            <!-- Phone -->
+            <div class="floating-label-group">
+              <input type="tel" id="client-phone" class="form-control w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-accent focus:border-accent outline-none" required>
+              <label class="floating-label">Telefone*</label>
+            </div>
+
+            <!-- Email -->
+            <div class="floating-label-group">
+              <input type="email" id="client-email" class="form-control w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-accent focus:border-accent outline-none">
+              <label class="floating-label">E-mail</label>
+            </div>
+
+            <!-- CPF/CNPJ -->
+            <div class="floating-label-group">
+              <input type="text" id="client-document" class="form-control w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-accent focus:border-accent outline-none">
+              <label class="floating-label">CPF/CNPJ</label>
+            </div>
+          </div>
+
+          <!-- Address -->
+          <div class="mt-4 floating-label-group">
+            <textarea id="client-address" rows="2" class="form-control w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-accent focus:border-accent outline-none"></textarea>
+            <label class="floating-label">Endereço</label>
+          </div>
+
+          <!-- Credit Limit -->
+          <div class="mt-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Limite de Crédito</label>
+            <div class="relative rounded-md shadow-sm">
+              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span class="text-gray-500">R$</span>
+              </div>
+              <input type="number" step="0.01" id="client-credit-limit" class="focus:ring-accent focus:border-accent block w-full pl-10 pr-12 py-2 border-gray-300 rounded-md" placeholder="0,00">
+              <div class="absolute inset-y-0 right-0 flex items-center">
+                <span class="text-gray-500 mr-3 text-sm">BRL</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Guarantor Section -->
+        <div class="mb-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-primary">Fiador</h3>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="has-guarantor" class="sr-only peer">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
+              <span class="ml-3 text-sm font-medium text-gray-700">Incluir fiador?</span>
+            </label>
+          </div>
+
+          <div id="guarantor-fields" class="hidden bg-gray-50 p-4 rounded-lg">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Guarantor Name -->
+              <div class="floating-label-group">
+                <input type="text" id="guarantor-name" class="form-control w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-accent focus:border-accent outline-none">
+                <label class="floating-label">Nome Completo</label>
+              </div>
+
+              <!-- Guarantor Phone -->
+              <div class="floating-label-group">
+                <input type="tel" id="guarantor-phone" class="form-control w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-accent focus:border-accent outline-none">
+                <label class="floating-label">Telefone</label>
+              </div>
+
+              <!-- Guarantor Email -->
+              <div class="floating-label-group">
+                <input type="email" id="guarantor-email" class="form-control w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-accent focus:border-accent outline-none">
+                <label class="floating-label">E-mail</label>
+              </div>
+
+              <!-- Guarantor CPF/CNPJ -->
+              <div class="floating-label-group">
+                <input type="text" id="guarantor-document" class="form-control w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-accent focus:border-accent outline-none">
+                <label class="floating-label">CPF/CNPJ</label>
+              </div>
+            </div>
+
+            <!-- Guarantor Address -->
+            <div class="mt-4 floating-label-group">
+              <textarea id="guarantor-address" rows="2" class="form-control w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-accent focus:border-accent outline-none"></textarea>
+              <label class="floating-label">Endereço</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+          <button type="button" id="cancel-new-client" class="btn-outline-secondary px-4 py-2 rounded font-medium">
+            Cancelar
+          </button>
+          <button type="submit" id="save-client" class="bg-accent hover:bg-yellow-500 text-primary px-4 py-2 rounded font-medium flex items-center">
+            <span id="save-spinner" class="hidden animate-spin mr-2 material-icons" style="font-size: 18px;">autorenew</span>
+            Salvar Cliente
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Client Modal (Same as New Client but with different title) -->
+<div id="edit-client-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+  <div class="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+      <h2 class="text-xl font-bold text-primary">Editar Cliente</h2>
+      <button id="close-edit-client-modal" class="text-gray-500 hover:text-gray-700">
+        <span class="material-icons">close</span>
+      </button>
+    </div>
+    <div class="p-6">
+      <form id="edit-client-form">
+        <!-- Content would be the same as new client form -->
+        <!-- In a real app, this would be populated with existing client data -->
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast-notification" class="fixed top-4 right-4 hidden">
+  <div class="bg-primary text-white px-4 py-3 rounded-lg shadow-lg flex items-center toast">
+    <span class="material-icons mr-2 text-accent">check_circle</span>
+    <span>Cliente salvo com sucesso!</span>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // DOM Elements
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  const sidebar = document.getElementById('sidebar');
+  const newClientBtn = document.getElementById('new-client-btn');
+  const newClientModal = document.getElementById('new-client-modal');
+  const closeNewClientModal = document.getElementById('close-new-client-modal');
+  const cancelNewClient = document.getElementById('cancel-new-client');
+  const clientForm = document.getElementById('client-form');
+  const hasGuarantor = document.getElementById('has-guarantor');
+  const guarantorFields = document.getElementById('guarantor-fields');
+  const saveClientBtn = document.getElementById('save-client');
+  const saveSpinner = document.getElementById('save-spinner');
+  const toastNotification = document.getElementById('toast-notification');
+
+  // Toggle sidebar on mobile
+  sidebarToggle.addEventListener('click', () => {
+    sidebar.classList.toggle('hidden');
+  });
+
+  // Show new client modal
+  newClientBtn.addEventListener('click', () => {
+    newClientModal.classList.remove('hidden');
+  });
+
+  // Close modals
+  function closeAllModals() {
+    newClientModal.classList.add('hidden');
+    document.getElementById('edit-client-modal').classList.add('hidden');
+  }
+
+  closeNewClientModal.addEventListener('click', closeAllModals);
+  cancelNewClient.addEventListener('click', closeAllModals);
+
+  // Toggle guarantor fields
+  hasGuarantor.addEventListener('change', () => {
+    if (hasGuarantor.checked) {
+      guarantorFields.classList.remove('hidden');
+    } else {
+      guarantorFields.classList.add('hidden');
+    }
+  });
+
+  // Form submission
+  clientForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    // Show loading spinner
+    saveSpinner.classList.remove('hidden');
+    saveClientBtn.disabled = true;
+
+    // Simulate API call
+    setTimeout(() => {
+      // Hide spinner and enable button
+      saveSpinner.classList.add('hidden');
+      saveClientBtn.disabled = false;
+
+      // Close modal
+      closeAllModals();
+
+      // Show toast notification
+      toastNotification.classList.remove('hidden');
+
+      // Hide toast after animation
+      setTimeout(() => {
+        toastNotification.classList.add('hidden');
+      }, 3500);
+
+      // Reset form
+      clientForm.reset();
+      hasGuarantor.checked = false;
+      guarantorFields.classList.add('hidden');
+    }, 1500);
+  });
+
+  // Close modals when clicking outside
+  window.addEventListener('click', (e) => {
+    if (e.target === newClientModal) {
+      closeAllModals();
+    }
+  });
+
+  // Initialize floating labels for edit modal (would be the same as new client)
+  // In a real app, we would also populate the edit form with existing data
+</script>
+</body>
+</html>

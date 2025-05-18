@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatórios | Vendas a Prazo</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#0A2463',
+            accent: '#3E92CC',
+            secondary: '#FFFAFF',
+            warning: '#FFC107',
+            danger: '#D8315B',
+            blue: {
+              50: '#E6E9F2',
+              100: '#CDD3E5',
+              200: '#9BA7CB',
+              300: '#687BB1',
+              400: '#364F97',
+              500: '#0A2463',
+              600: '#081D4F',
+              700: '#06163B',
+              800: '#040E27',
+              900: '#020714'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- Custom CSS -->
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .sidebar-link {
+      transition: all 0.3s ease;
+    }
+
+    .sidebar-link:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      transform: translateX(4px);
+    }
+
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+
+    .card-hover:hover {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      transform: translateY(-2px);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    /* Custom blue gradient */
+    .bg-blue-gradient {
+      background: linear-gradient(135deg, #0A2463 0%, #3E92CC 100%);
+    }
+
+    .text-blue-gradient {
+      background: linear-gradient(135deg, #0A2463 0%, #3E92CC 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+  </style>
+</head>
+<body class="bg-blue-50 font-sans">
+<!-- Main Container -->
+<div class="flex h-screen overflow-hidden">
+  <!-- Sidebar -->
+  <div class="hidden md:flex md:w-60 bg-blue-800 text-white h-screen flex-col fixed">
+    <div class="p-4 flex items-center justify-center border-b border-blue-700 bg-blue-gradient">
+      <h1 class="text-xl font-bold">Vendas a Prazo</h1>
+    </div>
+    <nav class="flex-1 overflow-y-auto p-4">
+      <ul class="space-y-2">
+        <li><a href="#" class="sidebar-link flex items-center p-2 rounded hover:text-white"><span class="material-icons mr-3">dashboard</span> Dashboard</a></li>
+        <li><a href="#" class="sidebar-link flex items-center p-2 rounded hover:text-white"><span class="material-icons mr-3">shopping_cart</span> Vendas</a></li>
+        <li><a href="#" class="sidebar-link flex items-center p-2 rounded hover:text-white"><span class="material-icons mr-3">people</span> Clientes</a></li>
+        <li><a href="#" class="sidebar-link flex items-center p-2 rounded bg-blue-700 text-white font-medium"><span class="material-icons mr-3">assessment</span> Relatórios</a></li>
+        <li><a href="#" class="sidebar-link flex items-center p-2 rounded hover:text-white"><span class="material-icons mr-3">settings</span> Configurações</a></li>
+      </ul>
+    </nav>
+    <div class="p-4 border-t border-blue-700">
+      <div class="flex items-center">
+        <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
+          <span class="material-icons">person</span>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm font-medium">Admin</p>
+          <p class="text-xs text-blue-200">admin@fiada.com</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="flex-1 flex flex-col overflow-hidden md:ml-60">
+    <!-- Topbar -->
+    <header class="bg-blue-800 text-white h-14 flex items-center justify-between px-4 fixed w-full z-10 bg-blue-gradient">
+      <div class="flex items-center">
+        <button id="sidebarToggle" class="md:hidden mr-2 text-white focus:outline-none">
+          <span class="material-icons">menu</span>
+        </button>
+        <h1 class="text-xl font-semibold">Relatórios</h1>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button id="filterBtn" class="flex items-center px-3 py-1 bg-white bg-opacity-10 rounded hover:bg-opacity-20 transition" aria-label="Filtrar">
+          <span class="material-icons mr-1">filter_alt</span>
+          <span class="hidden sm:inline">Filtrar</span>
+        </button>
+        <button id="exportPdfBtn" class="flex items-center px-3 py-1 bg-white bg-opacity-10 rounded hover:bg-opacity-20 transition" aria-label="Exportar PDF">
+          <span class="material-icons mr-1">picture_as_pdf</span>
+          <span class="hidden sm:inline">PDF</span>
+        </button>
+        <button id="exportCsvBtn" class="flex items-center px-3 py-1 bg-white bg-opacity-10 rounded hover:bg-opacity-20 transition" aria-label="Exportar CSV">
+          <span class="material-icons mr-1">file_download</span>
+          <span class="hidden sm:inline">CSV</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="flex-1 overflow-y-auto pt-14 pb-6 px-4 md:px-8 md:py-8">
+      <!-- Filter Controls -->
+      <div id="filterContainer" class="bg-white rounded-lg shadow p-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 fade-in">
+        <div class="w-full sm:w-auto">
+          <label for="dateRange" class="block text-sm font-medium text-blue-800 mb-1">Período</label>
+          <div class="flex items-center space-x-2">
+            <input type="date" id="startDate" class="w-full sm:w-auto border-blue-200 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+            <span class="text-blue-800">a</span>
+            <input type="date" id="endDate" class="w-full sm:w-auto border-blue-200 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+          </div>
+        </div>
+        <div class="w-full sm:w-48">
+          <label for="reportType" class="block text-sm font-medium text-blue-800 mb-1">Tipo de Relatório</label>
+          <select id="reportType" class="w-full border-blue-200 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+            <option value="sales">Vendas</option>
+            <option value="payments">Pagamentos</option>
+            <option value="customers">Clientes</option>
+          </select>
+        </div>
+        <button id="applyFilterBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition self-end sm:self-auto mt-2 sm:mt-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          Aplicar
+        </button>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white p-4 rounded-lg shadow card-hover fade-in border-l-4 border-blue-500">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-blue-600">Total Vendas</p>
+              <p class="text-2xl font-bold text-blue-800">R$ 12.450,00</p>
+            </div>
+            <span class="material-icons text-blue-500 text-4xl">shopping_cart</span>
+          </div>
+          <div class="mt-2 text-sm text-green-600 flex items-center">
+            <span class="material-icons mr-1 text-sm">trending_up</span>
+            <span>12% vs período anterior</span>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow card-hover fade-in border-l-4 border-blue-500">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-blue-600">Pagamentos</p>
+              <p class="text-2xl font-bold text-blue-800">R$ 8.320,00</p>
+            </div>
+            <span class="material-icons text-blue-500 text-4xl">payments</span>
+          </div>
+          <div class="mt-2 text-sm text-green-600 flex items-center">
+            <span class="material-icons mr-1 text-sm">trending_up</span>
+            <span>8% vs período anterior</span>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow card-hover fade-in border-l-4 border-blue-500">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-blue-600">Clientes Ativos</p>
+              <p class="text-2xl font-bold text-blue-800">48</p>
+            </div>
+            <span class="material-icons text-blue-500 text-4xl">people</span>
+          </div>
+          <div class="mt-2 text-sm text-red-600 flex items-center">
+            <span class="material-icons mr-1 text-sm">trending_down</span>
+            <span>2% vs período anterior</span>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow card-hover fade-in border-l-4 border-blue-500">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-blue-600">Fiados Pendentes</p>
+              <p class="text-2xl font-bold text-blue-800">R$ 4.130,00</p>
+            </div>
+            <span class="material-icons text-blue-500 text-4xl">receipt</span>
+          </div>
+          <div class="mt-2 text-sm text-red-600 flex items-center">
+            <span class="material-icons mr-1 text-sm">trending_down</span>
+            <span>5% vs período anterior</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow p-4 fade-in border border-blue-100">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold text-blue-800">Vendas ao longo do tempo</h2>
+            <button class="text-sm text-blue-600 hover:underline focus:outline-none">Ver detalhes</button>
+          </div>
+          <div class="h-64">
+            <canvas id="chartSales"></canvas>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4 fade-in border border-blue-100">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold text-blue-800">Pagamentos por método</h2>
+            <button class="text-sm text-blue-600 hover:underline focus:outline-none">Ver detalhes</button>
+          </div>
+          <div class="h-64">
+            <canvas id="chartPayments"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Details Table -->
+      <div class="bg-white rounded-lg shadow p-4 fade-in border border-blue-100">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-semibold text-blue-800">Detalhes das Vendas</h2>
+          <button id="exportTableCsvBtn" class="flex items-center px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition" aria-label="Exportar tabela para CSV">
+            <span class="material-icons mr-1 text-sm">file_download</span>
+            <span class="text-sm">Exportar CSV</span>
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="table table-striped mb-0 w-full">
+            <thead class="bg-blue-50">
+            <tr>
+              <th class="text-left px-4 py-2 text-blue-800">Data</th>
+              <th class="text-left px-4 py-2 text-blue-800">Cliente</th>
+              <th class="text-left px-4 py-2 text-blue-800">Valor</th>
+              <th class="text-left px-4 py-2 text-blue-800">Status</th>
+              <th class="text-left px-4 py-2 text-blue-800">Ações</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+              <td class="px-4 py-2">15/06/2023</td>
+              <td class="px-4 py-2">João Silva</td>
+              <td class="px-4 py-2">R$ 350,00</td>
+              <td class="px-4 py-2"><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Pago</span></td>
+              <td class="px-4 py-2">
+                <button class="text-blue-600 hover:text-blue-800 focus:outline-none" aria-label="Ver detalhes">
+                  <span class="material-icons text-sm">visibility</span>
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2">14/06/2023</td>
+              <td class="px-4 py-2">Maria Oliveira</td>
+              <td class="px-4 py-2">R$ 420,00</td>
+              <td class="px-4 py-2"><span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">Parcial</span></td>
+              <td class="px-4 py-2">
+                <button class="text-blue-600 hover:text-blue-800 focus:outline-none" aria-label="Ver detalhes">
+                  <span class="material-icons text-sm">visibility</span>
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2">13/06/2023</td>
+              <td class="px-4 py-2">Carlos Souza</td>
+              <td class="px-4 py-2">R$ 275,00</td>
+              <td class="px-4 py-2"><span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Pendente</span></td>
+              <td class="px-4 py-2">
+                <button class="text-blue-600 hover:text-blue-800 focus:outline-none" aria-label="Ver detalhes">
+                  <span class="material-icons text-sm">visibility</span>
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2">12/06/2023</td>
+              <td class="px-4 py-2">Ana Costa</td>
+              <td class="px-4 py-2">R$ 600,00</td>
+              <td class="px-4 py-2"><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Pago</span></td>
+              <td class="px-4 py-2">
+                <button class="text-blue-600 hover:text-blue-800 focus:outline-none" aria-label="Ver detalhes">
+                  <span class="material-icons text-sm">visibility</span>
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2">11/06/2023</td>
+              <td class="px-4 py-2">Pedro Alves</td>
+              <td class="px-4 py-2">R$ 180,00</td>
+              <td class="px-4 py-2"><span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Pendente</span></td>
+              <td class="px-4 py-2">
+                <button class="text-blue-600 hover:text-blue-800 focus:outline-none" aria-label="Ver detalhes">
+                  <span class="material-icons text-sm">visibility</span>
+                </button>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="mt-4 flex justify-center">
+          <nav aria-label="Page navigation">
+            <ul class="inline-flex items-center -space-x-px">
+              <li>
+                <a href="#" class="block px-3 py-2 ml-0 leading-tight text-blue-600 bg-white border border-blue-300 rounded-l-lg hover:bg-blue-50 hover:text-blue-700">
+                  <span class="material-icons">chevron_left</span>
+                </a>
+              </li>
+              <li>
+                <a href="#" class="px-3 py-2 leading-tight text-blue-600 bg-white border border-blue-300 hover:bg-blue-50 hover:text-blue-700">1</a>
+              </li>
+              <li>
+                <a href="#" class="px-3 py-2 leading-tight text-blue-600 bg-white border border-blue-300 hover:bg-blue-50 hover:text-blue-700">2</a>
+              </li>
+              <li>
+                <a href="#" aria-current="page" class="z-10 px-3 py-2 leading-tight text-white bg-blue-600 border border-blue-600 hover:bg-blue-700">3</a>
+              </li>
+              <li>
+                <a href="#" class="px-3 py-2 leading-tight text-blue-600 bg-white border border-blue-300 hover:bg-blue-50 hover:text-blue-700">4</a>
+              </li>
+              <li>
+                <a href="#" class="px-3 py-2 leading-tight text-blue-600 bg-white border border-blue-300 hover:bg-blue-50 hover:text-blue-700">5</a>
+              </li>
+              <li>
+                <a href="#" class="block px-3 py-2 leading-tight text-blue-600 bg-white border border-blue-300 rounded-r-lg hover:bg-blue-50 hover:text-blue-700">
+                  <span class="material-icons">chevron_right</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast bg-blue-800 text-white px-4 py-3 rounded-lg shadow-lg flex items-center">
+  <span class="material-icons mr-2">check_circle</span>
+  <span id="toastMessage">Relatório exportado com sucesso!</span>
+</div>
+
+<!-- Bootstrap JS Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Custom JavaScript -->
+<script>
+  // Initialize tooltips
+  document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Initialize charts
+    initCharts();
+
+    // Sidebar toggle for mobile
+    document.getElementById('sidebarToggle').addEventListener('click', function() {
+      document.querySelector('.sidebar').classList.toggle('hidden');
+    });
+
+    // Export buttons
+    document.getElementById('exportPdfBtn').addEventListener('click', showExportToast);
+    document.getElementById('exportCsvBtn').addEventListener('click', showExportToast);
+    document.getElementById('exportTableCsvBtn').addEventListener('click', showExportToast);
+
+    // Apply filter button
+    document.getElementById('applyFilterBtn').addEventListener('click', function() {
+      // In a real app, this would fetch new data based on filters
+      console.log('Filters applied');
+    });
+  });
+
+  function initCharts() {
+    // Sales Line Chart
+    const salesCtx = document.getElementById('chartSales').getContext('2d');
+    const salesChart = new Chart(salesCtx, {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun'],
+        datasets: [{
+          label: 'Vendas',
+          data: [6500, 5900, 8000, 8100, 11200, 12450],
+          borderColor: '#0A2463',
+          backgroundColor: 'rgba(10, 36, 99, 0.1)',
+          tension: 0.4,
+          fill: true,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              usePointStyle: true,
+              padding: 20
+            }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              drawBorder: false
+            },
+            ticks: {
+              callback: function(value) {
+                return 'R$ ' + value.toLocaleString('pt-BR');
+              }
+            }
+          },
+          x: {
+            grid: {
+              display: false,
+              drawBorder: false
+            }
+          }
+        }
+      }
+    });
+
+    // Payments Bar Chart
+    const paymentsCtx = document.getElementById('chartPayments').getContext('2d');
+    const paymentsChart = new Chart(paymentsCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Dinheiro', 'Cartão', 'PIX', 'Transferência'],
+        datasets: [{
+          label: 'Pagamentos',
+          data: [3200, 4500, 2800, 1820],
+          backgroundColor: [
+            'rgba(10, 36, 99, 0.7)',
+            'rgba(62, 146, 204, 0.7)',
+            'rgba(216, 49, 91, 0.7)',
+            'rgba(255, 193, 7, 0.7)'
+          ],
+          borderColor: [
+            'rgba(10, 36, 99, 1)',
+            'rgba(62, 146, 204, 1)',
+            'rgba(216, 49, 91, 1)',
+            'rgba(255, 193, 7, 1)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              usePointStyle: true,
+              padding: 20
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                let label = context.dataset.label || '';
+                if (label) {
+                  label += ': ';
+                }
+                label += 'R$ ' + context.raw.toLocaleString('pt-BR');
+                return label;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              drawBorder: false
+            },
+            ticks: {
+              callback: function(value) {
+                return 'R$ ' + value.toLocaleString('pt-BR');
+              }
+            }
+          },
+          x: {
+            grid: {
+              display: false,
+              drawBorder: false
+            }
+          }
+        }
+      }
+    });
+  }
+
+  function showExportToast() {
+    const toast = document.getElementById('toast');
+    const message = this.id.includes('Pdf') ? 'PDF exportado com sucesso!' : 'CSV exportado com sucesso!';
+    document.getElementById('toastMessage').textContent = message;
+
+    toast.classList.add('show');
+    setTimeout(() => {
+      toast.classList.remove('show');
+    }, 3000);
+  }
+</script>
+</body>
+</html>
