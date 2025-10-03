@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notificações - Vendas a Prazo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="../theme.css" rel="stylesheet">
+</head>
+<body>
+<!-- Sidebar Container -->
+<div id="sidebarContainer"></div>
+
+<!-- Topbar Container -->
+<div id="topbarContainer"></div>
+
+
+
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Título e Ações -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-semibold mb-0">Notificações</h4>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm">
+                <span class="material-icons me-1">filter_alt</span>
+                Filtrar
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" id="markAllRead">
+                <span class="material-icons me-1">check</span>
+                Marcar todas como lidas
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card border-0 bg-white p-4 mb-4">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Tipo</label>
+                <select class="form-select">
+                    <option value="">Todas</option>
+                    <option value="payment">Pagamentos</option>
+                    <option value="due">Vencimentos</option>
+                    <option value="system">Sistema</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select class="form-select">
+                    <option value="">Todas</option>
+                    <option value="read">Lidas</option>
+                    <option value="unread">Não lidas</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Período</label>
+                <select class="form-select">
+                    <option value="">Todos</option>
+                    <option value="today">Hoje</option>
+                    <option value="week">Esta semana</option>
+                    <option value="month">Este mês</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-primary">Aplicar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timeline de Notificações -->
+    <div class="notification-timeline">
+        <!-- Notificação 1 -->
+        <div class="card border-0 bg-white p-4 mb-3 fade-in">
+            <div class="d-flex">
+                <span class="material-icons text-primary me-3">notifications</span>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Pagamento recebido</h6>
+                        <small class="text-muted">há 2 horas</small>
+                    </div>
+                    <p class="mb-2">João Silva realizou um pagamento de R$ 150,00 referente à venda #FV-1234.</p>
+                    <span class="badge bg-success">Concluído</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notificação 2 -->
+        <div class="card border-0 bg-white p-4 mb-3 fade-in">
+            <div class="d-flex">
+                <span class="material-icons text-warning me-3">warning</span>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Vencimento próximo</h6>
+                        <small class="text-muted">ontem</small>
+                    </div>
+                    <p class="mb-2">A venda #FV-1235 para Maria Souza vence em 2 dias. Valor pendente: R$ 320,00.</p>
+                    <span class="badge bg-warning text-dark">Atenção</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notificação 3 -->
+        <div class="card border-0 bg-white p-4 mb-3 fade-in">
+            <div class="d-flex">
+                <span class="material-icons text-danger me-3">error</span>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Vencimento ultrapassado</h6>
+                        <small class="text-muted">2 dias atrás</small>
+                    </div>
+                    <p class="mb-2">A venda #FV-1236 para Carlos Oliveira está vencida há 3 dias. Valor pendente: R$ 450,00.</p>
+                    <span class="badge bg-danger">Vencido</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notificação 4 -->
+        <div class="card border-0 bg-white p-4 mb-3 fade-in">
+            <div class="d-flex">
+                <span class="material-icons text-info me-3">info</span>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Atualização do sistema</h6>
+                        <small class="text-muted">3 dias atrás</small>
+                    </div>
+                    <p class="mb-2">Nova versão 2.1.0 disponível. Correção de bugs e melhorias de desempenho.</p>
+                    <span class="badge badge-status badge-partial">Informação</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notificação 5 -->
+        <div class="card border-0 bg-white p-4 mb-3 fade-in">
+            <div class="d-flex">
+                <span class="material-icons text-primary me-3">person_add</span>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Novo cliente cadastrado</h6>
+                        <small class="text-muted">5 dias atrás</small>
+                    </div>
+                    <p class="mb-2">Ana Paula foi cadastrada no sistema com limite de crédito de R$ 1.000,00.</p>
+                    <span class="badge bg-info">Novo</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notificação 6 -->
+        <div class="card border-0 bg-white p-4 mb-3 fade-in">
+            <div class="d-flex">
+                <span class="material-icons text-success me-3">check_circle</span>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Backup realizado</h6>
+                        <small class="text-muted">1 semana atrás</small>
+                    </div>
+                    <p class="mb-2">Backup automático dos dados realizado com sucesso.</p>
+                    <span class="badge bg-success">Concluído</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paginação -->
+    <nav aria-label="Navegação das notificações" class="mt-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item disabled">
+                <a class="page-link" href="#" tabindex="-1">
+                    <span class="material-icons">chevron_left</span>
+                </a>
+            </li>
+            <li class="page-item active">
+                <a class="page-link" href="#">1</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="#">2</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="#">3</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="#">
+                    <span class="material-icons">chevron_right</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/app.js"></script>
+<script>
+// Marcar todas como lidas
+document.getElementById('markAllRead').addEventListener('click', function() {
+    const notifications = document.querySelectorAll('.notification-timeline .card');
+    notifications.forEach(notification => {
+        notification.style.opacity = '0.7';
+    });
+    
+    showToast('Todas as notificações foram marcadas como lidas!', 'success');
+});
+</script>
+</body>
+</html>

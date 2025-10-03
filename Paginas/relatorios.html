@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatórios - Vendas a Prazo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#0A2463',
+            accent: '#3E92CC',
+            secondary: '#FFFAFF',
+            warning: '#FFC107',
+            danger: '#D8315B',
+            blue: {
+              50: '#E6E9F2',
+              100: '#CDD3E5',
+              200: '#9BA7CB',
+              300: '#687BB1',
+              400: '#364F97',
+              500: '#0A2463',
+              600: '#081D4F',
+              700: '#06163B',
+              800: '#040E27',
+              900: '#020714'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link href="../theme.css" rel="stylesheet">
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    .card-hover {
+      transition: all 0.3s ease;
+    }
+    .card-hover:hover {
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      transform: translateY(-2px);
+    }
+    .toast {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    .toast.show {
+      opacity: 1;
+    }
+    .bg-blue-gradient {
+      background: linear-gradient(135deg, #0A2463 0%, #3E92CC 100%);
+    }
+  </style>
+</head>
+<body>
+<!-- Sidebar Container -->
+<div id="sidebarContainer"></div>
+
+<!-- Topbar Container -->
+<div id="topbarContainer"></div>
+
+
+
+<!-- Main Content -->
+<div class="main-content">
+    <h1 class="text-2xl font-bold text-blue-800 mb-4">Relatório Mensal - Julho 2026</h1>
+    
+    <div id="filterContainer" class="bg-white rounded-lg shadow p-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 fade-in">
+        <div class="w-full sm:w-auto">
+          <label for="dateRange" class="block text-sm font-medium text-blue-800 mb-1">Período</label>
+          <div class="flex items-center space-x-2">
+            <input type="date" id="startDate" class="w-full sm:w-auto border-blue-200 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" value="2026-07-01">
+            <span class="text-blue-800">a</span>
+            <input type="date" id="endDate" class="w-full sm:w-auto border-blue-200 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" value="2026-07-31">
+          </div>
+        </div>
+        <div class="w-full sm:w-48">
+          <label for="reportType" class="block text-sm font-medium text-blue-800 mb-1">Tipo de Relatório</label>
+          <select id="reportType" class="w-full border-blue-200 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+            <option value="sales">Vendas</option>
+            <option value="payments">Pagamentos</option>
+            <option value="customers">Clientes</option>
+          </select>
+        </div>
+        <button id="applyFilterBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition self-end sm:self-auto mt-2 sm:mt-0 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+          Aplicar
+        </button>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white p-4 rounded-lg shadow card-hover fade-in border-l-4 border-blue-500">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-blue-600">Total Vendas</p>
+              <p class="text-2xl font-bold text-blue-800">R$ 14.870,00</p>
+            </div>
+            <span class="material-icons text-blue-500 text-4xl">shopping_cart</span>
+          </div>
+          <div class="mt-2 text-sm text-green-600 flex items-center">
+            <span class="material-icons mr-1 text-sm">trending_up</span>
+            <span>15% vs período anterior</span>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow card-hover fade-in border-l-4 border-blue-500">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-blue-600">Pagamentos</p>
+              <p class="text-2xl font-bold text-blue-800">R$ 9.950,00</p>
+            </div>
+            <span class="material-icons text-blue-500 text-4xl">payments</span>
+          </div>
+          <div class="mt-2 text-sm text-green-600 flex items-center">
+            <span class="material-icons mr-1 text-sm">trending_up</span>
+            <span>11% vs período anterior</span>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow card-hover fade-in border-l-4 border-blue-500">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-blue-600">Clientes Ativos</p>
+              <p class="text-2xl font-bold text-blue-800">53</p>
+            </div>
+            <span class="material-icons text-blue-500 text-4xl">people</span>
+          </div>
+          <div class="mt-2 text-sm text-green-600 flex items-center">
+            <span class="material-icons mr-1 text-sm">trending_up</span>
+            <span>4 novos clientes</span>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-lg shadow card-hover fade-in border-l-4 border-blue-500">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-blue-600">Fiados Pendentes</p>
+              <p class="text-2xl font-bold text-blue-800">R$ 4.920,00</p>
+            </div>
+            <span class="material-icons text-blue-500 text-4xl">receipt</span>
+          </div>
+          <div class="mt-2 text-sm text-red-600 flex items-center">
+            <span class="material-icons mr-1 text-sm">trending_up</span>
+            <span>7% vs período anterior</span>
+          </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow p-4 fade-in border border-blue-100">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold text-blue-800">Vendas ao longo do tempo (Mensal)</h2>
+            <button class="text-sm text-blue-600 hover:underline focus:outline-none">Ver detalhes</button>
+          </div>
+          <div class="h-64">
+            <canvas id="chartSales"></canvas>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4 fade-in border border-blue-100">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold text-blue-800">Pagamentos por método</h2>
+            <button class="text-sm text-blue-600 hover:underline focus:outline-none">Ver detalhes</button>
+          </div>
+          <div class="h-64">
+            <canvas id="chartPayments"></canvas>
+          </div>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow p-4 fade-in border border-blue-100 mb-8">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-semibold text-blue-800">Detalhes das Vendas Recentes (Mensal)</h2>
+          <button id="exportTableCsvBtn" class="flex items-center px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition" aria-label="Exportar tabela para CSV">
+            <span class="material-icons mr-1 text-sm">file_download</span>
+            <span class="text-sm">Exportar CSV</span>
+          </button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="table table-striped mb-0 w-full">
+            <thead class="bg-blue-50">
+            <tr>
+              <th class="text-left px-4 py-2 text-blue-800">Data</th>
+              <th class="text-left px-4 py-2 text-blue-800">Cliente</th>
+              <th class="text-left px-4 py-2 text-blue-800">Valor</th>
+              <th class="text-left px-4 py-2 text-blue-800">Status</th>
+              <th class="text-left px-4 py-2 text-blue-800">Ações</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+              <td class="px-4 py-2">25/07/2026</td>
+              <td class="px-4 py-2">Ana Beatriz Lima</td>
+              <td class="px-4 py-2">R$ 410,00</td>
+              <td class="px-4 py-2"><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Pago</span></td>
+              <td class="px-4 py-2">
+                <button class="text-blue-600 hover:text-blue-800 focus:outline-none" aria-label="Ver detalhes">
+                  <span class="material-icons text-sm">visibility</span>
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2">24/07/2026</td>
+              <td class="px-4 py-2">Ricardo Mendes</td>
+              <td class="px-4 py-2">R$ 550,00</td>
+              <td class="px-4 py-2"><span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Pendente</span></td>
+              <td class="px-4 py-2">
+                <button class="text-blue-600 hover:text-blue-800 focus:outline-none" aria-label="Ver detalhes">
+                  <span class="material-icons text-sm">visibility</span>
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2">22/07/2026</td>
+              <td class="px-4 py-2">Juliana Costa</td>
+              <td class="px-4 py-2">R$ 320,00</td>
+              <td class="px-4 py-2"><span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">Parcial</span></td>
+              <td class="px-4 py-2">
+                <button class="text-blue-600 hover:text-blue-800 focus:outline-none" aria-label="Ver detalhes">
+                  <span class="material-icons text-sm">visibility</span>
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2">21/07/2026</td>
+              <td class="px-4 py-2">Marcos Pereira</td>
+              <td class="px-4 py-2">R$ 780,00</td>
+              <td class="px-4 py-2"><span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">Pago</span></td>
+              <td class="px-4 py-2">
+                <button class="text-blue-600 hover:text-blue-800 focus:outline-none" aria-label="Ver detalhes">
+                  <span class="material-icons text-sm">visibility</span>
+                </button>
+              </td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2">20/07/2026</td>
+              <td class="px-4 py-2">Fernanda Souza</td>
+              <td class="px-4 py-2">R$ 250,00</td>
+              <td class="px-4 py-2"><span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">Pendente</span></td>
+              <td class="px-4 py-2">
+                <button class="text-blue-600 hover:text-blue-800 focus:outline-none" aria-label="Ver detalhes">
+                  <span class="material-icons text-sm">visibility</span>
+                </button>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="mt-4 flex justify-center">
+          <nav aria-label="Page navigation">
+            <ul class="inline-flex items-center -space-x-px">
+              <li>
+                <a href="#" class="block px-3 py-2 ml-0 leading-tight text-blue-600 bg-white border border-blue-300 rounded-l-lg hover:bg-blue-50 hover:text-blue-700">
+                  <span class="material-icons">chevron_left</span>
+                </a>
+              </li>
+              <li>
+                <a href="#" class="z-10 px-3 py-2 leading-tight text-white bg-blue-600 border border-blue-600 hover:bg-blue-700">1</a>
+              </li>
+              <li>
+                <a href="#" class="px-3 py-2 leading-tight text-blue-600 bg-white border border-blue-300 hover:bg-blue-50 hover:text-blue-700">2</a>
+              </li>
+              <li>
+                <a href="#" class="px-3 py-2 leading-tight text-blue-600 bg-white border border-blue-300 hover:bg-blue-50 hover:text-blue-700">3</a>
+              </li>
+              <li>
+                <a href="#" class="block px-3 py-2 leading-tight text-blue-600 bg-white border border-blue-300 rounded-r-lg hover:bg-blue-50 hover:text-blue-700">
+                  <span class="material-icons">chevron_right</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+    </div>
+
+    <hr class="my-8 border-t-2 border-blue-200">
+
+    <div class="p-4">
+        <h1 class="text-2xl font-bold text-primary mb-4">Relatório Semanal Resumido</h1>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div class="bg-white p-4 rounded-lg shadow border-l-4 border-primary">
+            <p class="text-sm text-primary">Total Vendas</p>
+            <p class="text-2xl font-bold text-primary">R$ 45.300,00</p>
+            <p class="mt-1 text-sm text-green-600 flex items-center">
+              <span class="material-icons mr-1">trending_up</span>
+              12% vs maio
+            </p>
+          </div>
+          <div class="bg-white p-4 rounded-lg shadow border-l-4 border-accent">
+            <p class="text-sm text-accent">Total Pagamentos</p>
+            <p class="text-2xl font-bold text-accent">R$ 41.200,00</p>
+            <p class="mt-1 text-sm text-red-600 flex items-center">
+              <span class="material-icons mr-1">trending_down</span>
+              8% vs maio
+            </p>
+          </div>
+          <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-400">
+            <p class="text-sm text-yellow-600">Clientes Ativos</p>
+            <p class="text-2xl font-bold text-yellow-600">120</p>
+            <p class="mt-1 text-sm text-green-600 flex items-center">
+              <span class="material-icons mr-1">trending_up</span>
+              5% vs maio
+            </p>
+          </div>
+          <div class="bg-white p-4 rounded-lg shadow border-l-4 border-red-600">
+            <p class="text-sm text-red-600">Inadimplência</p>
+            <p class="text-2xl font-bold text-red-600">4,5%</p>
+            <p class="mt-1 text-sm text-green-600 flex items-center">
+              <span class="material-icons mr-1">trending_down</span>
+              1% vs maio
+            </p>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+          <div class="bg-white rounded-lg shadow p-4">
+            <h2 class="text-lg font-semibold text-primary mb-4">Vendas por Semana</h2>
+            <canvas id="salesChartWeekly"></canvas>
+          </div>
+          <div class="bg-white rounded-lg shadow p-4">
+            <h2 class="text-lg font-semibold text-primary mb-4">Pagamentos por Semana</h2>
+            <canvas id="paymentsChartWeekly"></canvas>
+          </div>
+        </div>
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+          <h2 class="text-lg font-semibold text-primary mb-4">Detalhamento Semanal</h2>
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-100">
+            <tr>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-700">Semana</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-700">Vendas (R$)</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-700">Pagamentos (R$)</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-gray-700">Inadimplência (%)</th>
+            </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200 text-gray-800">
+            <tr>
+              <td class="px-4 py-2">Semana 1</td>
+              <td class="px-4 py-2">8.000,00</td>
+              <td class="px-4 py-2">7.000,00</td>
+              <td class="px-4 py-2">4,0</td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2">Semana 2</td>
+              <td class="px-4 py-2">12.000,00</td>
+              <td class="px-4 py-2">11.000,00</td>
+              <td class="px-4 py-2">5,5</td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2">Semana 3</td>
+              <td class="px-4 py-2">11.000,00</td>
+              <td class="px-4 py-2">10.500,00</td>
+              <td class="px-4 py-2">3,5</td>
+            </tr>
+            <tr>
+              <td class="px-4 py-2">Semana 4</td>
+              <td class="px-4 py-2">9.400,00</td>
+              <td class="px-4 py-2">7.400,00</td>
+              <td class="px-4 py-2">4,2</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+    </div>
+</div>
+
+<div id="toast" class="toast bg-blue-800 text-white px-4 py-3 rounded-lg shadow-lg flex items-center">
+  <span class="material-icons mr-2">check_circle</span>
+  <span id="toastMessage">Relatório exportado com sucesso!</span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/app.js"></script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    initAllCharts();
+
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+      return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    document.getElementById('exportTableCsvBtn').addEventListener('click', showExportToast);
+
+    document.getElementById('applyFilterBtn').addEventListener('click', function() {
+      const startDate = document.getElementById('startDate').value;
+      const endDate = document.getElementById('endDate').value;
+      const reportType = document.getElementById('reportType').value;
+      console.log(`Filters applied: ${reportType} from ${startDate} to ${endDate}`);
+    });
+  });
+
+  function initAllCharts() {
+    const salesCtx = document.getElementById('chartSales').getContext('2d');
+    new Chart(salesCtx, {
+      type: 'line',
+      data: {
+        labels: ['Fev/26', 'Mar/26', 'Abr/26', 'Mai/26', 'Jun/26', 'Jul/26'],
+        datasets: [{
+          label: 'Vendas',
+          data: [8100, 9500, 9200, 11500, 13100, 14870],
+          borderColor: '#0A2463',
+          backgroundColor: 'rgba(10, 36, 99, 0.1)',
+          tension: 0.4,
+          fill: true,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }, tooltip: { mode: 'index', intersect: false } },
+        scales: {
+          y: { beginAtZero: true, grid: { drawBorder: false }, ticks: { callback: function(value) { return 'R$ ' + value.toLocaleString('pt-BR'); } } },
+          x: { grid: { display: false, drawBorder: false } }
+        }
+      }
+    });
+
+    const paymentsCtx = document.getElementById('chartPayments').getContext('2d');
+    new Chart(paymentsCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Dinheiro', 'Cartão', 'PIX', 'Transferência'],
+        datasets: [{
+          label: 'Pagamentos',
+          data: [2500, 4100, 3000, 350],
+          backgroundColor: ['rgba(10, 36, 99, 0.7)', 'rgba(62, 146, 204, 0.7)', 'rgba(216, 49, 91, 0.7)', 'rgba(255, 193, 7, 0.7)'],
+          borderColor: ['rgba(10, 36, 99, 1)', 'rgba(62, 146, 204, 1)', 'rgba(216, 49, 91, 1)', 'rgba(255, 193, 7, 1)'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } },
+          tooltip: { callbacks: { label: function(context) { return (context.dataset.label || '') + ': R$ ' + context.raw.toLocaleString('pt-BR'); } } }
+        },
+        scales: {
+          y: { beginAtZero: true, grid: { drawBorder: false }, ticks: { callback: function(value) { return 'R$ ' + value.toLocaleString('pt-BR'); } } },
+          x: { grid: { display: false, drawBorder: false } }
+        }
+      }
+    });
+
+    const salesWeeklyCtx = document.getElementById('salesChartWeekly').getContext('2d');
+    new Chart(salesWeeklyCtx, {
+      type: 'line',
+      data: {
+        labels: ['Semana 1','Semana 2','Semana 3','Semana 4'],
+        datasets: [{ label: 'Vendas', data: [8000,12000,11000,9400], borderColor: 'rgba(10, 36, 99, 1)', borderWidth: 2, tension: 0.4 }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    const paymentsWeeklyCtx = document.getElementById('paymentsChartWeekly').getContext('2d');
+    new Chart(paymentsWeeklyCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Semana 1','Semana 2','Semana 3','Semana 4'],
+        datasets: [{ label: 'Pagamentos', data: [7000,11000,10500,7400], backgroundColor: 'rgba(62, 146, 204, 0.7)', borderWidth: 1 }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+  }
+
+  function showExportToast() {
+    const toast = document.getElementById('toast');
+    const message = 'CSV exportado com sucesso!';
+    document.getElementById('toastMessage').textContent = message;
+
+    toast.classList.add('show');
+    setTimeout(() => {
+      toast.classList.remove('show');
+    }, 3000);
+  }
+</script>
+</body>
+</html>
