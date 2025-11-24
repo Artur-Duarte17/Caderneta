@@ -1,0 +1,15 @@
+# Stage 1: Build da aplicação (geralmente Node)
+FROM node:18-alpine as build
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build # Comando para gerar os arquivos estáticos (build)
+
+# Stage 2: Serve a aplicação (NGINX é popular por ser leve e eficiente)
+FROM nginx:alpine
+# Copia os arquivos estáticos gerados na primeira etapa para o NGINX
+COPY --from=build /app/build /usr/share/nginx/html
+# Copia uma configuração customizada (se necessário)
+# COPY nginx.conf /etc/nginx/conf.d/default.conf 
+# NGINX já expõe a porta 80 por padrão
