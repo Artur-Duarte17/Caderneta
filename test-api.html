@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste API</title>
+</head>
+<body>
+    <h1>Teste de Conectividade</h1>
+    <button onclick="testarAPI()">Testar Backend</button>
+    <div id="resultado"></div>
+
+    <script>
+        async function testarAPI() {
+            const resultado = document.getElementById('resultado');
+            
+            try {
+                // Teste 1: Verificar se backend responde
+                resultado.innerHTML = 'Testando http://localhost:8080/api/clientes...<br>';
+                
+                const response = await fetch('http://localhost:8080/api/clientes', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                resultado.innerHTML += `Status: ${response.status}<br>`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    resultado.innerHTML += `✅ SUCESSO! Dados: ${JSON.stringify(data)}<br>`;
+                } else {
+                    resultado.innerHTML += `❌ ERRO HTTP: ${response.statusText}<br>`;
+                }
+                
+            } catch (error) {
+                resultado.innerHTML += `❌ ERRO DE REDE: ${error.message}<br>`;
+                resultado.innerHTML += 'Possíveis causas:<br>';
+                resultado.innerHTML += '1. Backend não está rodando<br>';
+                resultado.innerHTML += '2. Porta 8080 não está acessível<br>';
+                resultado.innerHTML += '3. CORS bloqueando<br>';
+            }
+        }
+    </script>
+</body>
+</html>

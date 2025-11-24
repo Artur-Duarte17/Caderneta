@@ -193,16 +193,8 @@
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../js/app.js"></script>
-<script>
-// Marcar todas como lidas
-document.getElementById('markAllRead').addEventListener('click', function() {
-    const notifications = document.querySelectorAll('.notification-timeline .card');
-    notifications.forEach(notification => {
-        notification.style.opacity = '0.7';
-    });
-    
-    showToast('Todas as notificações foram marcadas como lidas!', 'success');
-});
-</script>
+<script src="../js/api-service.js"></script>
+<script src="../js/notificacoes.js"></script>
+
 </body>
 </html>

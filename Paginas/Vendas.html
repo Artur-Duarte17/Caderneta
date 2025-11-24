@@ -35,143 +35,94 @@
         <div class="row g-3">
             <div class="col-md-4">
                 <label class="form-label">Status</label>
-                <select class="form-select">
+                <select id="statusFilter" class="form-select">
                     <option value="">Todos</option>
-                    <option value="pending">Pendente</option>
-                    <option value="partial">Parcial</option>
-                    <option value="paid">Quitado</option>
+                    <option value="PENDENTE">Pendente</option>
+                    <option value="PAGO">Pago</option>
+                    <option value="CANCELADO">Cancelado</option>
                 </select>
             </div>
             <div class="col-md-4">
                 <label class="form-label">Cliente</label>
-                <input type="text" class="form-control" placeholder="Buscar cliente">
+                <input type="text" class="form-control" placeholder="Buscar cliente" id="clienteFilter">
             </div>
             <div class="col-md-4">
                 <label class="form-label">Período</label>
-                <input type="date" class="form-control">
+                <select id="periodoFilter" class="form-select">
+                    <option value="todos">Todos</option>
+                    <option value="hoje">Hoje</option>
+                    <option value="semana">Últimos 7 dias</option>
+                    <option value="mes">Último mês</option>
+                </select>
             </div>
         </div>
     </div>
 
     <!-- Cards de Vendas -->
     <div class="row g-4">
-        <!-- Venda 1 -->
-        <div class="col-md-6 col-lg-4 fade-in">
-            <div class="card border-0 bg-white p-4 h-100">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <h6 class="mb-1">#FV-0012</h6>
-                        <small class="text-muted">15/06/2023</small>
+        <!-- As vendas serão carregadas dinamicamente via JavaScript -->
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="mt-2 text-muted">Carregando vendas...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ver Detalhes Venda -->
+<div class="modal fade" id="viewSaleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header modal-header-gradient">
+                <h5 class="modal-title text-white">Detalhes da Venda</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="card border-0 bg-light p-3">
+                            <h6 class="text-muted mb-2">Informações da Venda</h6>
+                            <div class="mb-2">
+                                <strong>ID:</strong> <span id="viewSaleId"></span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Data:</strong> <span id="viewSaleDate"></span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Cliente:</strong> <span id="viewSaleClient"></span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Valor Total:</strong> <span id="viewSaleTotal"></span>
+                            </div>
+                            <div>
+                                <strong>Status:</strong> <span id="viewSaleStatus" class="badge"></span>
+                            </div>
+                        </div>
                     </div>
-                    <span class="badge badge-status badge-pending">Pendente</span>
-                </div>
-                <div class="d-flex align-items-center mb-3">
-                    <div class="avatar me-3">JS</div>
-                    <div>
-                        <h6 class="mb-0">João Silva</h6>
-                        <small class="text-muted">(11) 98765-4321</small>
+                    <div class="col-md-6">
+                        <div class="card border-0 bg-light p-3">
+                            <h6 class="text-muted mb-2">Itens da Venda</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Descrição</th>
+                                            <th class="text-center">Qtd</th>
+                                            <th class="text-end">Valor Unit.</th>
+                                            <th class="text-end">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="viewSaleItems">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between">
-                        <span class="text-muted">Valor:</span>
-                        <span class="fw-bold">R$ 1.250,00</span>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span class="text-muted">Vencimento:</span>
-                        <span>15/07/2023</span>
-                    </div>
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-primary flex-fill">
-                        <span class="material-icons me-1" style="font-size: 16px;">visibility</span>
-                        Ver
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary flex-fill edit-sale-btn" data-sale-id="1" data-client="João Silva" data-date="2023-06-15" data-value="1250.00" data-description="Compra de produtos">
-                        <span class="material-icons me-1" style="font-size: 16px;">edit</span>
-                        Editar
-                    </button>
                 </div>
             </div>
-        </div>
-
-        <!-- Venda 2 -->
-        <div class="col-md-6 col-lg-4 fade-in">
-            <div class="card border-0 bg-white p-4 h-100">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <h6 class="mb-1">#FV-0011</h6>
-                        <small class="text-muted">14/06/2023</small>
-                    </div>
-                    <span class="badge badge-status badge-partial">Parcial</span>
-                </div>
-                <div class="d-flex align-items-center mb-3">
-                    <div class="avatar me-3">MS</div>
-                    <div>
-                        <h6 class="mb-0">Maria Souza</h6>
-                        <small class="text-muted">(11) 98765-1234</small>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between">
-                        <span class="text-muted">Valor:</span>
-                        <span class="fw-bold">R$ 890,00</span>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span class="text-muted">Vencimento:</span>
-                        <span>14/07/2023</span>
-                    </div>
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-primary flex-fill">
-                        <span class="material-icons me-1" style="font-size: 16px;">visibility</span>
-                        Ver
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary flex-fill edit-sale-btn" data-sale-id="2" data-client="Maria Souza" data-date="2023-06-14" data-value="890.00" data-description="Produtos diversos">
-                        <span class="material-icons me-1" style="font-size: 16px;">edit</span>
-                        Editar
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Venda 3 -->
-        <div class="col-md-6 col-lg-4 fade-in">
-            <div class="card border-0 bg-white p-4 h-100">
-                <div class="d-flex justify-content-between align-items-start mb-3">
-                    <div>
-                        <h6 class="mb-1">#FV-0010</h6>
-                        <small class="text-muted">10/06/2023</small>
-                    </div>
-                    <span class="badge badge-status badge-paid">Quitado</span>
-                </div>
-                <div class="d-flex align-items-center mb-3">
-                    <div class="avatar me-3">CO</div>
-                    <div>
-                        <h6 class="mb-0">Carlos Oliveira</h6>
-                        <small class="text-muted">(11) 98765-5678</small>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between">
-                        <span class="text-muted">Valor:</span>
-                        <span class="fw-bold">R$ 2.150,00</span>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span class="text-muted">Vencimento:</span>
-                        <span>10/07/2023</span>
-                    </div>
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-primary flex-fill">
-                        <span class="material-icons me-1" style="font-size: 16px;">visibility</span>
-                        Ver
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary flex-fill edit-sale-btn" data-sale-id="3" data-client="Carlos Oliveira" data-date="2023-06-10" data-value="2150.00" data-description="Venda completa">
-                        <span class="material-icons me-1" style="font-size: 16px;">edit</span>
-                        Editar
-                    </button>
-                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
             </div>
         </div>
     </div>
@@ -246,11 +197,8 @@
         <form>
             <div class="mb-3">
                 <label class="form-label">Cliente *</label>
-                <select class="form-select" required>
+                <select id="clienteSelect" class="form-select" required>
                     <option value="">Selecione um cliente</option>
-                    <option>João Silva</option>
-                    <option>Maria Souza</option>
-                    <option>Carlos Oliveira</option>
                 </select>
             </div>
             <div class="row g-3 mb-3">
@@ -271,8 +219,22 @@
                 </div>
             </div>
             <div class="mb-3">
-                <label class="form-label">Descrição</label>
-                <textarea class="form-control" rows="3" placeholder="Descreva os itens da venda..."></textarea>
+                <label class="form-label">Observações</label>
+                <textarea id="observacoes" class="form-control" rows="2" placeholder="Observações sobre a venda..."></textarea>
+            </div>
+            
+            <!-- Container de Itens -->
+            <div class="mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label class="form-label mb-0">Itens da Venda</label>
+                    <button type="button" id="addItemBtn" class="btn btn-sm btn-outline-primary">
+                        <span class="material-icons me-1" style="font-size: 16px;">add</span>
+                        Adicionar Item
+                    </button>
+                </div>
+                <div id="itemsContainer">
+                    <!-- Itens serão adicionados aqui -->
+                </div>
             </div>
             <div class="d-grid">
                 <button type="submit" class="btn btn-accent">Registrar Venda</button>
@@ -284,61 +246,8 @@
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../js/app.js"></script>
-<script>
-// Funcionalidade do modal de editar venda
-document.addEventListener('DOMContentLoaded', function() {
-    const editButtons = document.querySelectorAll('.edit-sale-btn');
-    const editModal = new bootstrap.Modal(document.getElementById('editSaleModal'));
-    const editForm = document.getElementById('editSaleForm');
-    const saveBtn = document.getElementById('saveSaleBtn');
-    
-    // Abrir modal de edição
-    editButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const saleId = this.dataset.saleId;
-            const client = this.dataset.client;
-            const date = this.dataset.date;
-            const value = this.dataset.value;
-            const description = this.dataset.description;
-            
-            // Preencher campos do modal
-            document.getElementById('editSaleId').value = saleId;
-            document.getElementById('editClientSelect').value = client;
-            document.getElementById('editSaleDate').value = date;
-            document.getElementById('editSaleValue').value = value;
-            document.getElementById('editSaleDescription').value = description;
-            
-            editModal.show();
-        });
-    });
-    
-    // Salvar alterações
-    saveBtn.addEventListener('click', function() {
-        if (validateForm()) {
-            // Simular salvamento
-            showToast('Venda atualizada com sucesso!', 'success');
-            editModal.hide();
-            editForm.reset();
-        }
-    });
-    
-    // Validação do formulário
-    function validateForm() {
-        let isValid = true;
-        const requiredFields = editForm.querySelectorAll('[required]');
-        
-        requiredFields.forEach(field => {
-            if (!field.value.trim()) {
-                field.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                field.classList.remove('is-invalid');
-            }
-        });
-        
-        return isValid;
-    }
-});
-</script>
+<script src="../js/api-service.js"></script>
+<script src="../js/vendas.js"></script>
+
 </body>
 </html>

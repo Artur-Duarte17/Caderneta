@@ -119,7 +119,7 @@ class ApiService {
     }
 
     async getDividasByCliente(clienteId) {
-        return await this.request(`/dividas?clienteId=${clienteId}`);
+        return await this.request(`/dividas/cliente/${clienteId}`);
     }
 
     async createPagamento(dividaId, pagamentoData) {
@@ -189,14 +189,15 @@ class ApiService {
     }
 
     // ===== RELATÓRIOS =====
-    async getRelatorioVendas(filtros = {}) {
-        const params = new URLSearchParams(filtros).toString();
-        return await this.request(`/relatorios/vendas${params ? '?' + params : ''}`);
+    async getRelatorioVendas(dataInicio, dataFim) {
+        const params = new URLSearchParams({ dataInicio, dataFim });
+        return await this.request('/relatorios/vendas-a-prazo?' + params.toString());
     }
 
-    async getRelatorioDividas(filtros = {}) {
-        const params = new URLSearchParams(filtros).toString();
-        return await this.request(`/relatorios/dividas${params ? '?' + params : ''}`);
+    async getRelatorioDividas(dataInicio, dataFim, status = null) {
+        const params = new URLSearchParams({ dataInicio, dataFim });
+        if (status) params.append('status', status);
+        return await this.request('/relatorios/debitos-pendentes?' + params.toString());
     }
 
     // ===== PROPRIETÁRIO =====

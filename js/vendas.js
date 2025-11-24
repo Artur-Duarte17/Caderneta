@@ -35,7 +35,7 @@ class VendasManager {
 
     setupEventListeners() {
         // Busca
-        const searchInput = document.querySelector('input[placeholder*="Buscar"]');
+        const searchInput = document.getElementById('clienteFilter');
         if (searchInput) {
             searchInput.addEventListener('input', (e) => this.filtrarVendas(e.target.value));
         }
@@ -123,7 +123,7 @@ class VendasManager {
             }
             
             if (periodoFilter.value !== 'todos') {
-                vendas = vendas.filter(venda => new Date(venda.dataVenda) >= dataLimite);
+                vendas = vendas.filter(venda => new Date(venda.dataHora) >= dataLimite);
             }
         }
 
@@ -162,7 +162,7 @@ class VendasManager {
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
                             <h6 class="mb-1">Venda #${venda.id}</h6>
-                            <small class="text-muted">${this.formatarData(venda.dataVenda)}</small>
+                            <small class="text-muted">${this.formatarData(venda.dataHora)}</small>
                         </div>
                         <span class="badge ${statusClass}">${statusText}</span>
                     </div>
@@ -224,7 +224,7 @@ class VendasManager {
         const cliente = this.clientes.find(c => c.id === venda.clienteId);
         
         document.getElementById('viewSaleId').textContent = `#${venda.id}`;
-        document.getElementById('viewSaleDate').textContent = this.formatarData(venda.dataVenda);
+        document.getElementById('viewSaleDate').textContent = this.formatarData(venda.dataHora);
         document.getElementById('viewSaleClient').textContent = cliente ? cliente.nome : 'Cliente não encontrado';
         document.getElementById('viewSaleTotal').textContent = `R$ ${this.formatarMoeda(venda.valorTotal)}`;
         
@@ -266,7 +266,7 @@ class VendasManager {
 
         const dadosVenda = {
             clienteId: parseInt(clienteId),
-            observacoes: observacoes || null,
+            funcionarioId: 1, // ID padrão do funcionário
             itens: itens
         };
 
@@ -348,9 +348,9 @@ class VendasManager {
             
             if (descricao && quantidade && valorUnitario) {
                 items.push({
-                    descricao,
+                    descricaoProduto: descricao,
                     quantidade,
-                    valorUnitario
+                    precoUnitario: valorUnitario
                 });
             }
         });

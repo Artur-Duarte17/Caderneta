@@ -139,7 +139,8 @@
                     <div class="row g-3 mb-3">
                         <div class="col-6">
                             <label class="form-label">CPF/CNPJ</label>
-                            <input type="text" id="editClientCpf" class="form-control">
+                            <input type="text" id="editClientCpf" class="form-control" readonly>
+                            <small class="text-muted">CPF não pode ser alterado</small>
                         </div>
                         <div class="col-6">
                             <label class="form-label">Limite de Crédito</label>
@@ -185,8 +186,8 @@
                 <input type="email" name="email" class="form-control">
             </div>
             <div class="mb-3">
-                <label class="form-label">CPF/CNPJ</label>
-                <input type="text" name="cpf" class="form-control">
+                <label class="form-label">CPF/CNPJ *</label>
+                <input type="text" name="cpf" class="form-control" required>
             </div>
             <div class="mb-3">
                 <label class="form-label">Endereço</label>

@@ -204,9 +204,9 @@ class ClientesManager {
             nome: document.getElementById('editClientName').value,
             telefone: document.getElementById('editClientPhone').value,
             email: document.getElementById('editClientEmail').value || null,
-            cpf: document.getElementById('editClientCpf').value || null,
             endereco: document.getElementById('editClientAddress').value || null,
-            limiteCredito: parseFloat(document.getElementById('editClientLimit').value) || 0
+            limiteCredito: parseFloat(document.getElementById('editClientLimit').value) || 0,
+            prazoPagamentoPadraoDias: 30
         };
 
         try {
@@ -232,12 +232,13 @@ class ClientesManager {
 
         const formData = new FormData(form);
         const dadosCliente = {
-            nome: formData.get('nome') || form.querySelector('input[type="text"]').value,
-            telefone: formData.get('telefone') || form.querySelector('input[type="tel"]').value,
-            email: formData.get('email') || form.querySelector('input[type="email"]').value || null,
-            cpf: formData.get('cpf') || form.querySelector('input[type="text"]:nth-of-type(2)').value || null,
-            endereco: formData.get('endereco') || form.querySelector('textarea').value || null,
-            limiteCredito: parseFloat(formData.get('limite') || form.querySelector('input[type="number"]').value) || 0
+            nome: form.querySelector('input[name="nome"]').value,
+            telefone: form.querySelector('input[name="telefone"]').value,
+            cpf: form.querySelector('input[name="cpf"]').value || '000.000.000-00',
+            email: form.querySelector('input[name="email"]').value || null,
+            endereco: form.querySelector('textarea[name="endereco"]').value || null,
+            limiteCredito: parseFloat(form.querySelector('input[name="limite"]').value) || 0,
+            prazoPagamentoPadraoDias: 30
         };
 
         // Dados do fiador se incluído
