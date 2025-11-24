@@ -40,124 +40,12 @@
 
     <!-- Cards de clientes -->
     <div class="row g-4">
-        <!-- Cliente 1 -->
-        <div class="col-md-4 col-lg-3 fade-in">
-            <div class="card border-0 bg-white p-3 h-100">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="avatar me-3">JS</div>
-                    <div>
-                        <h5 class="mb-0">João Silva</h5>
-                        <small class="text-muted">(11) 98765-4321</small>
-                    </div>
-                </div>
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <small class="text-muted d-block">Saldo devedor</small>
-                        <div class="debt-amount">R$ 1.250,00</div>
-                    </div>
-                    <span class="badge badge-status badge-partial">Parcial</span>
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-primary flex-fill view-client-btn" data-client-id="1" data-name="João Silva" data-phone="(11) 98765-4321" data-email="joao@email.com" data-cpf="123.456.789-00" data-address="Rua A, 123" data-limit="5000.00" data-debt="1250.00" data-status="Parcial">
-                        <span class="material-icons me-1" style="font-size: 16px;">visibility</span>
-                        Detalhes
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary flex-fill edit-client-btn" data-client-id="1" data-name="João Silva" data-phone="(11) 98765-4321" data-email="joao@email.com" data-cpf="123.456.789-00" data-address="Rua A, 123" data-limit="5000.00">
-                        <span class="material-icons me-1" style="font-size: 16px;">edit</span>
-                        Editar
-                    </button>
-                </div>
+        <!-- Os clientes serão carregados dinamicamente via JavaScript -->
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
             </div>
-        </div>
-
-        <!-- Cliente 2 -->
-        <div class="col-md-4 col-lg-3 fade-in">
-            <div class="card border-0 bg-white p-3 h-100">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="avatar me-3">MS</div>
-                    <div>
-                        <h5 class="mb-0">Maria Souza</h5>
-                        <small class="text-muted">(11) 91234-5678</small>
-                    </div>
-                </div>
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <small class="text-muted d-block">Saldo devedor</small>
-                        <div class="text-success fw-bold">R$ 0,00</div>
-                    </div>
-                    <span class="badge badge-status badge-paid">Quitado</span>
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-primary flex-fill view-client-btn" data-client-id="2" data-name="Maria Souza" data-phone="(11) 91234-5678" data-email="maria@email.com" data-cpf="987.654.321-00" data-address="Rua B, 456" data-limit="3000.00" data-debt="0.00" data-status="Quitado">
-                        <span class="material-icons me-1" style="font-size: 16px;">visibility</span>
-                        Detalhes
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary flex-fill edit-client-btn" data-client-id="2" data-name="Maria Souza" data-phone="(11) 91234-5678" data-email="maria@email.com" data-cpf="987.654.321-00" data-address="Rua B, 456" data-limit="3000.00">
-                        <span class="material-icons me-1" style="font-size: 16px;">edit</span>
-                        Editar
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Cliente 3 -->
-        <div class="col-md-4 col-lg-3 fade-in">
-            <div class="card border-0 bg-white p-3 h-100">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="avatar me-3">PC</div>
-                    <div>
-                        <h5 class="mb-0">Pedro Cardoso</h5>
-                        <small class="text-muted">(11) 99876-5432</small>
-                    </div>
-                </div>
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <small class="text-muted d-block">Saldo devedor</small>
-                        <div class="debt-amount">R$ 2.450,00</div>
-                    </div>
-                    <span class="badge badge-status badge-pending">Pendente</span>
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-primary flex-fill view-client-btn" data-client-id="3" data-name="Pedro Cardoso" data-phone="(11) 99876-5432" data-email="pedro@email.com" data-cpf="456.789.123-00" data-address="Rua C, 789" data-limit="4000.00" data-debt="2450.00" data-status="Pendente">
-                        <span class="material-icons me-1" style="font-size: 16px;">visibility</span>
-                        Detalhes
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary flex-fill edit-client-btn" data-client-id="3" data-name="Pedro Cardoso" data-phone="(11) 99876-5432" data-email="pedro@email.com" data-cpf="456.789.123-00" data-address="Rua C, 789" data-limit="4000.00">
-                        <span class="material-icons me-1" style="font-size: 16px;">edit</span>
-                        Editar
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Cliente 4 -->
-        <div class="col-md-4 col-lg-3 fade-in">
-            <div class="card border-0 bg-white p-3 h-100">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="avatar me-3">AC</div>
-                    <div>
-                       <h5 class="mb-0">Ana Carolina</h5>
-                        <small class="text-muted">(11) 94567-8901</small>
-                    </div>
-                </div>
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <small class="text-muted d-block">Saldo devedor</small>
-                        <div class="debt-amount">R$ 350,00</div>
-                    </div>
-                    <span class="badge badge-status badge-partial">Parcial</span>
-                </div>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-primary flex-fill view-client-btn" data-client-id="4" data-name="Ana Carolina" data-phone="(11) 94567-8901" data-email="ana@email.com" data-cpf="789.123.456-00" data-address="Rua D, 321" data-limit="2500.00" data-debt="350.00" data-status="Parcial">
-                        <span class="material-icons me-1" style="font-size: 16px;">visibility</span>
-                        Detalhes
-                    </button>
-                    <button class="btn btn-sm btn-outline-secondary flex-fill edit-client-btn" data-client-id="4" data-name="Ana Carolina" data-phone="(11) 94567-8901" data-email="ana@email.com" data-cpf="789.123.456-00" data-address="Rua D, 321" data-limit="2500.00">
-                        <span class="material-icons me-1" style="font-size: 16px;">edit</span>
-                        Editar
-                    </button>
-                </div>
-            </div>
+            <p class="mt-2 text-muted">Carregando clientes...</p>
         </div>
     </div>
 </div>
@@ -286,29 +174,29 @@
         <form>
             <div class="mb-3">
                 <label class="form-label">Nome Completo *</label>
-                <input type="text" class="form-control" required>
+                <input type="text" name="nome" class="form-control" required>
             </div>
             <div class="mb-3">
                 <label class="form-label">Telefone *</label>
-                <input type="tel" class="form-control" required>
+                <input type="tel" name="telefone" class="form-control" required>
             </div>
             <div class="mb-3">
                 <label class="form-label">E-mail</label>
-                <input type="email" class="form-control">
+                <input type="email" name="email" class="form-control">
             </div>
             <div class="mb-3">
                 <label class="form-label">CPF/CNPJ</label>
-                <input type="text" class="form-control">
+                <input type="text" name="cpf" class="form-control">
             </div>
             <div class="mb-3">
                 <label class="form-label">Endereço</label>
-                <textarea class="form-control" rows="2"></textarea>
+                <textarea name="endereco" class="form-control" rows="2"></textarea>
             </div>
             <div class="mb-3">
                 <label class="form-label">Limite de Crédito</label>
                 <div class="input-group">
                     <span class="input-group-text">R$</span>
-                    <input type="number" step="0.01" class="form-control">
+                    <input type="number" name="limite" step="0.01" min="0" class="form-control">
                 </div>
             </div>
             
@@ -358,111 +246,8 @@
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../js/app.js"></script>
-<script>
-// Toggle campos do fiador
-document.getElementById('hasGuarantor').addEventListener('change', function() {
-    const guarantorFields = document.getElementById('guarantorFields');
-    if (this.checked) {
-        guarantorFields.classList.remove('d-none');
-    } else {
-        guarantorFields.classList.add('d-none');
-    }
-});
+<script src="../js/api-service.js"></script>
+<script src="../js/clientes.js"></script>
 
-// Funcionalidade do modal de editar cliente
-document.addEventListener('DOMContentLoaded', function() {
-    // Modal de ver detalhes
-    const viewButtons = document.querySelectorAll('.view-client-btn');
-    const viewModal = new bootstrap.Modal(document.getElementById('viewClientModal'));
-    
-    viewButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const name = this.dataset.name;
-            const phone = this.dataset.phone;
-            const email = this.dataset.email;
-            const cpf = this.dataset.cpf;
-            const address = this.dataset.address;
-            const limit = parseFloat(this.dataset.limit);
-            const debt = parseFloat(this.dataset.debt);
-            const status = this.dataset.status;
-            
-            // Preencher campos do modal
-            document.getElementById('viewClientName').textContent = name;
-            document.getElementById('viewClientPhone').textContent = phone;
-            document.getElementById('viewClientEmail').textContent = email || 'Não informado';
-            document.getElementById('viewClientCpf').textContent = cpf || 'Não informado';
-            document.getElementById('viewClientAddress').textContent = address || 'Não informado';
-            document.getElementById('viewClientLimit').textContent = limit.toFixed(2).replace('.', ',');
-            document.getElementById('viewClientDebt').textContent = debt.toFixed(2).replace('.', ',');
-            document.getElementById('viewClientAvailable').textContent = (limit - debt).toFixed(2).replace('.', ',');
-            
-            // Status badge
-            const statusBadge = document.getElementById('viewClientStatus');
-            statusBadge.textContent = status;
-            statusBadge.className = 'badge badge-status ';
-            if (status === 'Quitado') statusBadge.className += 'badge-paid';
-            else if (status === 'Parcial') statusBadge.className += 'badge-partial';
-            else statusBadge.className += 'badge-pending';
-            
-            viewModal.show();
-        });
-    });
-    
-    const editButtons = document.querySelectorAll('.edit-client-btn');
-    const editModal = new bootstrap.Modal(document.getElementById('editClientModal'));
-    const editForm = document.getElementById('editClientForm');
-    const saveBtn = document.getElementById('saveClientBtn');
-    
-    // Abrir modal de edição
-    editButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const clientId = this.dataset.clientId;
-            const name = this.dataset.name;
-            const phone = this.dataset.phone;
-            const email = this.dataset.email;
-            const cpf = this.dataset.cpf;
-            const address = this.dataset.address;
-            const limit = this.dataset.limit;
-            
-            // Preencher campos do modal
-            document.getElementById('editClientId').value = clientId;
-            document.getElementById('editClientName').value = name;
-            document.getElementById('editClientPhone').value = phone;
-            document.getElementById('editClientEmail').value = email;
-            document.getElementById('editClientCpf').value = cpf;
-            document.getElementById('editClientAddress').value = address;
-            document.getElementById('editClientLimit').value = limit;
-            
-            editModal.show();
-        });
-    });
-    
-    // Salvar alterações
-    saveBtn.addEventListener('click', function() {
-        if (validateClientForm()) {
-            showToast('Cliente atualizado com sucesso!', 'success');
-            editModal.hide();
-            editForm.reset();
-        }
-    });
-    
-    // Validação do formulário
-    function validateClientForm() {
-        let isValid = true;
-        const requiredFields = editForm.querySelectorAll('[required]');
-        
-        requiredFields.forEach(field => {
-            if (!field.value.trim()) {
-                field.classList.add('is-invalid');
-                isValid = false;
-            } else {
-                field.classList.remove('is-invalid');
-            }
-        });
-        
-        return isValid;
-    }
-});
-</script>
 </body>
 </html>
