@@ -16,13 +16,23 @@ class VendasManager {
 
   async carregarDados() {
     try {
-      const [vendasData, clientesData] = await Promise.all([
+      const [vendasData, clientesData, dividasData] = await Promise.all([
         apiService.getVendas(),
         apiService.getClientes(),
+        apiService.getDividas(),
       ]);
 
-      this.vendas = vendasData;
-      this.clientes = clientesData;
+      // Mapear status da dívida (se houver) para cada venda para uso no frontend
+      this.vendas = (vendasData || []).map((venda) => {
+        const divida = (dividasData || []).find((d) => d.id === venda.dividaId);
+        const statusDivida = divida ? divida.statusDivida : null;
+        return {
+          ...venda,
+          status: this.mapStatusDividaToVendaStatus(statusDivida),
+        };
+      });
+
+      this.clientes = clientesData || [];
       this.vendasFiltradas = [...this.vendas];
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
@@ -30,6 +40,24 @@ class VendasManager {
       this.vendas = [];
       this.clientes = [];
       this.vendasFiltradas = [];
+    }
+  }
+
+  mapStatusDividaToVendaStatus(statusDivida) {
+    if (!statusDivida) return null;
+    switch (statusDivida) {
+      case "ABERTA":
+        return "PENDENTE";
+      case "PAGA_TOTALMENTE":
+        return "PAGO";
+      case "PAGA_PARCIALMENTE":
+        return "PARCIAL";
+      case "CANCELADA":
+        return "CANCELADO";
+      case "VENCIDA":
+        return "VENCIDA";
+      default:
+        return statusDivida;
     }
   }
 
@@ -173,21 +201,21 @@ class VendasManager {
   criarCardVenda(venda) {
     const cliente = this.clientes.find((c) => c.id === venda.clienteId);
     const nomeCliente = cliente ? cliente.nome : "Cliente não encontrado";
-    const statusClass = this.getStatusClass(venda.status);
-    const statusText = this.getStatusText(venda.status);
+    const statusClass = this.getStatusClass(venda.status || "");
+    const statusText = venda.status ? this.getStatusText(venda.status) : "—";
 
     return `
-            <div class="col-md-6 col-lg-4 fade-in">
-                <div class="card border-0 bg-white p-3 h-100">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <h6 class="mb-1">Venda #${venda.id}</h6>
-                            <small class="text-muted">${this.formatarData(
-                              venda.dataHora
-                            )}</small>
-                        </div>
-                        <span class="badge ${statusClass}">${statusText}</span>
-                    </div>
+        <div class="col-md-6 col-lg-4 fade-in">
+          <div class="card border-0 bg-white p-3 h-100">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <div>
+                <h6 class="mb-1">Venda #${venda.id}</h6>
+                <small class="text-muted">${this.formatarData(
+                  venda.dataHora
+                )}</small>
+              </div>
+              <span class="badge ${statusClass}" title="Status da venda (baseado na dívida associada)">${statusText}</span>
+            </div>
                     
                     <div class="mb-3">
                         <div class="d-flex align-items-center mb-2">
@@ -254,6 +282,19 @@ class VendasManager {
   async visualizarVenda(vendaId) {
     try {
       const venda = await apiService.getVendaById(vendaId);
+
+      // Se a venda tiver referência à dívida, buscar o status atualizado
+      if (venda && venda.dividaId) {
+        try {
+          const divida = await apiService.getDividaById(venda.dividaId);
+          venda.status = this.mapStatusDividaToVendaStatus(
+            divida ? divida.statusDivida : null
+          );
+        } catch (err) {
+          console.warn("Não foi possível obter a dívida relacionada:", err);
+        }
+      }
+
       this.preencherModalVisualizacao(venda);
 
       const modal = new bootstrap.Modal(
@@ -281,8 +322,12 @@ class VendasManager {
     ).textContent = `R$ ${this.formatarMoeda(venda.valorTotal || 0)}`;
 
     const statusBadge = document.getElementById("viewSaleStatus");
-    statusBadge.textContent = this.getStatusText(venda.status);
-    statusBadge.className = `badge ${this.getStatusClass(venda.status)}`;
+    statusBadge.textContent =
+      venda && venda.status ? this.getStatusText(venda.status) : "—";
+    statusBadge.className =
+      venda && venda.status
+        ? `badge ${this.getStatusClass(venda.status)}`
+        : "badge bg-secondary text-dark";
 
     // Renderizar itens
     const itemsContainer = document.getElementById("viewSaleItems");
@@ -394,14 +439,19 @@ class VendasManager {
 
     try {
       const resultado = await apiService.updateVenda(vendaId, dadosAtualizados);
-      
+
       showToast("Venda atualizada com sucesso!", "success");
-      
-      const modal = bootstrap.Modal.getInstance(document.getElementById("editSaleModal"));
+
+      const modal = bootstrap.Modal.getInstance(
+        document.getElementById("editSaleModal")
+      );
       if (modal) modal.hide();
-      
+
       await this.carregarDados();
       this.renderizarVendas();
+
+      // Emitir evento para atualizar o dashboard
+      window.dispatchEvent(new Event("vendaAtualizada"));
     } catch (error) {
       console.error("Erro ao atualizar venda:", error);
       showToast("Erro: " + error.message, "error");
@@ -444,6 +494,9 @@ class VendasManager {
 
       await this.carregarDados();
       this.renderizarVendas();
+
+      // Emitir evento para atualizar o dashboard
+      window.dispatchEvent(new Event("vendaCriada"));
     } catch (error) {
       console.error("Erro ao criar venda:", error);
       showToast("Erro ao criar venda: " + error.message, "error");
@@ -544,13 +597,15 @@ class VendasManager {
   getStatusClass(status) {
     switch (status) {
       case "PAGO":
-        return "badge-success";
+        return "bg-success";
       case "PENDENTE":
-        return "badge-warning";
+        return "bg-warning text-dark";
       case "CANCELADO":
-        return "badge-danger";
+        return "bg-danger";
+      case "VENCIDA":
+        return "bg-danger";
       default:
-        return "badge-secondary";
+        return "bg-secondary text-dark";
     }
   }
 
@@ -562,6 +617,8 @@ class VendasManager {
         return "Pendente";
       case "CANCELADO":
         return "Cancelado";
+      case "VENCIDA":
+        return "Vencida";
       default:
         return status;
     }

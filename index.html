@@ -1,191 +1,245 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Visão Geral - Vendas a Prazo</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="theme.css" rel="stylesheet">
-</head>
-<body>
-<!-- Sidebar Container -->
-<div id="sidebarContainer"></div>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <link href="theme.css" rel="stylesheet" />
+  </head>
+  <body>
+    <!-- Sidebar Container -->
+    <div id="sidebarContainer"></div>
 
-<!-- Topbar Container -->
-<div id="topbarContainer"></div>
+    <!-- Topbar Container -->
+    <div id="topbarContainer"></div>
 
-
-
-<!-- Main Content -->
-<div class="main-content">
-    <!-- Dashboard Section -->
-    <section id="dashboard" class="mb-5">
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Dashboard Section -->
+      <section id="dashboard" class="mb-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-semibold mb-0">Visão Geral</h4>
-            <div>
-                <button class="btn btn-sm btn-outline-secondary me-2">
-                    <span class="material-icons">filter_alt</span> Filtrar
-                </button>
-                <button class="btn btn-sm btn-outline-secondary">
-                    <span class="material-icons">calendar_today</span> Hoje
-                </button>
-            </div>
+          <h4 class="fw-semibold mb-0">Visão Geral</h4>
+          <div>
+            <button class="btn btn-sm btn-outline-secondary me-2">
+              <span class="material-icons">filter_alt</span> Filtrar
+            </button>
+            <button class="btn btn-sm btn-outline-secondary">
+              <span class="material-icons">calendar_today</span> Hoje
+            </button>
+          </div>
         </div>
 
         <div class="row g-4 mb-4">
-            <div class="col-md-4">
-                <div class="card border-0 bg-white p-4 h-100">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <h6 class="text-muted mb-1">Saldo Pendente</h6>
-                            <h3 class="mb-0">R$ 24.580,00</h3>
-                        </div>
-                        <span class="material-icons text-primary">account_balance_wallet</span>
-                    </div>
-                    <div class="progress" style="height: 6px;">
-                        <div class="progress-bar progress-bar-accent" role="progressbar" style="width: 65%;"></div>
-                    </div>
-                    <small class="text-muted mt-2 d-block">65% do limite total</small>
+          <div class="col-md-4">
+            <div class="card border-0 bg-white p-4 h-100">
+              <div
+                class="d-flex justify-content-between align-items-start mb-3"
+              >
+                <div>
+                  <h6 class="text-muted mb-1">Saldo Pendente</h6>
+                  <h3 class="mb-0">R$ 24.580,00</h3>
                 </div>
+                <span class="material-icons text-primary"
+                  >account_balance_wallet</span
+                >
+              </div>
+              <div class="progress" style="height: 6px">
+                <div
+                  class="progress-bar progress-bar-accent"
+                  role="progressbar"
+                  style="width: 65%"
+                ></div>
+              </div>
+              <small class="text-muted mt-2 d-block">65% do limite total</small>
             </div>
-            <div class="col-md-4">
-                <div class="card border-0 bg-white p-4 h-100">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <h6 class="text-muted mb-1">Vendas este mês</h6>
-                            <h3 class="mb-0">R$ 12.340,00</h3>
-                        </div>
-                        <span class="material-icons text-primary">receipt</span>
-                    </div>
-                    <div class="progress" style="height: 6px;">
-                        <div class="progress-bar progress-bar-accent" role="progressbar" style="width: 45%;"></div>
-                    </div>
-                    <small class="text-muted mt-2 d-block">+12% em relação ao mês passado</small>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-0 bg-white p-4 h-100">
+              <div
+                class="d-flex justify-content-between align-items-start mb-3"
+              >
+                <div>
+                  <h6 class="text-muted mb-1">Vendas este mês</h6>
+                  <h3 class="mb-0">R$ 12.340,00</h3>
                 </div>
+                <span class="material-icons text-primary">receipt</span>
+              </div>
+              <div class="progress" style="height: 6px">
+                <div
+                  class="progress-bar progress-bar-accent"
+                  role="progressbar"
+                  style="width: 45%"
+                ></div>
+              </div>
+              <small class="text-muted mt-2 d-block"
+                >+12% em relação ao mês passado</small
+              >
             </div>
-            <div class="col-md-4">
-                <div class="card border-0 bg-white p-4 h-100">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <h6 class="text-muted mb-1">Pagamentos recebidos</h6>
-                            <h3 class="mb-0">R$ 8.720,00</h3>
-                        </div>
-                        <span class="material-icons text-primary">payments</span>
-                    </div>
-                    <div class="progress" style="height: 6px;">
-                        <div class="progress-bar progress-bar-accent" role="progressbar" style="width: 35%;"></div>
-                    </div>
-                    <small class="text-muted mt-2 d-block">35% do saldo pendente</small>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-0 bg-white p-4 h-100">
+              <div
+                class="d-flex justify-content-between align-items-start mb-3"
+              >
+                <div>
+                  <h6 class="text-muted mb-1">Pagamentos recebidos</h6>
+                  <h3 class="mb-0">R$ 8.720,00</h3>
                 </div>
+                <span class="material-icons text-primary">payments</span>
+              </div>
+              <div class="progress" style="height: 6px">
+                <div
+                  class="progress-bar progress-bar-accent"
+                  role="progressbar"
+                  style="width: 35%"
+                ></div>
+              </div>
+              <small class="text-muted mt-2 d-block"
+                >35% do saldo pendente</small
+              >
             </div>
+          </div>
         </div>
 
         <div class="row g-4">
-            <div class="col-md-8">
-                <div class="card border-0 bg-white p-4 h-100">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="fw-semibold mb-0">Vendas Recentes</h5>
-                        <button class="btn btn-sm btn-outline-secondary">Ver todas</button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover mb-0">
-                            <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Cliente</th>
-                                <th>Data</th>
-                                <th>Valor</th>
-                                <th>Status</th>
-                                <th></th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <tr>
-                                <td>#FV-0012</td>
-                                <td>João Silva</td>
-                                <td>15/06/2023</td>
-                                <td>R$ 1.250,00</td>
-                                <td><span class="badge badge-status badge-pending">Pendente</span></td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-outline-secondary">
-                                        <span class="material-icons">visibility</span>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>#FV-0011</td>
-                                <td>Maria Souza</td>
-                                <td>14/06/2023</td>
-                                <td>R$ 890,00</td>
-                                <td><span class="badge badge-status badge-partial">Parcial</span></td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-outline-secondary">
-                                        <span class="material-icons">visibility</span>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>#FV-0010</td>
-                                <td>Carlos Oliveira</td>
-                                <td>10/06/2023</td>
-                                <td>R$ 2.150,00</td>
-                                <td><span class="badge badge-status badge-paid">Quitado</span></td>
-                                <td class="text-end">
-                                    <button class="btn btn-sm btn-outline-secondary">
-                                        <span class="material-icons">visibility</span>
-                                    </button>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+          <div class="col-md-8">
+            <div class="card border-0 bg-white p-4 h-100">
+              <div
+                class="d-flex justify-content-between align-items-center mb-4"
+              >
+                <h5 class="fw-semibold mb-0">Vendas Recentes</h5>
+                <button
+                  id="verTodasVendasBtn"
+                  class="btn btn-sm btn-outline-secondary"
+                >
+                  Ver todas
+                </button>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Cliente</th>
+                      <th>Data</th>
+                      <th>Valor</th>
+                      <th>Status</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>#FV-0012</td>
+                      <td>João Silva</td>
+                      <td>15/06/2023</td>
+                      <td>R$ 1.250,00</td>
+                      <td>
+                        <span class="badge badge-status badge-pending"
+                          >Pendente</span
+                        >
+                      </td>
+                      <td class="text-end">
+                        <button class="btn btn-sm btn-outline-secondary">
+                          <span class="material-icons">visibility</span>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>#FV-0011</td>
+                      <td>Maria Souza</td>
+                      <td>14/06/2023</td>
+                      <td>R$ 890,00</td>
+                      <td>
+                        <span class="badge badge-status badge-partial"
+                          >Parcial</span
+                        >
+                      </td>
+                      <td class="text-end">
+                        <button class="btn btn-sm btn-outline-secondary">
+                          <span class="material-icons">visibility</span>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>#FV-0010</td>
+                      <td>Carlos Oliveira</td>
+                      <td>10/06/2023</td>
+                      <td>R$ 2.150,00</td>
+                      <td>
+                        <span class="badge badge-status badge-paid"
+                          >Quitado</span
+                        >
+                      </td>
+                      <td class="text-end">
+                        <button class="btn btn-sm btn-outline-secondary">
+                          <span class="material-icons">visibility</span>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div class="col-md-4">
-                <div class="card border-0 bg-white p-4 h-100">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="fw-semibold mb-0">Clientes em Atraso</h5>
-                        <button class="btn btn-sm btn-outline-secondary">Ver todos</button>
-                    </div>
-                    <div class="list-group list-group-flush">
-                        <div class="list-group-item d-flex align-items-center px-0">
-                            <div class="avatar me-3">JS</div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-0">João Silva</h6>
-                                <small class="text-muted">Vencido há 5 dias</small>
-                            </div>
-                            <div class="debt-amount">R$ 1.250,00</div>
-                        </div>
-                        <div class="list-group-item d-flex align-items-center px-0">
-                            <div class="avatar me-3">AS</div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-0">Ana Santos</h6>
-                                <small class="text-muted">Vencido há 3 dias</small>
-                            </div>
-                            <div class="debt-amount">R$ 890,00</div>
-                        </div>
-                        <div class="list-group-item d-flex align-items-center px-0">
-                            <div class="avatar me-3">PF</div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-0">Pedro Ferreira</h6>
-                                <small class="text-muted">Vencido hoje</small>
-                            </div>
-                            <div class="debt-amount">R$ 1.750,00</div>
-                        </div>
-                    </div>
+          </div>
+          <div class="col-md-4">
+            <div class="card border-0 bg-white p-4 h-100">
+              <div
+                class="d-flex justify-content-between align-items-center mb-4"
+              >
+                <h5 class="fw-semibold mb-0">Clientes em Atraso</h5>
+                <button class="btn btn-sm btn-outline-secondary">
+                  Ver todos
+                </button>
+              </div>
+              <div class="list-group list-group-flush">
+                <div class="list-group-item d-flex align-items-center px-0">
+                  <div class="avatar me-3">JS</div>
+                  <div class="flex-grow-1">
+                    <h6 class="mb-0">João Silva</h6>
+                    <small class="text-muted">Vencido há 5 dias</small>
+                  </div>
+                  <div class="debt-amount">R$ 1.250,00</div>
                 </div>
+                <div class="list-group-item d-flex align-items-center px-0">
+                  <div class="avatar me-3">AS</div>
+                  <div class="flex-grow-1">
+                    <h6 class="mb-0">Ana Santos</h6>
+                    <small class="text-muted">Vencido há 3 dias</small>
+                  </div>
+                  <div class="debt-amount">R$ 890,00</div>
+                </div>
+                <div class="list-group-item d-flex align-items-center px-0">
+                  <div class="avatar me-3">PF</div>
+                  <div class="flex-grow-1">
+                    <h6 class="mb-0">Pedro Ferreira</h6>
+                    <small class="text-muted">Vencido hoje</small>
+                  </div>
+                  <div class="debt-amount">R$ 1.750,00</div>
+                </div>
+              </div>
             </div>
+          </div>
         </div>
-    </section>
-</div>
+      </section>
+    </div>
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="js/app.js"></script>
-<script src="js/api-service.js"></script>
-<script src="js/dashboard.js"></script>
-</body>
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/api-service.js"></script>
+    <script src="js/dashboard.js"></script>
+  </body>
 </html>

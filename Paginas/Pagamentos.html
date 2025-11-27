@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pagamentos - Gestão de Cobranças</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <link href="../theme.css" rel="stylesheet" />
+  </head>
+  <body>
+    <!-- Sidebar Container -->
+    <div id="sidebarContainer"></div>
+
+    <!-- Topbar Container -->
+    <div id="topbarContainer"></div>
+
+    <!-- Main Content -->
+    <div class="main-content container py-4">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-semibold mb-0">Gestão de Pagamentos</h4>
+      </div>
+
+      <!-- Filtros -->
+      <div class="card border-0 bg-white p-4 mb-4">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Status da Dívida</label>
+            <select id="statusFilter" class="form-select">
+              <option value="">Todas</option>
+              <option value="PENDENTE">Pendentes</option>
+              <option value="PARCIAL">Parcial</option>
+              <option value="PAGO">Pagas</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Cliente</label>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Buscar cliente"
+              id="clienteFilter"
+            />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Período</label>
+            <select id="periodoFilter" class="form-select">
+              <option value="">Todo o período</option>
+              <option value="7">Últimos 7 dias</option>
+              <option value="30">Últimos 30 dias</option>
+              <option value="90">Últimos 90 dias</option>
+            </select>
+          </div>
+          <div class="col-md-3 d-flex align-items-end">
+            <button
+              class="btn btn-outline-secondary w-100"
+              id="limparFiltrosBtn"
+            >
+              <span class="material-icons me-2">restart_alt</span>
+              Limpar Filtros
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resumo de Estatísticas -->
+      <div class="row mb-4">
+        <div class="col-md-4">
+          <div class="card border-0 bg-white p-4">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <p class="text-muted mb-1">Saldo Pendente</p>
+                <h3 class="fw-bold text-dark mb-0">
+                  R$ <span id="saldoPendenteVal">0,00</span>
+                </h3>
+                <small class="text-muted"
+                  >em <span id="dividasPendentesCt">0</span> dívidas</small
+                >
+              </div>
+              <span class="material-icons text-warning" style="font-size: 32px"
+                >pending_actions</span
+              >
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 bg-white p-4">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <p class="text-muted mb-1">Pagamentos este Mês</p>
+                <h3 class="fw-bold text-success mb-0">
+                  R$ <span id="pagamentosNoMesVal">0,00</span>
+                </h3>
+                <small class="text-muted"
+                  ><span id="pagamentosNoMesCt">0</span> pagamentos</small
+                >
+              </div>
+              <span class="material-icons text-success" style="font-size: 32px"
+                >check_circle</span
+              >
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card border-0 bg-white p-4">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <p class="text-muted mb-1">Vencimentos Vencidos</p>
+                <h3 class="fw-bold text-danger mb-0">
+                  <span id="vencidosVal">0</span>
+                </h3>
+                <small class="text-muted">dívidas vencidas</small>
+              </div>
+              <span class="material-icons text-danger" style="font-size: 32px"
+                >schedule</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de Dívidas -->
+      <div class="card border-0 bg-white p-4">
+        <h5 class="fw-semibold mb-4">Dívidas e Pagamentos</h5>
+        <div id="dividasContainer" class="row"></div>
+        <div id="emptyState" class="text-center py-5" style="display: none">
+          <span class="material-icons mb-3" style="font-size: 48px; color: #ccc"
+            >inbox</span
+          >
+          <p class="text-muted">Nenhuma dívida encontrada</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Registrar Pagamento -->
+    <div class="modal fade" id="pagarDividaModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Registrar Pagamento</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Dívida</label>
+              <p id="modalDividaInfo" class="text-muted">-</p>
+            </div>
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Valor Pendente</label>
+              <p id="modalValorPendente" class="fs-5 fw-bold text-primary">
+                R$ 0,00
+              </p>
+            </div>
+            <form id="pagarDividaForm">
+              <div class="mb-3">
+                <label for="valorPago" class="form-label"
+                  >Valor a Pagar *</label
+                >
+                <div class="input-group">
+                  <span class="input-group-text">R$</span>
+                  <input
+                    type="number"
+                    class="form-control"
+                    id="valorPago"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    required
+                  />
+                </div>
+                <small class="text-muted d-block mt-1" id="avisoValor"></small>
+              </div>
+              <div class="mb-3">
+                <label for="metodoPagamento" class="form-label"
+                  >Método de Pagamento *</label
+                >
+                <select id="metodoPagamento" class="form-select" required>
+                  <option value="">Selecione um método</option>
+                  <option value="DINHEIRO">Dinheiro</option>
+                  <option value="CARTAO_DEBITO">Cartão de Débito</option>
+                  <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+                  <option value="PIX">PIX</option>
+                  <option value="TRANSFERENCIA">Transferência Bancária</option>
+                  <option value="CHEQUE">Cheque</option>
+                </select>
+              </div>
+              <div
+                class="alert alert-info"
+                id="alertaPagamentoTotal"
+                style="display: none"
+              >
+                <small
+                  ><strong>ℹ️ Pagamento Total:</strong> Esta dívida será quitada
+                  totalmente.</small
+                >
+              </div>
+              <div class="d-grid gap-2">
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  id="confirmarPagamentoBtn"
+                >
+                  <span class="material-icons me-2" style="font-size: 18px"
+                    >check_circle</span
+                  >
+                  Confirmar Pagamento
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bundle do Bootstrap (necessário para usar bootstrap.Modal) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Scripts -->
+    <script src="../js/app.js"></script>
+    <script src="../js/api-service.js"></script>
+    <script src="../js/pagamentos.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        new PagamentosManager();
+      });
+    </script>
+  </body>
+</html>
