@@ -236,13 +236,16 @@ class VendasManager {
         const itemsContainer = document.getElementById('viewSaleItems');
         if (venda.itens && venda.itens.length > 0) {
             itemsContainer.innerHTML = venda.itens.map(item => `
-                <tr>
-                    <td>${item.descricao}</td>
-                    <td class="text-center">${item.quantidade}</td>
-                    <td class="text-end">R$ ${this.formatarMoeda(item.valorUnitario)}</td>
-                    <td class="text-end fw-bold">R$ ${this.formatarMoeda(item.valorTotal)}</td>
-                </tr>
-            `).join('');
+        <tr>
+            <td>${item.descricaoProduto}</td>
+            
+            <td class="text-center">${item.quantidade}</td>
+            
+            <td class="text-end">R$ ${this.formatarMoeda(item.precoUnitario)}</td>
+            
+            <td class="text-end fw-bold">R$ ${this.formatarMoeda(item.subtotal)}</td>
+        </tr>
+    `).join('');
         } else {
             itemsContainer.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Nenhum item encontrado</td></tr>';
         }
