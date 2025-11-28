@@ -77,7 +77,7 @@ function setupMobileSidebar() {
       sidebarOverlay.classList.remove("show");
     });
 
-    // Fechar sidebar ao clicar em um link (mobile)
+    // Fechar sidebar ao clicar em um link
     sidebar.querySelectorAll("a").forEach((link) => {
       link.addEventListener("click", () => {
         if (window.innerWidth < 768) {
@@ -224,7 +224,7 @@ function ensurePaymentsMenuExists() {
     wrapper.setAttribute("data-page", "pagamentos");
     const href = window.location.pathname.includes("/Paginas/")
       ? "Pagamentos.html"
-      : "Paginas/Pagamentos.html";
+      : "Paginas/pagamentos.html";
     wrapper.innerHTML = `\n      <a href="${href}" class="text-white text-decoration-none d-flex align-items-center">\n        <span class="material-icons me-3">payment</span>\n        <span>Pagamentos</span>\n      </a>\n    `;
 
     if (relatoriosItem && relatoriosItem.parentNode) {

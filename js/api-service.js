@@ -225,6 +225,9 @@ class ApiService {
       "/relatorios/debitos-pendentes?" + params.toString()
     );
   }
+  async getRelatorioPagamentos(inicio, fim) {
+    return await this.request(`/relatorios/pagamentos?inicio=${inicio}&fim=${fim}`);
+  }
 
   // ===== PROPRIETÁRIO =====
   async getProprietario() {
