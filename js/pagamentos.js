@@ -20,7 +20,6 @@ class PagamentosManager {
   }
 
   configurarEventListeners() {
-    // Filtros
     document.getElementById("statusFilter").addEventListener("change", () => {
       this.aplicarFiltros();
     });
@@ -36,7 +35,6 @@ class PagamentosManager {
         this.limparFiltros();
       });
 
-    // Modal Pagamento
     document
       .getElementById("pagarDividaForm")
       .addEventListener("submit", (e) => {
@@ -44,7 +42,6 @@ class PagamentosManager {
         this.registrarPagamento();
       });
 
-    // Validação do valor de pagamento
     document.getElementById("valorPago").addEventListener("input", (e) => {
       this.validarValorPagamento();
     });
@@ -93,7 +90,6 @@ class PagamentosManager {
       parseInt(document.getElementById("periodoFilter").value) || null;
 
     this.dividasFiltradas = this.dividas.filter((divida) => {
-      // Filtro de status
       if (
         status &&
         this.mapStatusDividaToDisplay(divida.statusDivida) !== status
@@ -101,12 +97,10 @@ class PagamentosManager {
         return false;
       }
 
-      // Filtro de cliente
       if (cliente && !divida.clienteNome.toLowerCase().includes(cliente)) {
         return false;
       }
 
-      // Filtro de período
       if (periodo) {
         const dataEmissao = new Date(divida.dataEmissao);
         const agora = new Date();
@@ -147,7 +141,6 @@ class PagamentosManager {
       .map((divida) => this.criarCardDivida(divida))
       .join("");
 
-    // Adicionar listeners aos botões
     document.querySelectorAll(".btn-pagar-divida").forEach((btn) => {
       btn.addEventListener("click", () => {
         const dividaId = parseInt(btn.dataset.dividaId);
@@ -178,7 +171,6 @@ class PagamentosManager {
       <div class="col-md-6 col-lg-4 mb-3">
         <div class="card border-0 bg-white h-100 shadow-sm hover-shadow transition">
           <div class="card-body">
-            <!-- Header -->
             <div class="d-flex justify-content-between align-items-start mb-3">
               <div>
                 <h6 class="fw-bold mb-1">Venda #${divida.vendaId}</h6>
@@ -190,7 +182,6 @@ class PagamentosManager {
               </span>
             </div>
 
-            <!-- Valores -->
             <div class="bg-light rounded p-3 mb-3">
               <div class="row g-3">
                 <div class="col-6">
@@ -208,7 +199,6 @@ class PagamentosManager {
               </div>
             </div>
 
-            <!-- Datas -->
             <div class="row g-2 mb-3 text-small">
               <div class="col-6">
                 <small class="text-muted d-block">Emissão</small>
@@ -223,25 +213,23 @@ class PagamentosManager {
               </div>
             </div>
 
-            <!-- Histórico de Pagamentos -->
             ${this.renderizarPagamentos(divida)}
 
-            <!-- Botão Pagar -->
-              ${
-                statusDisplay === "PENDENTE" || statusDisplay === "PARCIAL"
-                  ? `
+            ${
+              statusDisplay === "PENDENTE" || statusDisplay === "PARCIAL"
+                ? `
                 <button class="btn btn-primary w-100 btn-pagar-divida" data-divida-id="${divida.id}">
                   <span class="material-icons me-2" style="font-size: 18px;">payment</span>
                   Registrar Pagamento
                 </button>
               `
-                  : `
+                : `
                 <button class="btn btn-success w-100" disabled>
                   <span class="material-icons me-2" style="font-size: 18px;">check_circle</span>
                   Dívida Paga
                 </button>
               `
-              }
+            }
           </div>
         </div>
       </div>
@@ -282,7 +270,6 @@ class PagamentosManager {
   abrirModalPagamento(divida) {
     this.dividaSelecionada = divida;
 
-    // Preencher informações do modal
     document.getElementById(
       "modalDividaInfo"
     ).textContent = `Venda #${divida.vendaId} - ${divida.clienteNome}`;
@@ -290,7 +277,6 @@ class PagamentosManager {
       "modalValorPendente"
     ).textContent = `R$ ${this.formatarMoeda(divida.valorPendente)}`;
 
-    // Limpar e resetar formulário
     document.getElementById("pagarDividaForm").reset();
     document.getElementById("valorPago").max = divida.valorPendente;
     document.getElementById("avisoValor").textContent = "";
@@ -357,13 +343,14 @@ class PagamentosManager {
       showToast("Pagamento registrado com sucesso!", "success");
       this.pagarDividaModal.hide();
 
-      // Recarregar dados
       await this.carregarDados();
       this.renderizarDividas();
       this.atualizarEstatisticas();
 
-      // Emitir evento para dashboard atualizar
-      window.dispatchEvent(new Event("pagamentoDividaRealizado"));
+      console.log('Disparando evento pagamentoDividaRealizado:', { valor: valorPago });
+      window.dispatchEvent(new CustomEvent("pagamentoDividaRealizado", {
+        detail: { valor: valorPago }
+      }));
     } catch (error) {
       console.error("Erro ao registrar pagamento:", error);
       showToast("Erro ao registrar pagamento: " + error.message, "error");
@@ -374,7 +361,6 @@ class PagamentosManager {
   }
 
   atualizarEstatisticas() {
-    // Saldo Pendente (inclui parcialmente pagas)
     const saldoPendente = this.dividasFiltradas
       .filter((d) => {
         const s = this.mapStatusDividaToDisplay(d.statusDivida);
@@ -390,7 +376,6 @@ class PagamentosManager {
         return s === "PENDENTE" || s === "PARCIAL";
       }).length;
 
-    // Pagamentos este Mês
     const inicioMes = new Date();
     inicioMes.setDate(1);
     inicioMes.setHours(0, 0, 0, 0);
@@ -415,7 +400,6 @@ class PagamentosManager {
     document.getElementById("pagamentosNoMesCt").textContent =
       contagemPagamentos;
 
-    // Dívidas Vencidas
     const agora = new Date();
     const vencidas = this.dividasFiltradas.filter((d) => {
       const s = this.mapStatusDividaToDisplay(d.statusDivida);

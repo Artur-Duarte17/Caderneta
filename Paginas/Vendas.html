@@ -1,253 +1,342 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vendas - Vendas a Prazo</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="../theme.css" rel="stylesheet">
-</head>
-<body>
-<!-- Sidebar Container -->
-<div id="sidebarContainer"></div>
+    <link href="../theme.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 
-<!-- Topbar Container -->
-<div id="topbarContainer"></div>
+    <script src="../js/api-service.js"></script>
+    <script src="../js/notificacoes-global.js"></script>
+  </head>
+  <body>
+    <!-- Sidebar Container -->
+    <div id="sidebarContainer"></div>
 
+    <!-- Topbar Container -->
+    <div id="topbarContainer"></div>
 
-
-<!-- Main Content -->
-<div class="main-content">
-    <!-- Título e Ações -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Título e Ações -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-semibold mb-0">Vendas a Crédito</h4>
-        <button class="btn btn-accent d-flex align-items-center" data-bs-toggle="offcanvas" data-bs-target="#newSaleOffcanvas">
-            <span class="material-icons me-2">add</span>
-            Nova Venda
+        <button
+          class="btn btn-accent d-flex align-items-center"
+          data-bs-toggle="offcanvas"
+          data-bs-target="#newSaleOffcanvas"
+        >
+          <span class="material-icons me-2">add</span>
+          Nova Venda
         </button>
-    </div>
+      </div>
 
-    <!-- Filtros -->
-    <div class="card border-0 bg-white p-4 mb-4">
+      <!-- Filtros -->
+      <div class="card border-0 bg-white p-4 mb-4">
         <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">Status</label>
-                <select id="statusFilter" class="form-select">
-                    <option value="">Todos</option>
-                    <option value="PENDENTE">Pendente</option>
-                    <option value="PAGO">Pago</option>
-                    <option value="CANCELADO">Cancelado</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Cliente</label>
-                <input type="text" class="form-control" placeholder="Buscar cliente" id="clienteFilter">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Período</label>
-                <select id="periodoFilter" class="form-select">
-                    <option value="todos">Todos</option>
-                    <option value="hoje">Hoje</option>
-                    <option value="semana">Últimos 7 dias</option>
-                    <option value="mes">Último mês</option>
-                </select>
-            </div>
+          <div class="col-md-4">
+            <label class="form-label">Status</label>
+            <select id="statusFilter" class="form-select">
+              <option value="">Todos</option>
+              <option value="PENDENTE">Pendente</option>
+              <option value="PAGO">Pago</option>
+              <option value="CANCELADO">Cancelado</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Cliente</label>
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Buscar cliente"
+              id="clienteFilter"
+            />
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Período</label>
+            <select id="periodoFilter" class="form-select">
+              <option value="todos">Todos</option>
+              <option value="hoje">Hoje</option>
+              <option value="semana">Últimos 7 dias</option>
+              <option value="mes">Último mês</option>
+            </select>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <!-- Cards de Vendas -->
-    <div class="row g-4">
+      <!-- Cards de Vendas -->
+      <div class="row g-4">
         <!-- As vendas serão carregadas dinamicamente via JavaScript -->
         <div class="col-12 text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Carregando...</span>
-            </div>
-            <p class="mt-2 text-muted">Carregando vendas...</p>
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Carregando...</span>
+          </div>
+          <p class="mt-2 text-muted">Carregando vendas...</p>
         </div>
+      </div>
     </div>
-</div>
 
-<!-- Modal Ver Detalhes Venda -->
-<div class="modal fade" id="viewSaleModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <!-- Modal Ver Detalhes Venda -->
+    <div class="modal fade" id="viewSaleModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header modal-header-gradient">
-                <h5 class="modal-title text-white">Detalhes da Venda</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row g-4">
-                    <div class="col-md-6">
-                        <div class="card border-0 bg-light p-3">
-                            <h6 class="text-muted mb-2">Informações da Venda</h6>
-                            <div class="mb-2">
-                                <strong>ID:</strong> <span id="viewSaleId"></span>
-                            </div>
-                            <div class="mb-2">
-                                <strong>Data:</strong> <span id="viewSaleDate"></span>
-                            </div>
-                            <div class="mb-2">
-                                <strong>Cliente:</strong> <span id="viewSaleClient"></span>
-                            </div>
-                            <div class="mb-2">
-                                <strong>Valor Total:</strong> <span id="viewSaleTotal"></span>
-                            </div>
-                            <div>
-                                <strong>Status:</strong> <span id="viewSaleStatus" class="badge"></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card border-0 bg-light p-3">
-                            <h6 class="text-muted mb-2">Itens da Venda</h6>
-                            <div class="table-responsive">
-                                <table class="table table-sm mb-0">
-                                    <thead>
-                                        <tr>
-                                            <th>Descrição</th>
-                                            <th class="text-center">Qtd</th>
-                                            <th class="text-end">Valor Unit.</th>
-                                            <th class="text-end">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="viewSaleItems">
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+          <div class="modal-header modal-header-gradient">
+            <h5 class="modal-title text-white">Detalhes da Venda</h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-4">
+              <div class="col-md-6">
+                <div class="card border-0 bg-light p-3">
+                  <h6 class="text-muted mb-2">Informações da Venda</h6>
+                  <div class="mb-2">
+                    <strong>ID:</strong> <span id="viewSaleId"></span>
+                  </div>
+                  <div class="mb-2">
+                    <strong>Data:</strong> <span id="viewSaleDate"></span>
+                  </div>
+                  <div class="mb-2">
+                    <strong>Cliente:</strong> <span id="viewSaleClient"></span>
+                  </div>
+                  <div class="mb-2">
+                    <strong>Valor Total:</strong>
+                    <span id="viewSaleTotal"></span>
+                  </div>
+                  <div>
+                    <strong>Status:</strong>
+                    <span id="viewSaleStatus" class="badge"></span>
+                  </div>
                 </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card border-0 bg-light p-3">
+                  <h6 class="text-muted mb-2">Itens da Venda</h6>
+                  <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                      <thead>
+                        <tr>
+                          <th>Descrição</th>
+                          <th class="text-center">Qtd</th>
+                          <th class="text-end">Valor Unit.</th>
+                          <th class="text-end">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody id="viewSaleItems"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
-            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              data-bs-dismiss="modal"
+            >
+              Fechar
+            </button>
+          </div>
         </div>
+      </div>
     </div>
-</div>
 
-<!-- Modal Editar Venda -->
-<div class="modal fade" id="editSaleModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <!-- Modal Editar Venda -->
+    <div class="modal fade" id="editSaleModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header modal-header-gradient">
-                <h5 class="modal-title text-white">Editar Venda a Crédito</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editSaleForm">
-                    <input type="hidden" id="editSaleId">
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Cliente *</label>
-                        <select id="editClientSelect" class="form-select" required>
-                            <option value="">Selecione um cliente</option>
-                            <option value="João Silva">João Silva</option>
-                            <option value="Maria Souza">Maria Souza</option>
-                            <option value="Carlos Oliveira">Carlos Oliveira</option>
-                            <option value="Ana Santos">Ana Santos</option>
-                        </select>
-                        <div class="invalid-feedback">Por favor, selecione um cliente</div>
-                    </div>
-                    
-                    <div class="row g-3 mb-3">
-                        <div class="col-6">
-                            <label class="form-label">Data da Venda *</label>
-                            <input type="date" id="editSaleDate" class="form-control" required>
-                            <div class="invalid-feedback">Por favor, informe uma data válida</div>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label">Vencimento</label>
-                            <input type="date" id="editDueDate" class="form-control">
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Valor Total *</label>
-                        <div class="input-group">
-                            <span class="input-group-text">R$</span>
-                            <input type="number" id="editSaleValue" step="0.01" min="0" class="form-control" required>
-                        </div>
-                        <div class="invalid-feedback">Por favor, informe um valor válido</div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Descrição</label>
-                        <textarea id="editSaleDescription" class="form-control" rows="3" placeholder="Descreva os itens da venda..."></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" id="saveSaleBtn" class="btn btn-accent">Salvar Alterações</button>
-            </div>
-        </div>
-    </div>
-</div>
+          <div class="modal-header modal-header-gradient">
+            <h5 class="modal-title text-white">Editar Venda a Crédito</h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="editSaleForm">
+              <input type="hidden" id="editSaleId" />
 
-<!-- Offcanvas Nova Venda -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="newSaleOffcanvas" style="width: 500px;">
-    <div class="offcanvas-header modal-header-gradient">
-        <h5 class="offcanvas-title text-white">Nova Venda a Crédito</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
-    </div>
-    <div class="offcanvas-body">
-        <form>
-            <div class="mb-3">
+              <div class="mb-3">
                 <label class="form-label">Cliente *</label>
-                <select id="clienteSelect" class="form-select" required>
-                    <option value="">Selecione um cliente</option>
+                <select id="editClientSelect" class="form-select" required>
+                  <option value="">Selecione um cliente</option>
+                  <option value="João Silva">João Silva</option>
+                  <option value="Maria Souza">Maria Souza</option>
+                  <option value="Carlos Oliveira">Carlos Oliveira</option>
+                  <option value="Ana Santos">Ana Santos</option>
                 </select>
-            </div>
-            <div class="row g-3 mb-3">
+                <div class="invalid-feedback">
+                  Por favor, selecione um cliente
+                </div>
+              </div>
+
+              <div class="row g-3 mb-3">
                 <div class="col-6">
-                    <label class="form-label">Data da Venda *</label>
-                    <input type="date" class="form-control" required>
+                  <label class="form-label">Data da Venda *</label>
+                  <input
+                    type="date"
+                    id="editSaleDate"
+                    class="form-control"
+                    required
+                  />
+                  <div class="invalid-feedback">
+                    Por favor, informe uma data válida
+                  </div>
                 </div>
                 <div class="col-6">
-                    <label class="form-label">Vencimento *</label>
-                    <input type="date" class="form-control" required>
+                  <label class="form-label">Vencimento</label>
+                  <input type="date" id="editDueDate" class="form-control" />
                 </div>
-            </div>
-            <div class="mb-3">
+              </div>
+
+              <div class="mb-3">
                 <label class="form-label">Valor Total *</label>
                 <div class="input-group">
-                    <span class="input-group-text">R$</span>
-                    <input type="number" step="0.01" class="form-control" required>
+                  <span class="input-group-text">R$</span>
+                  <input
+                    type="number"
+                    id="editSaleValue"
+                    step="0.01"
+                    min="0"
+                    class="form-control"
+                    required
+                  />
                 </div>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Observações</label>
-                <textarea id="observacoes" class="form-control" rows="2" placeholder="Observações sobre a venda..."></textarea>
-            </div>
-            
-            <!-- Container de Itens -->
-            <div class="mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <label class="form-label mb-0">Itens da Venda</label>
-                    <button type="button" id="addItemBtn" class="btn btn-sm btn-outline-primary">
-                        <span class="material-icons me-1" style="font-size: 16px;">add</span>
-                        Adicionar Item
-                    </button>
+                <div class="invalid-feedback">
+                  Por favor, informe um valor válido
                 </div>
-                <div id="itemsContainer">
-                    <!-- Itens serão adicionados aqui -->
-                </div>
-            </div>
-            <div class="d-grid">
-                <button type="submit" class="btn btn-accent">Registrar Venda</button>
-            </div>
-        </form>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Descrição</label>
+                <textarea
+                  id="editSaleDescription"
+                  class="form-control"
+                  rows="3"
+                  placeholder="Descreva os itens da venda..."
+                ></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancelar
+            </button>
+            <button type="button" id="saveSaleBtn" class="btn btn-accent">
+              Salvar Alterações
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-</div>
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../js/app.js"></script>
-<script src="../js/api-service.js"></script>
-<script src="../js/vendas.js"></script>
+    <!-- Offcanvas Nova Venda -->
+    <div
+      class="offcanvas offcanvas-end"
+      tabindex="-1"
+      id="newSaleOffcanvas"
+      style="width: 500px"
+    >
+      <div class="offcanvas-header modal-header-gradient">
+        <h5 class="offcanvas-title text-white">Nova Venda a Crédito</h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="offcanvas"
+        ></button>
+      </div>
+      <div class="offcanvas-body">
+        <form>
+          <div class="mb-3">
+            <label class="form-label">Cliente *</label>
+            <select id="clienteSelect" class="form-select" required>
+              <option value="">Selecione um cliente</option>
+            </select>
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label">Data da Venda *</label>
+              <input type="date" class="form-control" required />
+            </div>
+            <div class="col-6">
+              <label class="form-label">Vencimento *</label>
+              <input type="date" class="form-control" required />
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Valor Total *</label>
+            <div class="input-group">
+              <span class="input-group-text">R$</span>
+              <input type="number" step="0.01" class="form-control" required />
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Observações</label>
+            <textarea
+              id="observacoes"
+              class="form-control"
+              rows="2"
+              placeholder="Observações sobre a venda..."
+            ></textarea>
+          </div>
 
-</body>
+          <!-- Container de Itens -->
+          <div class="mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label mb-0">Itens da Venda</label>
+              <button
+                type="button"
+                id="addItemBtn"
+                class="btn btn-sm btn-outline-primary"
+              >
+                <span class="material-icons me-1" style="font-size: 16px"
+                  >add</span
+                >
+                Adicionar Item
+              </button>
+            </div>
+            <div id="itemsContainer">
+              <!-- Itens serão adicionados aqui -->
+            </div>
+          </div>
+          <div class="d-grid">
+            <button type="submit" class="btn btn-accent">
+              Registrar Venda
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/app.js"></script>
+    <script src="../js/api-service.js"></script>
+    <script src="../js/notificacoes-global.js"></script>
+    <script src="../js/vendas.js"></script>
+  </body>
 </html>

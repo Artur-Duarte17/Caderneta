@@ -61,6 +61,13 @@ class RelatoriosManager {
         this.renderizarTabela()
       );
     }
+
+    window.addEventListener("pagamentoDividaRealizado", () => {
+      this.carregarDados().then(() => {
+        this.renderizarRelatorios();
+        this.updateCharts();
+      });
+    });
   }
 
   async aplicarFiltros() {
@@ -104,27 +111,10 @@ class RelatoriosManager {
       (sum, v) => sum + (parseFloat(v.valorTotal) || 0),
       0
     );
-    const totalPago = dividas.reduce((sum, d) => {
-      if (d.pagamentos && Array.isArray(d.pagamentos)) {
-        return (
-          sum +
-          d.pagamentos.reduce(
-            (pSum, p) => pSum + (parseFloat(p.valorPago) || 0),
-            0
-          )
-        );
-      }
-      return sum;
-    }, 0);
+    const totalPago = dividas.reduce((sum, d) => sum + (parseFloat(d.valorPago) || 0), 0);
     const clientesAtivos = new Set(vendas.map((v) => v.clienteId)).size;
     const totalPendente = dividas.reduce((sum, d) => {
-      const pago = d.pagamentos
-        ? d.pagamentos.reduce(
-            (pSum, p) => pSum + (parseFloat(p.valorPago) || 0),
-            0
-          )
-        : 0;
-      return sum + Math.max(0, (parseFloat(d.valorOriginal) || 0) - pago);
+      return sum + (parseFloat(d.valorPendente) || 0);
     }, 0);
 
     document.querySelectorAll(
@@ -408,29 +398,12 @@ class RelatoriosManager {
       0
     );
 
-    const totalPagamentos = dividas.reduce((sum, d) => {
-      if (d.pagamentos && Array.isArray(d.pagamentos)) {
-        return (
-          sum +
-          d.pagamentos.reduce(
-            (pSum, p) => pSum + (parseFloat(p.valorPago) || 0),
-            0
-          )
-        );
-      }
-      return sum;
-    }, 0);
+    const totalPagamentos = dividas.reduce((sum, d) => sum + (parseFloat(d.valorPago) || 0), 0);
 
     const clientesAtivos = new Set(vendas.map((v) => v.clienteId)).size;
 
     const totalPendente = dividas.reduce((sum, d) => {
-      const pago = d.pagamentos
-        ? d.pagamentos.reduce(
-            (pSum, p) => pSum + (parseFloat(p.valorPago) || 0),
-            0
-          )
-        : 0;
-      return sum + Math.max(0, (parseFloat(d.valorOriginal) || 0) - pago);
+      return sum + (parseFloat(d.valorPendente) || 0);
     }, 0);
 
     const inadimplencia =
@@ -485,21 +458,17 @@ class RelatoriosManager {
       });
 
       dividas.forEach((d) => {
-        if (d.pagamentos && Array.isArray(d.pagamentos)) {
-          d.pagamentos.forEach((p) => {
-            const date = new Date(p.dataPagamento);
-            const day = date.getDate();
-            const week =
-              day <= 7
-                ? "Semana 1"
-                : day <= 14
-                ? "Semana 2"
-                : day <= 21
-                ? "Semana 3"
-                : "Semana 4";
-            weekPagamentos[week] += parseFloat(p.valorPago) || 0;
-          });
-        }
+        const date = new Date(d.dataVencimento);
+        const day = date.getDate();
+        const week =
+          day <= 7
+            ? "Semana 1"
+            : day <= 14
+            ? "Semana 2"
+            : day <= 21
+            ? "Semana 3"
+            : "Semana 4";
+        weekPagamentos[week] += parseFloat(d.valorPendente) || 0;
       });
 
       const tbody = document.getElementById("weeklyDetailsBody");
@@ -607,21 +576,17 @@ class RelatoriosManager {
     };
 
     dividas.forEach((d) => {
-      if (d.pagamentos && Array.isArray(d.pagamentos)) {
-        d.pagamentos.forEach((p) => {
-          const date = new Date(p.dataPagamento);
-          const day = date.getDate();
-          const week =
-            day <= 7
-              ? "Semana 1"
-              : day <= 14
-              ? "Semana 2"
-              : day <= 21
-              ? "Semana 3"
-              : "Semana 4";
-          weekMap[week] += parseFloat(p.valorPago) || 0;
-        });
-      }
+      const date = new Date(d.dataVencimento);
+      const day = date.getDate();
+      const week =
+        day <= 7
+          ? "Semana 1"
+          : day <= 14
+          ? "Semana 2"
+          : day <= 21
+          ? "Semana 3"
+          : "Semana 4";
+      weekMap[week] += parseFloat(d.valorPendente) || 0;
     });
 
     const labels = Object.keys(weekMap);

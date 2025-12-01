@@ -13,14 +13,12 @@ class DashboardManager {
   }
 
   startAutoRefresh() {
-    // Recarregar dados a cada 30 segundos
     setInterval(() => {
       this.carregarDados().then(() => {
         this.renderizarDashboard();
       });
     }, 30000);
 
-    // Listeners para eventos de venda criada/atualizada
     window.addEventListener("vendaCriada", () => {
       this.carregarDados().then(() => {
         this.renderizarDashboard();
@@ -215,12 +213,7 @@ class DashboardManager {
 
   calcularSaldoPendente() {
     if (!this.dividas) return 0;
-    return this.dividas
-      .filter((divida) => {
-        const status = this.mapStatusDividaToVendaStatus(divida.statusDivida);
-        return status === "PENDENTE" || status === "PARCIAL";
-      })
-      .reduce((total, divida) => total + (divida.valorPendente || 0), 0);
+    return this.dividas.reduce((total, divida) => total + (parseFloat(divida.valorPendente) || 0), 0);
   }
 
   calcularVendasMes() {
@@ -236,16 +229,7 @@ class DashboardManager {
 
   calcularPagamentosRecebidos() {
     if (!this.dividas) return 0;
-    const inicioMes = new Date();
-    inicioMes.setDate(1);
-    inicioMes.setHours(0, 0, 0, 0);
-
-    return this.dividas
-      .filter((divida) => {
-        const status = this.mapStatusDividaToVendaStatus(divida.statusDivida);
-        return status === "PAGO" && new Date(divida.dataPagamento) >= inicioMes;
-      })
-      .reduce((total, divida) => total + (divida.valorPago || 0), 0);
+    return this.dividas.reduce((total, divida) => total + (parseFloat(divida.valorPago) || 0), 0);
   }
 
   calcularDiasAtraso(dataVencimento) {
