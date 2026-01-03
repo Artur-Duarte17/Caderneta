@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+<<<<<<< HEAD
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -526,12 +527,157 @@
       <span class="material-icons mr-2">check_circle</span>
       <span id="toastMessage">Relatório exportado com sucesso!</span>
     </div>
+=======
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatórios - Vendas a Prazo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="../theme.css" rel="stylesheet">
+  <style>
+    .fade-in { animation: fadeIn 0.5s ease-in-out; }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+    .card-hover { transition: all 0.3s ease; }
+  </style>
+</head>
+<body>
+<div id="sidebarContainer"></div>
+<div id="topbarContainer"></div>
+
+<div class="main-content">
+  <h1 class="text-2xl font-bold text-primary mb-4">Relatório Mensal</h1>
+
+  <div class="bg-white rounded-lg shadow p-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 fade-in">
+    <div class="w-full sm:w-auto">
+      <label class="block text-sm font-medium text-primary mb-1">Período</label>
+      <div class="flex items-center space-x-2">
+        <input type="date" id="startDate" class="form-control w-auto">
+        <span class="text-primary">a</span>
+        <input type="date" id="endDate" class="form-control w-auto">
+      </div>
+    </div>
+    <div class="w-full sm:w-48">
+      <label class="block text-sm font-medium text-primary mb-1">Tipo</label>
+      <select id="reportType" class="form-select">
+        <option value="sales">Vendas</option>
+        <option value="payments">Pagamentos</option>
+      </select>
+    </div>
+    <button id="applyFilterBtn" class="btn btn-primary mt-4 sm:mt-0">Aplicar</button>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white p-4 rounded-lg shadow card-hover fade-in border-l-4 border-primary">
+      <p class="text-sm text-primary">Total Vendas</p>
+      <p class="text-2xl font-bold text-primary" id="card1Value">R$ 0,00</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow card-hover fade-in border-l-4 border-accent">
+      <p class="text-sm text-accent">Pagamentos</p>
+      <p class="text-2xl font-bold text-accent" id="card2Value">R$ 0,00</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow card-hover fade-in border-l-4 border-warning">
+      <p class="text-sm text-warning">Clientes Ativos</p>
+      <p class="text-2xl font-bold text-warning" id="card3Value">0</p>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow card-hover fade-in border-l-4 border-danger">
+      <p class="text-sm text-danger">Fiados Pendentes</p>
+      <p class="text-2xl font-bold text-danger" id="card4Value">R$ 0,00</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white rounded-lg shadow p-4 fade-in">
+      <h2 class="text-lg font-semibold text-primary mb-4">Vendas ao longo do tempo (Mensal)</h2>
+      <div class="h-64"><canvas id="chartSales"></canvas></div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 fade-in">
+      <h2 class="text-lg font-semibold text-primary mb-4">Pagamentos por método</h2>
+      <div class="h-64"><canvas id="chartPayments"></canvas></div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow p-4 fade-in mb-8">
+    <h2 class="text-lg font-semibold text-primary mb-4">Detalhes das Vendas Recentes (Mensal)</h2>
+    <div class="overflow-x-auto">
+      <table class="table table-hover w-full">
+        <thead class="table-light">
+        <tr>
+          <th class="px-4 py-2">Data</th>
+          <th class="px-4 py-2">Cliente</th>
+          <th class="px-4 py-2">Valor</th>
+          <th class="px-4 py-2">Status</th>
+          <th class="px-4 py-2">Ações</th>
+        </tr>
+        </thead>
+        <tbody id="tabelaVendasBody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <hr class="my-8 border-t-2 border-blue-200" />
+
+  <h1 class="text-2xl font-bold text-primary mb-4">Relatório Semanal Resumido</h1>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div class="bg-white p-4 rounded-lg shadow border-l-4 border-primary">
+      <p class="text-sm text-primary">Total Vendas</p>
+      <h3 class="fw-bold text-primary mb-0" id="weeklySalesTotal">R$ 0,00</h3>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow border-l-4 border-accent">
+      <p class="text-sm text-accent">Total Pagamentos</p>
+      <h3 class="fw-bold text-accent mb-0" id="weeklyPaymentsTotal">R$ 0,00</h3>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-400">
+      <p class="text-sm text-yellow-600">Clientes Ativos</p>
+      <h3 class="fw-bold text-yellow-600 mb-0" id="weeklyClientsActive">0</h3>
+    </div>
+    <div class="bg-white p-4 rounded-lg shadow border-l-4 border-red-600">
+      <p class="text-sm text-red-600">Inadimplência</p>
+      <h3 class="fw-bold text-red-600 mb-0" id="weeklyInadimplencia">0%</h3>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4">
+      <h2 class="text-lg font-semibold text-primary mb-4">Vendas por Semana</h2>
+      <div style="height: 300px;"><canvas id="salesChartWeekly"></canvas></div>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+      <h2 class="text-lg font-semibold text-primary mb-4">Pagamentos por Semana</h2>
+      <div style="height: 300px;"><canvas id="paymentsChartWeekly"></canvas></div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow p-4 mb-6">
+    <h2 class="text-lg font-semibold text-primary mb-4">Detalhamento Semanal</h2>
+    <table class="min-w-full divide-y divide-gray-200 table">
+      <thead class="bg-gray-100">
+      <tr>
+        <th>Semana</th>
+        <th>Vendas (R$)</th>
+        <th>Pagamentos (R$)</th>
+        <th>Inadimplência (%)</th>
+      </tr>
+      </thead>
+      <tbody id="weeklyDetailsBody">
+      </tbody>
+    </table>
+  </div>
+
+</div>
+>>>>>>> master
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="../js/app.js"></script>
     <script src="../js/api-service.js"></script>
     <script src="../js/relatorios.js"></script>
 
+<<<<<<< HEAD
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         var tooltipTriggerList = [].slice.call(
@@ -563,3 +709,7 @@
     </script>
   </body>
 </html>
+=======
+</body>
+</html>
+>>>>>>> master

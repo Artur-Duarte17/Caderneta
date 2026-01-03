@@ -161,7 +161,7 @@ class DashboardManager {
     const verTodasBtn = document.getElementById("verTodasVendasBtn");
     if (verTodasBtn) {
       verTodasBtn.addEventListener("click", () => {
-        window.location.href = "Paginas/Vendas.html";
+        window.location.href = "Paginas/vendas.html";
       });
     }
 
@@ -170,7 +170,7 @@ class DashboardManager {
       btn.addEventListener("click", (e) => {
         const id = btn.dataset.saleId;
         // Navega para a página de vendas — o usuário pode então buscar a venda
-        window.location.href = "Paginas/Vendas.html";
+        window.location.href = "Paginas/vendas.html";
       });
     });
   }
