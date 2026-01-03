@@ -10,15 +10,20 @@ class NotificacoesManager {
   async init() {
     await this.carregarNotificacoes();
     this.setupEventListeners();
+    this.setupNotificacaoListeners();
   }
 
   async carregarNotificacoes() {
     try {
       const dados = await apiService.getNotificacoes();
 
+<<<<<<< HEAD
+      this.notificacoes = dados.map((n) => {
+=======
       // MAPEAMENTO: Backend (Java) -> Frontend (Visual)
       this.notificacoes = dados.map(n => {
         // Define o visual e o tipo de filtro baseado no dado do banco
+>>>>>>> master
         const visual = this.definirVisual(n.tipoNotificacao);
 
         return {
@@ -26,6 +31,13 @@ class NotificacoesManager {
           mensagem: n.mensagem,
           dataHora: n.dataEnvio,
           lida: n.lida,
+<<<<<<< HEAD
+          titulo: visual.titulo,
+          tipoFiltro: visual.tipoFiltro,
+          icone: visual.icone,
+          corIcone: visual.corIcone,
+          badgeHTML: visual.badgeHTML,
+=======
 
           // Dados Visuais mapeados
           titulo: visual.titulo,
@@ -33,6 +45,7 @@ class NotificacoesManager {
           icone: visual.icone,
           corIcone: visual.corIcone,
           badgeHTML: visual.badgeHTML
+>>>>>>> master
         };
       });
 
@@ -40,7 +53,10 @@ class NotificacoesManager {
       this.notificacoesFiltradas = [...this.notificacoes];
       this.renderizar();
       this.atualizarBadge();
+<<<<<<< HEAD
+=======
 
+>>>>>>> master
     } catch (error) {
       console.error("Erro:", error);
       this.renderizarErro();
@@ -48,6 +64,22 @@ class NotificacoesManager {
   }
 
   setupEventListeners() {
+<<<<<<< HEAD
+    const btnAplicar = document.getElementById("btnAplicar");
+    if (btnAplicar) {
+      btnAplicar.addEventListener("click", () => this.aplicarFiltros());
+    }
+
+    const btnTodas = document.getElementById("markAllRead");
+    if (btnTodas) {
+      btnTodas.addEventListener("click", () => this.marcarTodasLidas());
+    }
+
+    const container = document.querySelector(".notification-timeline");
+    if (container) {
+      container.addEventListener("click", (e) => {
+        const btn = e.target.closest(".mark-read-btn");
+=======
     // 1. Botão APLICAR (Obrigatório clicar para filtrar)
     const btnAplicar = document.getElementById('btnAplicar');
     if (btnAplicar) {
@@ -65,11 +97,51 @@ class NotificacoesManager {
     if (container) {
       container.addEventListener('click', (e) => {
         const btn = e.target.closest('.mark-read-btn');
+>>>>>>> master
         if (btn) {
           this.marcarUmaLida(btn.dataset.id);
         }
       });
     }
+<<<<<<< HEAD
+  }
+
+  setupNotificacaoListeners() {
+    window.addEventListener("novaNotificacao", (e) => {
+      this.adicionarNotificacao(e.detail);
+    });
+  }
+
+  aplicarFiltros() {
+    const tipo = document.getElementById("filtroTipo").value;
+    const status = document.getElementById("filtroStatus").value;
+    const periodo = document.getElementById("filtroPeriodo").value;
+
+    let lista = [...this.notificacoes];
+
+    if (tipo && tipo !== "") {
+      lista = lista.filter((n) => n.tipoFiltro === tipo);
+    }
+
+    if (status && status !== "") {
+      const deveEstarLida = status === "read";
+      lista = lista.filter((n) => n.lida === deveEstarLida);
+    }
+
+    if (periodo && periodo !== "") {
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+
+      lista = lista.filter((n) => {
+        const d = new Date(n.dataHora);
+        d.setHours(0, 0, 0, 0);
+        const diffMs = hoje - d;
+        const diffDias = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+        if (periodo === "today") return diffDias === 0;
+        if (periodo === "week") return diffDias <= 7 && diffDias >= 0;
+        if (periodo === "month") return diffDias <= 30 && diffDias >= 0;
+=======
   }
 
   aplicarFiltros() {
@@ -104,11 +176,15 @@ class NotificacoesManager {
         if (periodo === 'today') return diffDias === 0;
         if (periodo === 'week') return diffDias <= 7 && diffDias >= 0;
         if (periodo === 'month') return diffDias <= 30 && diffDias >= 0;
+>>>>>>> master
         return true;
       });
     }
 
+<<<<<<< HEAD
+=======
     // Ordenar: Mais recente primeiro
+>>>>>>> master
     lista.sort((a, b) => new Date(b.dataHora) - new Date(a.dataHora));
 
     this.notificacoesFiltradas = lista;
@@ -116,7 +192,11 @@ class NotificacoesManager {
   }
 
   renderizar() {
+<<<<<<< HEAD
+    const container = document.querySelector(".notification-timeline");
+=======
     const container = document.querySelector('.notification-timeline');
+>>>>>>> master
 
     if (!this.notificacoesFiltradas.length) {
       container.innerHTML = `
@@ -127,27 +207,186 @@ class NotificacoesManager {
       return;
     }
 
+<<<<<<< HEAD
+    container.innerHTML = this.notificacoesFiltradas
+      .map(
+        (n) => `
+            <div class="card border-0 bg-white p-4 mb-3 shadow-sm fade-in ${
+              n.lida ? "opacity-50 bg-light" : ""
+            }">
+                <div class="d-flex align-items-start">
+                    <div class="me-3 mt-1">
+                        <span class="material-icons ${n.corIcone} fs-4">${
+          n.icone
+        }</span>
+=======
     container.innerHTML = this.notificacoesFiltradas.map(n => `
             <div class="card border-0 bg-white p-4 mb-3 shadow-sm fade-in ${n.lida ? 'opacity-50 bg-light' : ''}">
                 <div class="d-flex align-items-start">
                     <div class="me-3 mt-1">
                         <span class="material-icons ${n.corIcone} fs-4">${n.icone}</span>
+>>>>>>> master
                     </div>
                     <div class="flex-grow-1">
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <h6 class="mb-0 fw-bold text-dark">${n.titulo}</h6>
+<<<<<<< HEAD
+                            <small class="text-muted" style="font-size:0.8rem">${this.getTempoRelativo(
+                              n.dataHora
+                            )}</small>
+=======
                             <small class="text-muted" style="font-size:0.8rem">${this.getTempoRelativo(n.dataHora)}</small>
+>>>>>>> master
                         </div>
                         <p class="mb-2 text-secondary small">${n.mensagem}</p>
                         <div class="d-flex justify-content-between align-items-center">
                             ${n.badgeHTML}
+<<<<<<< HEAD
+                            ${
+                              !n.lida
+                                ? `<button class="btn btn-outline-primary btn-sm mark-read-btn" data-id="${n.id}" style="font-size: 0.8rem;">Marcar lida</button>`
+                                : '<span class="text-success small fw-bold"><i class="material-icons align-middle" style="font-size:16px">check_circle</i> Lida</span>'
+                            }
+=======
                             ${!n.lida
         ? `<button class="btn btn-outline-primary btn-sm mark-read-btn" data-id="${n.id}" style="font-size: 0.8rem;">Marcar lida</button>`
         : '<span class="text-success small fw-bold"><i class="material-icons align-middle" style="font-size:16px">check_circle</i> Lida</span>'}
+>>>>>>> master
                         </div>
                     </div>
                 </div>
             </div>
+<<<<<<< HEAD
+        `
+      )
+      .join("");
+  }
+
+  definirVisual(tipoBackend) {
+    if (
+      [
+        "PAGAMENTO_RECEBIDO",
+        "CONFIRMACAO_PAGAMENTO",
+        "LEMBRETE_PAGAMENTO",
+      ].includes(tipoBackend)
+    ) {
+      return {
+        tipoFiltro: "payment",
+        titulo: "Pagamento Recebido",
+        icone: "payments",
+        corIcone: "text-primary",
+        badgeHTML: '<span class="badge bg-success">Concluído</span>',
+      };
+    }
+    if ([
+      "LEMBRETE_VENCIMENTO",
+      "AVISO_DIVIDA_VENCIDA",
+    ].includes(tipoBackend)) {
+      const isAtrasado = tipoBackend === "AVISO_DIVIDA_VENCIDA";
+      return {
+        tipoFiltro: "due",
+        titulo: isAtrasado ? "Conta Vencida" : "Vencimento Próximo",
+        icone: isAtrasado ? "error" : "notifications_active",
+        corIcone: isAtrasado ? "text-danger" : "text-warning",
+        badgeHTML: isAtrasado
+          ? '<span class="badge bg-danger">Vencido</span>'
+          : '<span class="badge bg-warning text-dark">Atenção</span>',
+      };
+    }
+    if (tipoBackend === "NOVA_VENDA") {
+      return {
+        tipoFiltro: "system",
+        titulo: "Nova Venda",
+        icone: "shopping_cart",
+        corIcone: "text-success",
+        badgeHTML: '<span class="badge bg-success">Nova</span>',
+      };
+    }
+    if (tipoBackend === "NOVO_CLIENTE") {
+      return {
+        tipoFiltro: "system",
+        titulo: "Novo Cliente",
+        icone: "person_add",
+        corIcone: "text-info",
+        badgeHTML: '<span class="badge bg-info text-dark">Novo</span>',
+      };
+    }
+    return {
+      tipoFiltro: "system",
+      titulo: "Sistema",
+      icone: "info",
+      corIcone: "text-info",
+      badgeHTML: '<span class="badge bg-info text-dark">Info</span>',
+    };
+  }
+
+  adicionarNotificacao(notificacao) {
+    const visual = this.definirVisual(notificacao.tipoNotificacao);
+    const novaNotificacao = {
+      id: Date.now(),
+      mensagem: notificacao.mensagem,
+      dataHora: notificacao.dataEnvio,
+      lida: notificacao.lida,
+      titulo: visual.titulo,
+      tipoFiltro: visual.tipoFiltro,
+      icone: visual.icone,
+      corIcone: visual.corIcone,
+      badgeHTML: visual.badgeHTML,
+    };
+    this.notificacoes.unshift(novaNotificacao);
+    this.aplicarFiltros();
+    this.atualizarBadge();
+  }
+
+  async marcarUmaLida(id) {
+    const item = this.notificacoes.find((n) => n.id == id);
+    if (item) {
+      item.lida = true;
+      this.aplicarFiltros();
+      this.atualizarBadge();
+      try {
+        await apiService.marcarNotificacaoComoLida(id);
+      } catch (e) {}
+    }
+  }
+
+  async marcarTodasLidas() {
+    this.notificacoes.forEach((n) => (n.lida = true));
+    this.renderizar();
+    this.atualizarBadge();
+    try {
+      await apiService.request("/notificacoes/marcar-todas-lidas", {
+        method: "PATCH",
+      });
+    } catch (e) {}
+  }
+
+  getTempoRelativo(dataISO) {
+    if (!dataISO) return "";
+    const diff = (new Date() - new Date(dataISO)) / 1000;
+    if (diff < 60) return "agora";
+    if (diff < 3600) return `há ${Math.floor(diff / 60)} min`;
+    if (diff < 86400) return `há ${Math.floor(diff / 3600)} h`;
+    return new Date(dataISO).toLocaleDateString("pt-BR");
+  }
+
+  atualizarBadge() {
+    const count = this.notificacoes.filter((n) => !n.lida).length;
+    const badge = document.getElementById("notificationBadge");
+    if (badge) {
+      badge.textContent = count;
+      badge.style.display = count > 0 ? "inline-block" : "none";
+    }
+  }
+
+  renderizarErro() {
+    document.querySelector(".notification-timeline").innerHTML =
+      '<div class="alert alert-danger text-center">Erro ao carregar dados.</div>';
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => new NotificacoesManager());
+=======
         `).join('');
   }
 
@@ -225,3 +464,4 @@ class NotificacoesManager {
 }
 
 document.addEventListener('DOMContentLoaded', () => new NotificacoesManager());
+>>>>>>> master

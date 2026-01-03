@@ -22,7 +22,6 @@ class VendasManager {
         apiService.getDividas(),
       ]);
 
-      // Mapear status da dívida (se houver) para cada venda para uso no frontend
       this.vendas = (vendasData || []).map((venda) => {
         const divida = (dividasData || []).find((d) => d.id === venda.dividaId);
         const statusDivida = divida ? divida.statusDivida : null;
@@ -62,7 +61,6 @@ class VendasManager {
   }
 
   setupEventListeners() {
-    // Busca
     const searchInput = document.getElementById("clienteFilter");
     if (searchInput) {
       searchInput.addEventListener("input", (e) =>
@@ -70,7 +68,6 @@ class VendasManager {
       );
     }
 
-    // Filtros
     const statusFilter = document.getElementById("statusFilter");
     const periodoFilter = document.getElementById("periodoFilter");
 
@@ -82,25 +79,21 @@ class VendasManager {
       periodoFilter.addEventListener("change", () => this.aplicarFiltros());
     }
 
-    // Formulário nova venda
     const novaVendaForm = document.querySelector("#newSaleOffcanvas form");
     if (novaVendaForm) {
       novaVendaForm.addEventListener("submit", (e) => this.criarVenda(e));
     }
 
-    // Botão adicionar item
     const addItemBtn = document.getElementById("addItemBtn");
     if (addItemBtn) {
       addItemBtn.addEventListener("click", () => this.adicionarItem());
     }
 
-    // Botão salvar edição
     const saveSaleBtn = document.getElementById("saveSaleBtn");
     if (saveSaleBtn) {
       saveSaleBtn.addEventListener("click", () => this.salvarEdicaoVenda());
     }
 
-    // Carregar clientes no select
     this.carregarClientesSelect();
   }
 
@@ -142,13 +135,11 @@ class VendasManager {
   aplicarFiltros() {
     let vendas = [...this.vendasFiltradas];
 
-    // Filtro por status
     const statusFilter = document.getElementById("statusFilter");
     if (statusFilter && statusFilter.value) {
       vendas = vendas.filter((venda) => venda.status === statusFilter.value);
     }
 
-    // Filtro por período
     const periodoFilter = document.getElementById("periodoFilter");
     if (periodoFilter && periodoFilter.value) {
       const hoje = new Date();
@@ -248,7 +239,6 @@ class VendasManager {
   }
 
   setupCardEventListeners() {
-    // Botões de visualizar
     document.querySelectorAll(".view-sale-btn").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         try {
@@ -263,7 +253,6 @@ class VendasManager {
       });
     });
 
-    // Botões de editar
     document.querySelectorAll(".edit-sale-btn").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         try {
@@ -283,7 +272,6 @@ class VendasManager {
     try {
       const venda = await apiService.getVendaById(vendaId);
 
-      // Se a venda tiver referência à dívida, buscar o status atualizado
       if (venda && venda.dividaId) {
         try {
           const divida = await apiService.getDividaById(venda.dividaId);
@@ -329,7 +317,6 @@ class VendasManager {
         ? `badge ${this.getStatusClass(venda.status)}`
         : "badge bg-secondary text-dark";
 
-    // Renderizar itens
     const itemsContainer = document.getElementById("viewSaleItems");
     if (venda.itens && venda.itens.length > 0) {
       itemsContainer.innerHTML = venda.itens
@@ -384,7 +371,6 @@ class VendasManager {
       : "";
     document.getElementById("editSaleValue").value = venda.valorTotal || 0;
 
-    // Preencher descrição com os itens
     if (venda.itens && venda.itens.length > 0) {
       const descricao = venda.itens
         .map(
@@ -430,7 +416,6 @@ class VendasManager {
       funcionarioId: 1,
     };
 
-    // Adicionar data se fornecida
     if (dataVenda) {
       dadosAtualizados.dataHora = dataVenda + "T00:00:00";
     }
@@ -450,7 +435,6 @@ class VendasManager {
       await this.carregarDados();
       this.renderizarVendas();
 
-      // Emitir evento para atualizar o dashboard
       window.dispatchEvent(new Event("vendaAtualizada"));
     } catch (error) {
       console.error("Erro ao atualizar venda:", error);
@@ -467,7 +451,6 @@ class VendasManager {
     const clienteId = document.getElementById("clienteSelect").value;
     const observacoes = document.getElementById("observacoes").value;
 
-    // Coletar itens
     const itens = this.coletarItens();
     if (itens.length === 0) {
       showToast("Adicione pelo menos um item à venda", "error");
@@ -476,13 +459,19 @@ class VendasManager {
 
     const dadosVenda = {
       clienteId: parseInt(clienteId),
-      funcionarioId: 1, // ID padrão do funcionário
+      funcionarioId: 1,
       itens: itens,
     };
 
     try {
       await apiService.createVenda(dadosVenda);
       showToast("Venda criada com sucesso!", "success");
+
+      const valorTotal = itens.reduce((sum, item) => sum + (item.quantidade * item.precoUnitario), 0);
+      console.log('Disparando evento vendaCriada:', { valor: valorTotal });
+      window.dispatchEvent(new CustomEvent('vendaCriada', {
+        detail: { valor: valorTotal }
+      }));
 
       const offcanvas = bootstrap.Offcanvas.getInstance(
         document.getElementById("newSaleOffcanvas")
@@ -494,9 +483,6 @@ class VendasManager {
 
       await this.carregarDados();
       this.renderizarVendas();
-
-      // Emitir evento para atualizar o dashboard
-      window.dispatchEvent(new Event("vendaCriada"));
     } catch (error) {
       console.error("Erro ao criar venda:", error);
       showToast("Erro ao criar venda: " + error.message, "error");
@@ -537,7 +523,6 @@ class VendasManager {
 
     itemsContainer.insertAdjacentHTML("beforeend", itemHtml);
 
-    // Adicionar event listener para remover item
     const removeBtn =
       itemsContainer.lastElementChild.querySelector(".remove-item-btn");
     removeBtn.addEventListener("click", (e) => {
@@ -642,9 +627,7 @@ class VendasManager {
   }
 }
 
-// Inicializar quando o DOM estiver carregado
 document.addEventListener("DOMContentLoaded", function () {
-  // Aguardar o carregamento do app.js e componentes
   setTimeout(() => {
     new VendasManager();
   }, 100);

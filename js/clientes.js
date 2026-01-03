@@ -26,25 +26,21 @@ class ClientesManager {
     }
 
     setupEventListeners() {
-        // Busca
         const searchInput = document.querySelector('input[placeholder="Buscar por nome ou telefone"]');
         if (searchInput) {
             searchInput.addEventListener('input', (e) => this.filtrarClientes(e.target.value));
         }
 
-        // Formulário novo cliente
         const novoClienteForm = document.querySelector('#newClientOffcanvas form');
         if (novoClienteForm) {
             novoClienteForm.addEventListener('submit', (e) => this.criarCliente(e));
         }
 
-        // Toggle fiador
         const hasGuarantor = document.getElementById('hasGuarantor');
         if (hasGuarantor) {
             hasGuarantor.addEventListener('change', this.toggleFiadorFields);
         }
 
-        // Botão salvar edição
         const saveClientBtn = document.getElementById('saveClientBtn');
         if (saveClientBtn) {
             saveClientBtn.addEventListener('click', () => this.salvarEdicaoCliente());
@@ -127,12 +123,10 @@ class ClientesManager {
     }
 
     setupCardEventListeners() {
-        // Botões de visualizar
         document.querySelectorAll('.view-client-btn').forEach(btn => {
             btn.addEventListener('click', (e) => this.visualizarCliente(e.target.dataset.clientId));
         });
 
-        // Botões de editar
         document.querySelectorAll('.edit-client-btn').forEach(btn => {
             btn.addEventListener('click', (e) => this.editarCliente(e.target.dataset.clientId));
         });
@@ -241,7 +235,6 @@ class ClientesManager {
             prazoPagamentoPadraoDias: 30
         };
 
-        // Dados do fiador se incluído
         const hasGuarantor = document.getElementById('hasGuarantor').checked;
         let fiadorData = null;
         
@@ -260,13 +253,17 @@ class ClientesManager {
         try {
             const novoCliente = await apiService.createCliente(dadosCliente);
             
-            // Criar fiador se necessário
             if (fiadorData && fiadorData.nome) {
                 fiadorData.clienteId = novoCliente.id;
                 await apiService.createFiador(fiadorData);
             }
 
             showToast('Cliente criado com sucesso!', 'success');
+            
+            console.log('Disparando evento clienteCriado:', { nome: novoCliente.nome, id: novoCliente.id });
+            window.dispatchEvent(new CustomEvent('clienteCriado', {
+              detail: { nome: novoCliente.nome, id: novoCliente.id }
+            }));
             
             const offcanvas = bootstrap.Offcanvas.getInstance(document.getElementById('newClientOffcanvas'));
             offcanvas.hide();
@@ -340,9 +337,7 @@ class ClientesManager {
     }
 }
 
-// Inicializar quando o DOM estiver carregado
 document.addEventListener('DOMContentLoaded', function() {
-    // Aguardar o carregamento do app.js e componentes
     setTimeout(() => {
         new ClientesManager();
     }, 100);
