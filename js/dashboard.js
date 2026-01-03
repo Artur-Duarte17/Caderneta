@@ -161,7 +161,7 @@ class DashboardManager {
     const verTodasBtn = document.getElementById("verTodasVendasBtn");
     if (verTodasBtn) {
       verTodasBtn.addEventListener("click", () => {
-        window.location.href = "Paginas/vendas.html";
+        window.location.href = "Paginas/Vendas.html";
       });
     }
 
@@ -170,7 +170,7 @@ class DashboardManager {
       btn.addEventListener("click", (e) => {
         const id = btn.dataset.saleId;
         // Navega para a página de vendas — o usuário pode então buscar a venda
-        window.location.href = "Paginas/vendas.html";
+        window.location.href = "Paginas/Vendas.html";
       });
     });
   }
@@ -213,7 +213,10 @@ class DashboardManager {
 
   calcularSaldoPendente() {
     if (!this.dividas) return 0;
-    return this.dividas.reduce((total, divida) => total + (parseFloat(divida.valorPendente) || 0), 0);
+    return this.dividas.reduce(
+      (total, divida) => total + (parseFloat(divida.valorPendente) || 0),
+      0
+    );
   }
 
   calcularVendasMes() {
@@ -229,7 +232,10 @@ class DashboardManager {
 
   calcularPagamentosRecebidos() {
     if (!this.dividas) return 0;
-    return this.dividas.reduce((total, divida) => total + (parseFloat(divida.valorPago) || 0), 0);
+    return this.dividas.reduce(
+      (total, divida) => total + (parseFloat(divida.valorPago) || 0),
+      0
+    );
   }
 
   calcularDiasAtraso(dataVencimento) {
