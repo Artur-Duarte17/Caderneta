@@ -1,261 +1,352 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Clientes - Vendas a Prazo</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="../theme.css" rel="stylesheet">
+    <link href="../theme.css" rel="stylesheet" />
 
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 
-<script src="../js/api-service.js"></script>
-<script src="../js/notificacoes-global.js"></script>
-</head>
-<body>
-<!-- Sidebar Container -->
-<div id="sidebarContainer"></div>
+    <script src="../js/api-service.js"></script>
+    <script src="../js/notificacoes-global.js"></script>
+  </head>
+  <body>
+    <!-- Sidebar Container -->
+    <div id="sidebarContainer"></div>
 
-<!-- Topbar Container -->
-<div id="topbarContainer"></div>
+    <!-- Topbar Container -->
+    <div id="topbarContainer"></div>
 
-
-
-<!-- Main Content -->
-<div class="main-content">
-    <!-- Título e Ações -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Título e Ações -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-semibold mb-0">Clientes</h4>
-        <button class="btn btn-accent d-flex align-items-center" data-bs-toggle="offcanvas" data-bs-target="#newClientOffcanvas">
-            <span class="material-icons me-2">add</span>
-            Novo Cliente
+        <button
+          class="btn btn-accent d-flex align-items-center"
+          data-bs-toggle="offcanvas"
+          data-bs-target="#newClientOffcanvas"
+        >
+          <span class="material-icons me-2">add</span>
+          Novo Cliente
         </button>
-    </div>
+      </div>
 
-    <!-- Campo de busca -->
-    <div class="mb-4">
+      <!-- Campo de busca -->
+      <div class="mb-4">
         <div class="input-group">
-            <span class="input-group-text bg-white"><span class="material-icons">search</span></span>
-            <input type="text" class="form-control" placeholder="Buscar por nome ou telefone">
+          <span class="input-group-text bg-white"
+            ><span class="material-icons">search</span></span
+          >
+          <input
+            type="text"
+            class="form-control"
+            placeholder="Buscar por nome ou telefone"
+          />
         </div>
-    </div>
+      </div>
 
-    <!-- Cards de clientes -->
-    <div class="row g-4">
+      <!-- Cards de clientes -->
+      <div class="row g-4">
         <!-- Os clientes serão carregados dinamicamente via JavaScript -->
         <div class="col-12 text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Carregando...</span>
-            </div>
-            <p class="mt-2 text-muted">Carregando clientes...</p>
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Carregando...</span>
+          </div>
+          <p class="mt-2 text-muted">Carregando clientes...</p>
         </div>
+      </div>
     </div>
-</div>
 
-<!-- Modal Ver Detalhes Cliente -->
-<div class="modal fade" id="viewClientModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <!-- Modal Ver Detalhes Cliente -->
+    <div class="modal fade" id="viewClientModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header modal-header-gradient">
-                <h5 class="modal-title text-white">Detalhes do Cliente</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row g-4">
-                    <div class="col-md-6">
-                        <div class="card border-0 bg-light p-3">
-                            <h6 class="text-muted mb-2">Informações Pessoais</h6>
-                            <div class="mb-2">
-                                <strong>Nome:</strong> <span id="viewClientName"></span>
-                            </div>
-                            <div class="mb-2">
-                                <strong>Telefone:</strong> <span id="viewClientPhone"></span>
-                            </div>
-                            <div class="mb-2">
-                                <strong>E-mail:</strong> <span id="viewClientEmail"></span>
-                            </div>
-                            <div class="mb-2">
-                                <strong>CPF/CNPJ:</strong> <span id="viewClientCpf"></span>
-                            </div>
-                            <div>
-                                <strong>Endereço:</strong> <span id="viewClientAddress"></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card border-0 bg-light p-3">
-                            <h6 class="text-muted mb-2">Situação Financeira</h6>
-                            <div class="mb-2">
-                                <strong>Limite de Crédito:</strong> R$ <span id="viewClientLimit"></span>
-                            </div>
-                            <div class="mb-2">
-                                <strong>Saldo Devedor:</strong> R$ <span id="viewClientDebt"></span>
-                            </div>
-                            <div class="mb-2">
-                                <strong>Status:</strong> <span id="viewClientStatus" class="badge"></span>
-                            </div>
-                            <div>
-                                <strong>Crédito Disponível:</strong> R$ <span id="viewClientAvailable"></span>
-                            </div>
-                        </div>
-                    </div>
+          <div class="modal-header modal-header-gradient">
+            <h5 class="modal-title text-white">Detalhes do Cliente</h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-4">
+              <div class="col-md-6">
+                <div class="card border-0 bg-light p-3">
+                  <h6 class="text-muted mb-2">Informações Pessoais</h6>
+                  <div class="mb-2">
+                    <strong>Nome:</strong> <span id="viewClientName"></span>
+                  </div>
+                  <div class="mb-2">
+                    <strong>Telefone:</strong>
+                    <span id="viewClientPhone"></span>
+                  </div>
+                  <div class="mb-2">
+                    <strong>E-mail:</strong> <span id="viewClientEmail"></span>
+                  </div>
+                  <div class="mb-2">
+                    <strong>CPF/CNPJ:</strong> <span id="viewClientCpf"></span>
+                  </div>
+                  <div>
+                    <strong>Endereço:</strong>
+                    <span id="viewClientAddress"></span>
+                  </div>
                 </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card border-0 bg-light p-3">
+                  <h6 class="text-muted mb-2">Situação Financeira</h6>
+                  <div class="mb-2">
+                    <strong>Limite de Crédito:</strong> R$
+                    <span id="viewClientLimit"></span>
+                  </div>
+                  <div class="mb-2">
+                    <strong>Saldo Devedor:</strong> R$
+                    <span id="viewClientDebt"></span>
+                  </div>
+                  <div class="mb-2">
+                    <strong>Status:</strong>
+                    <span id="viewClientStatus" class="badge"></span>
+                  </div>
+                  <div>
+                    <strong>Crédito Disponível:</strong> R$
+                    <span id="viewClientAvailable"></span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
-            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              data-bs-dismiss="modal"
+            >
+              Fechar
+            </button>
+          </div>
         </div>
+      </div>
     </div>
-</div>
 
-<!-- Modal Editar Cliente -->
-<div class="modal fade" id="editClientModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <!-- Modal Editar Cliente -->
+    <div class="modal fade" id="editClientModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header modal-header-gradient">
-                <h5 class="modal-title text-white">Editar Cliente</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editClientForm">
-                    <input type="hidden" id="editClientId">
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Nome Completo *</label>
-                        <input type="text" id="editClientName" class="form-control" required>
-                        <div class="invalid-feedback">Por favor, informe o nome</div>
-                    </div>
-                    
-                    <div class="row g-3 mb-3">
-                        <div class="col-6">
-                            <label class="form-label">Telefone *</label>
-                            <input type="tel" id="editClientPhone" class="form-control" required>
-                            <div class="invalid-feedback">Por favor, informe o telefone</div>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label">E-mail</label>
-                            <input type="email" id="editClientEmail" class="form-control">
-                        </div>
-                    </div>
-                    
-                    <div class="row g-3 mb-3">
-                        <div class="col-6">
-                            <label class="form-label">CPF/CNPJ</label>
-                            <input type="text" id="editClientCpf" class="form-control" readonly>
-                            <small class="text-muted">CPF não pode ser alterado</small>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label">Limite de Crédito</label>
-                            <div class="input-group">
-                                <span class="input-group-text">R$</span>
-                                <input type="number" id="editClientLimit" step="0.01" min="0" class="form-control">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Endereço</label>
-                        <textarea id="editClientAddress" class="form-control" rows="2"></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" id="saveClientBtn" class="btn btn-accent">Salvar Alterações</button>
-            </div>
-        </div>
-    </div>
-</div>
+          <div class="modal-header modal-header-gradient">
+            <h5 class="modal-title text-white">Editar Cliente</h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="editClientForm">
+              <input type="hidden" id="editClientId" />
 
-<!-- Offcanvas Novo Cliente -->
-<div class="offcanvas offcanvas-end" tabindex="-1" id="newClientOffcanvas">
-    <div class="offcanvas-header modal-header-gradient">
-        <h5 class="offcanvas-title text-white">Novo Cliente</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
-    </div>
-    <div class="offcanvas-body">
-        <form>
-            <div class="mb-3">
+              <div class="mb-3">
                 <label class="form-label">Nome Completo *</label>
-                <input type="text" name="nome" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Telefone *</label>
-                <input type="tel" name="telefone" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">E-mail</label>
-                <input type="email" name="email" class="form-control">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">CPF/CNPJ *</label>
-                <input type="text" name="cpf" class="form-control" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Endereço</label>
-                <textarea name="endereco" class="form-control" rows="2"></textarea>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Limite de Crédito</label>
-                <div class="input-group">
+                <input
+                  type="text"
+                  id="editClientName"
+                  class="form-control"
+                  required
+                />
+                <div class="invalid-feedback">Por favor, informe o nome</div>
+              </div>
+
+              <div class="row g-3 mb-3">
+                <div class="col-6">
+                  <label class="form-label">Telefone *</label>
+                  <input
+                    type="tel"
+                    id="editClientPhone"
+                    class="form-control"
+                    required
+                  />
+                  <div class="invalid-feedback">
+                    Por favor, informe o telefone
+                  </div>
+                </div>
+                <div class="col-6">
+                  <label class="form-label">E-mail</label>
+                  <input
+                    type="email"
+                    id="editClientEmail"
+                    class="form-control"
+                  />
+                </div>
+              </div>
+
+              <div class="row g-3 mb-3">
+                <div class="col-6">
+                  <label class="form-label">CPF/CNPJ</label>
+                  <input
+                    type="text"
+                    id="editClientCpf"
+                    class="form-control"
+                    readonly
+                  />
+                  <small class="text-muted">CPF não pode ser alterado</small>
+                </div>
+                <div class="col-6">
+                  <label class="form-label">Limite de Crédito</label>
+                  <div class="input-group">
                     <span class="input-group-text">R$</span>
-                    <input type="number" name="limite" step="0.01" min="0" class="form-control">
+                    <input
+                      type="number"
+                      id="editClientLimit"
+                      step="0.01"
+                      min="0"
+                      class="form-control"
+                    />
+                  </div>
                 </div>
-            </div>
-            
-            <!-- Seção Fiador -->
-            <div class="mb-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="mb-0">Fiador</h6>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="hasGuarantor">
-                        <label class="form-check-label" for="hasGuarantor">Incluir fiador?</label>
-                    </div>
-                </div>
-                
-                <div id="guarantorFields" class="d-none bg-light p-3 rounded">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Nome Completo</label>
-                            <input type="text" class="form-control">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Telefone</label>
-                            <input type="tel" class="form-control">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">E-mail</label>
-                            <input type="email" class="form-control">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">CPF/CNPJ</label>
-                            <input type="text" class="form-control">
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Endereço</label>
-                            <textarea class="form-control" rows="2"></textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="d-grid">
-                <button type="submit" class="btn btn-accent">Salvar Cliente</button>
-            </div>
-        </form>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Endereço</label>
+                <textarea
+                  id="editClientAddress"
+                  class="form-control"
+                  rows="2"
+                ></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancelar
+            </button>
+            <button type="button" id="saveClientBtn" class="btn btn-accent">
+              Salvar Alterações
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-</div>
 
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="../js/app.js"></script>
-<script src="../js/api-service.js"></script>
-<script src="../js/notificacoes-global.js"></script>
-<script src="../js/clientes.js"></script>
+    <!-- Offcanvas Novo Cliente -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="newClientOffcanvas">
+      <div class="offcanvas-header modal-header-gradient">
+        <h5 class="offcanvas-title text-white">Novo Cliente</h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="offcanvas"
+        ></button>
+      </div>
+      <div class="offcanvas-body">
+        <form>
+          <div class="mb-3">
+            <label class="form-label">Nome Completo *</label>
+            <input type="text" name="nome" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Telefone *</label>
+            <input type="tel" name="telefone" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">E-mail</label>
+            <input type="email" name="email" class="form-control" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">CPF/CNPJ *</label>
+            <input type="text" name="cpf" class="form-control" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Endereço</label>
+            <textarea name="endereco" class="form-control" rows="2"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Limite de Crédito</label>
+            <div class="input-group">
+              <span class="input-group-text">R$</span>
+              <input
+                type="number"
+                name="limite"
+                step="0.01"
+                min="0"
+                class="form-control"
+              />
+            </div>
+          </div>
 
-</body>
+          <!-- Seção Fiador -->
+          <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h6 class="mb-0">Fiador</h6>
+              <div class="form-check form-switch">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="hasGuarantor"
+                />
+                <label class="form-check-label" for="hasGuarantor"
+                  >Incluir fiador?</label
+                >
+              </div>
+            </div>
+
+            <div id="guarantorFields" class="d-none bg-light p-3 rounded">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Nome Completo</label>
+                  <input type="text" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Telefone</label>
+                  <input type="tel" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">E-mail</label>
+                  <input type="email" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">CPF/CNPJ</label>
+                  <input type="text" class="form-control" />
+                </div>
+                <div class="col-12">
+                  <label class="form-label">Endereço</label>
+                  <textarea class="form-control" rows="2"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-grid">
+            <button type="submit" class="btn btn-accent">Salvar Cliente</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/app.js"></script>
+    <script src="../js/api-service.js"></script>
+    <script src="../js/notificacoes-global.js"></script>
+    <script src="../js/clientes.js"></script>
+  </body>
 </html>

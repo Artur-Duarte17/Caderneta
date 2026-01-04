@@ -347,10 +347,14 @@ class PagamentosManager {
       this.renderizarDividas();
       this.atualizarEstatisticas();
 
-      console.log('Disparando evento pagamentoDividaRealizado:', { valor: valorPago });
-      window.dispatchEvent(new CustomEvent("pagamentoDividaRealizado", {
-        detail: { valor: valorPago }
-      }));
+      console.log("Disparando evento pagamentoDividaRealizado:", {
+        valor: valorPago,
+      });
+      window.dispatchEvent(
+        new CustomEvent("pagamentoDividaRealizado", {
+          detail: { valor: valorPago },
+        })
+      );
     } catch (error) {
       console.error("Erro ao registrar pagamento:", error);
       showToast("Erro ao registrar pagamento: " + error.message, "error");

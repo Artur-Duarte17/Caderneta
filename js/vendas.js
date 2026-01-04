@@ -467,11 +467,16 @@ class VendasManager {
       await apiService.createVenda(dadosVenda);
       showToast("Venda criada com sucesso!", "success");
 
-      const valorTotal = itens.reduce((sum, item) => sum + (item.quantidade * item.precoUnitario), 0);
-      console.log('Disparando evento vendaCriada:', { valor: valorTotal });
-      window.dispatchEvent(new CustomEvent('vendaCriada', {
-        detail: { valor: valorTotal }
-      }));
+      const valorTotal = itens.reduce(
+        (sum, item) => sum + item.quantidade * item.precoUnitario,
+        0
+      );
+      console.log("Disparando evento vendaCriada:", { valor: valorTotal });
+      window.dispatchEvent(
+        new CustomEvent("vendaCriada", {
+          detail: { valor: valorTotal },
+        })
+      );
 
       const offcanvas = bootstrap.Offcanvas.getInstance(
         document.getElementById("newSaleOffcanvas")

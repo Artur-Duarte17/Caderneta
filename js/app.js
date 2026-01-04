@@ -5,7 +5,7 @@ const pageConfig = {
   "index.html": { title: "Visão Geral", breadcrumb: "Visão Geral" },
   "clientes.html": { title: "Clientes", breadcrumb: "Clientes" },
   "vendas.html": { title: "Vendas", breadcrumb: "Vendas" },
-  "Pagamentos.html": { title: "Pagamentos", breadcrumb: "Pagamentos" },
+  "pagamentos.html": { title: "Pagamentos", breadcrumb: "Pagamentos" },
   "relatorios.html": { title: "Relatórios", breadcrumb: "Relatórios" },
   "notificacoes.html": { title: "Notificações", breadcrumb: "Notificações" },
 };
@@ -77,7 +77,7 @@ function setupMobileSidebar() {
       sidebarOverlay.classList.remove("show");
     });
 
-    // Fechar sidebar ao clicar em um link
+    // Fechar sidebar ao clicar em um link (mobile)
     sidebar.querySelectorAll("a").forEach((link) => {
       link.addEventListener("click", () => {
         if (window.innerWidth < 768) {
@@ -223,7 +223,7 @@ function ensurePaymentsMenuExists() {
     wrapper.className = "sidebar-item";
     wrapper.setAttribute("data-page", "pagamentos");
     const href = window.location.pathname.includes("/Paginas/")
-      ? "Pagamentos.html"
+      ? "pagamentos.html"
       : "Paginas/pagamentos.html";
     wrapper.innerHTML = `\n      <a href="${href}" class="text-white text-decoration-none d-flex align-items-center">\n        <span class="material-icons me-3">payment</span>\n        <span>Pagamentos</span>\n      </a>\n    `;
 
