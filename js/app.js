@@ -10,6 +10,41 @@ const pageConfig = {
   "notificacoes.html": { title: "Notificações", breadcrumb: "Notificações" },
 };
 
+// Regex que valida um telefone brasileiro já formatado: (99) 9999-9999 ou (99) 99999-9999
+const TELEFONE_REGEX = /^\(\d{2}\) \d{4,5}-\d{4}$/;
+
+// Formata uma string de telefone (com ou sem máscara) para (99) 99999-9999 / (99) 9999-9999
+function formatarTelefone(valor) {
+  if (!valor) return "";
+  const digitos = valor.replace(/\D/g, "").slice(0, 11);
+
+  if (digitos.length === 0) return "";
+
+  if (digitos.length <= 10) {
+    return digitos
+      .replace(/^(\d{2})(\d)/, "($1) $2")
+      .replace(/(\d{4})(\d)/, "$1-$2");
+  }
+
+  return digitos
+    .replace(/^(\d{2})(\d)/, "($1) $2")
+    .replace(/(\d{5})(\d)/, "$1-$2");
+}
+
+// Aplica a máscara de telefone em tempo real conforme o usuário digita
+function aplicarMascaraTelefone(input) {
+  if (!input) return;
+  input.setAttribute("maxlength", "15");
+  input.addEventListener("input", () => {
+    input.value = formatarTelefone(input.value);
+  });
+}
+
+// Expõe globalmente para uso nos scripts de cada página
+window.TELEFONE_REGEX = TELEFONE_REGEX;
+window.formatarTelefone = formatarTelefone;
+window.aplicarMascaraTelefone = aplicarMascaraTelefone;
+
 // Função para carregar componentes
 async function loadComponent(elementId, componentPath) {
   try {
@@ -202,6 +237,11 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Configurar validação de formulários
   setupFormValidation();
+
+  // Aplicar máscara de telefone em todos os campos "tel" da página
+  document
+    .querySelectorAll('input[type="tel"]')
+    .forEach((input) => aplicarMascaraTelefone(input));
 });
 
 // Exportar funções para uso global
