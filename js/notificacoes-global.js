@@ -100,12 +100,16 @@ class NotificacoesGlobal {
     return mapa[tipo] || "Notificação";
   }
 
-  atualizarBadge() {
+  atualizarBadge(tentativas = 0) {
     const badge = document.getElementById("notificationBadge");
     if (badge) {
       const count = this.notificacoes.filter((n) => !n.lida).length;
       badge.textContent = count > 99 ? "99+" : count;
       badge.style.display = count > 0 ? "inline-block" : "none";
+    } else if (tentativas < 20) {
+      // O sidebar (onde o badge vive) é injetado de forma assíncrona pelo app.js.
+      // Se ainda não existir no DOM, tenta de novo em vez de desistir silenciosamente.
+      setTimeout(() => this.atualizarBadge(tentativas + 1), 100);
     }
   }
 }
