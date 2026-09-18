@@ -76,10 +76,12 @@ class ClientesManager {
       this.clientesFiltrados = [...this.clientes];
     } else {
       const termoLower = termo.toLowerCase();
+      const termoDigitos = termo.replace(/\D/g, "");
       this.clientesFiltrados = this.clientes.filter(
         (cliente) =>
           cliente.nome.toLowerCase().includes(termoLower) ||
-          cliente.telefone.includes(termo)
+          (termoDigitos &&
+            (cliente.telefone || "").replace(/\D/g, "").includes(termoDigitos))
       );
     }
     this.renderizarClientes();
@@ -121,7 +123,8 @@ class ClientesManager {
                         <div>
                             <h5 class="mb-0">${cliente.nome}</h5>
                             <small class="text-muted">${
-                              cliente.telefone || "Sem telefone"
+                              formatarTelefone(cliente.telefone) ||
+                              "Sem telefone"
                             }</small>
                         </div>
                     </div>
@@ -188,7 +191,7 @@ class ClientesManager {
   preencherModalVisualizacao(cliente) {
     document.getElementById("viewClientName").textContent = cliente.nome;
     document.getElementById("viewClientPhone").textContent =
-      cliente.telefone || "Não informado";
+      formatarTelefone(cliente.telefone) || "Não informado";
     document.getElementById("viewClientEmail").textContent =
       cliente.email || "Não informado";
     document.getElementById("viewClientCpf").textContent =
@@ -231,7 +234,9 @@ class ClientesManager {
   preencherModalEdicao(cliente) {
     document.getElementById("editClientId").value = cliente.id;
     document.getElementById("editClientName").value = cliente.nome;
-    document.getElementById("editClientPhone").value = cliente.telefone || "";
+    document.getElementById("editClientPhone").value = formatarTelefone(
+      cliente.telefone
+    );
     document.getElementById("editClientEmail").value = cliente.email || "";
     document.getElementById("editClientCpf").value = cliente.cpf || "";
     document.getElementById("editClientAddress").value = cliente.endereco || "";
@@ -242,6 +247,13 @@ class ClientesManager {
   async salvarEdicaoCliente() {
     const form = document.getElementById("editClientForm");
     if (!this.validarFormulario(form)) return;
+
+    const telefoneInput = document.getElementById("editClientPhone");
+    if (!TELEFONE_REGEX.test(telefoneInput.value)) {
+      telefoneInput.classList.add("is-invalid");
+      showToast("Informe um telefone válido: (99) 99999-9999", "error");
+      return;
+    }
 
     const clienteId = document.getElementById("editClientId").value;
     const dadosCliente = {
@@ -277,6 +289,13 @@ class ClientesManager {
     const form = event.target;
     if (!this.validarFormulario(form)) return;
 
+    const telefoneInput = form.querySelector('input[name="telefone"]');
+    if (!TELEFONE_REGEX.test(telefoneInput.value)) {
+      telefoneInput.classList.add("is-invalid");
+      showToast("Informe um telefone válido: (99) 99999-9999", "error");
+      return;
+    }
+
     const formData = new FormData(form);
     const dadosCliente = {
       nome: form.querySelector('input[name="nome"]').value,
@@ -302,6 +321,15 @@ class ClientesManager {
         cpf: inputs[3].value || null,
         endereco: inputs[4].value || null,
       };
+
+      if (fiadorData.nome && !TELEFONE_REGEX.test(fiadorData.telefone)) {
+        inputs[1].classList.add("is-invalid");
+        showToast(
+          "Informe um telefone válido para o fiador: (99) 99999-9999",
+          "error"
+        );
+        return;
+      }
     }
 
     try {
