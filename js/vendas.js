@@ -119,7 +119,7 @@ class VendasManager {
         .map(
           (cliente) =>
             `<option value="${cliente.id}">${cliente.nome} - ${
-              cliente.telefone || "Sem telefone"
+              formatarTelefone(cliente.telefone) || "Sem telefone"
             }</option>`
         )
         .join("");
