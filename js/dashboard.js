@@ -182,7 +182,8 @@ class DashboardManager {
     const dividasVencidas = this.dividas
       .filter(
         (divida) =>
-          divida.status === "PENDENTE" &&
+          divida.statusDivida !== "PAGA_TOTALMENTE" &&
+          divida.statusDivida !== "CANCELADA" &&
           new Date(divida.dataVencimento) < new Date()
       )
       .slice(0, 3);
@@ -260,7 +261,11 @@ class DashboardManager {
         return "badge-paid";
       case "PENDENTE":
         return "badge-pending";
+      case "PARCIAL":
+        return "badge-partial";
       case "CANCELADO":
+        return "badge-danger";
+      case "VENCIDA":
         return "badge-danger";
       default:
         return "badge-partial";
@@ -273,8 +278,12 @@ class DashboardManager {
         return "Quitado";
       case "PENDENTE":
         return "Pendente";
+      case "PARCIAL":
+        return "Parcial";
       case "CANCELADO":
         return "Cancelado";
+      case "VENCIDA":
+        return "Vencida";
       default:
         return "Parcial";
     }
