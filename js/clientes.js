@@ -15,7 +15,16 @@ class ClientesManager {
 
   async carregarClientes() {
     try {
-      this.clientes = await apiService.getClientes();
+      const [clientes, dividas] = await Promise.all([
+        apiService.getClientes(),
+        apiService.getDividas(),
+      ]);
+
+      this.dividas = dividas || [];
+      this.clientes = (clientes || []).map((cliente) => ({
+        ...cliente,
+        saldoDevedor: this.calcularSaldoDevedor(cliente.id),
+      }));
       this.clientesFiltrados = [...this.clientes];
     } catch (error) {
       console.error("Erro ao carregar clientes:", error);
@@ -23,6 +32,17 @@ class ClientesManager {
       this.clientes = [];
       this.clientesFiltrados = [];
     }
+  }
+
+  calcularSaldoDevedor(clienteId) {
+    return this.dividas
+      .filter(
+        (divida) =>
+          divida.clienteId === clienteId &&
+          divida.statusDivida !== "PAGA_TOTALMENTE" &&
+          divida.statusDivida !== "CANCELADA"
+      )
+      .reduce((total, divida) => total + (parseFloat(divida.valorPendente) || 0), 0);
   }
 
   setupEventListeners() {
@@ -152,6 +172,7 @@ class ClientesManager {
   async visualizarCliente(clienteId) {
     try {
       const cliente = await apiService.getClienteById(clienteId);
+      cliente.saldoDevedor = this.calcularSaldoDevedor(cliente.id);
       this.preencherModalVisualizacao(cliente);
 
       const modal = new bootstrap.Modal(
