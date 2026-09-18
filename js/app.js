@@ -1,4 +1,4 @@
-// ===== APP.JS - Vendas a Prazo =====
+// ===== APP.JS - Caderneta =====
 
 // Configuração das páginas
 const pageConfig = {
