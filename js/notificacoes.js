@@ -33,6 +33,7 @@ class NotificacoesManager {
         };
       });
 
+      this.notificacoes.sort((a, b) => new Date(b.dataHora) - new Date(a.dataHora));
       this.notificacoesFiltradas = [...this.notificacoes];
       this.renderizar();
       this.atualizarBadge();
@@ -262,12 +263,15 @@ class NotificacoesManager {
     return new Date(dataISO).toLocaleDateString("pt-BR");
   }
 
-  atualizarBadge() {
+  atualizarBadge(tentativas = 0) {
     const count = this.notificacoes.filter((n) => !n.lida).length;
     const badge = document.getElementById("notificationBadge");
     if (badge) {
-      badge.textContent = count;
+      badge.textContent = count > 99 ? "99+" : count;
       badge.style.display = count > 0 ? "inline-block" : "none";
+    } else if (tentativas < 20) {
+      // O sidebar (onde o badge vive) é injetado de forma assíncrona pelo app.js.
+      setTimeout(() => this.atualizarBadge(tentativas + 1), 100);
     }
   }
 
