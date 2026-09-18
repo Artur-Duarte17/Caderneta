@@ -12,10 +12,68 @@ class RelatoriosManager {
   }
 
   async init() {
+    this.definirPeriodoPadraoMesAtual();
     await this.carregarDados();
     this.setupEventListeners();
-    this.renderizarRelatorios();
-    this.updateCharts();
+    await this.buscarRelatorioPorPeriodo({ mostrarToast: false });
+  }
+
+  formatarDataInput(data) {
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, "0");
+    const dia = String(data.getDate()).padStart(2, "0");
+    return `${ano}-${mes}-${dia}`;
+  }
+
+  definirPeriodoPadraoMesAtual() {
+    const hoje = new Date();
+    const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+
+    const startInput = document.getElementById("startDate");
+    const endInput = document.getElementById("endDate");
+    if (startInput) startInput.value = this.formatarDataInput(inicioMes);
+    if (endInput) endInput.value = this.formatarDataInput(fimMes);
+  }
+
+  async verAnoAteAgora() {
+    const hoje = new Date();
+    const inicioAno = new Date(hoje.getFullYear(), 0, 1);
+
+    const startInput = document.getElementById("startDate");
+    const endInput = document.getElementById("endDate");
+    if (startInput) startInput.value = this.formatarDataInput(inicioAno);
+    if (endInput) endInput.value = this.formatarDataInput(hoje);
+
+    await this.buscarRelatorioPorPeriodo({ mostrarToast: true });
+  }
+
+  atualizarTituloRelatorio(startDate, endDate) {
+    const titulo = document.getElementById("reportTitle");
+    if (!titulo) return;
+
+    const mesesNomes = [
+      "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+      "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+    ];
+
+    const inicio = new Date(startDate + "T00:00:00");
+    const fim = new Date(endDate + "T00:00:00");
+
+    const eMesCompleto =
+      inicio.getFullYear() === fim.getFullYear() &&
+      inicio.getMonth() === fim.getMonth() &&
+      inicio.getDate() === 1;
+
+    if (eMesCompleto) {
+      titulo.textContent = `Relatório Mensal - ${
+        mesesNomes[inicio.getMonth()]
+      } ${inicio.getFullYear()}`;
+    } else {
+      titulo.textContent = `Relatório - ${inicio.toLocaleDateString(
+        "pt-BR"
+      )} a ${fim.toLocaleDateString("pt-BR")}`;
+    }
   }
 
   async carregarDados() {
@@ -26,9 +84,22 @@ class RelatoriosManager {
         apiService.getClientes(),
       ]);
 
-      this.dadosVendas = vendas || [];
       this.dadosDividas = dividas || [];
-      this.clientes = clientes || [];
+
+      this.dadosVendas = (vendas || []).map((venda) => {
+        const divida = this.dadosDividas.find((d) => d.id === venda.dividaId);
+        return {
+          ...venda,
+          status: this.mapStatusDividaToVendaStatus(
+            divida ? divida.statusDivida : null
+          ),
+        };
+      });
+
+      this.clientes = (clientes || []).map((cliente) => ({
+        ...cliente,
+        saldoDevedor: this.calcularSaldoDevedor(cliente.id),
+      }));
 
       console.log("Dados carregados:", {
         vendas: this.dadosVendas.length,
@@ -41,10 +112,47 @@ class RelatoriosManager {
     }
   }
 
+  mapStatusDividaToVendaStatus(statusDivida) {
+    if (!statusDivida) return null;
+    switch (statusDivida) {
+      case "ABERTA":
+        return "PENDENTE";
+      case "PAGA_TOTALMENTE":
+        return "PAGO";
+      case "PAGA_PARCIALMENTE":
+        return "PARCIAL";
+      case "CANCELADA":
+        return "CANCELADO";
+      case "VENCIDA":
+        return "VENCIDA";
+      default:
+        return statusDivida;
+    }
+  }
+
+  calcularSaldoDevedor(clienteId) {
+    return this.dadosDividas
+      .filter(
+        (divida) =>
+          divida.clienteId === clienteId &&
+          divida.statusDivida !== "PAGA_TOTALMENTE" &&
+          divida.statusDivida !== "CANCELADA"
+      )
+      .reduce(
+        (total, divida) => total + (parseFloat(divida.valorPendente) || 0),
+        0
+      );
+  }
+
   setupEventListeners() {
     const aplicarBtn = document.getElementById("applyFilterBtn");
     if (aplicarBtn) {
       aplicarBtn.addEventListener("click", () => this.aplicarFiltros());
+    }
+
+    const ytdBtn = document.getElementById("viewYearToDateBtn");
+    if (ytdBtn) {
+      ytdBtn.addEventListener("click", () => this.verAnoAteAgora());
     }
 
     const exportBtn = document.getElementById("exportTableCsvBtn");
@@ -64,18 +172,23 @@ class RelatoriosManager {
 
     window.addEventListener("pagamentoDividaRealizado", () => {
       this.carregarDados().then(() => {
-        this.renderizarRelatorios();
-        this.updateCharts();
+        this.buscarRelatorioPorPeriodo({ mostrarToast: false });
       });
     });
   }
 
   async aplicarFiltros() {
+    await this.buscarRelatorioPorPeriodo({ mostrarToast: true });
+  }
+
+  async buscarRelatorioPorPeriodo({ mostrarToast }) {
     const startDate = document.getElementById("startDate").value;
     const endDate = document.getElementById("endDate").value;
 
     if (!startDate || !endDate) {
-      showToast("Por favor, selecione as datas de início e fim", "error");
+      if (mostrarToast) {
+        showToast("Por favor, selecione as datas de início e fim", "error");
+      }
       return;
     }
 
@@ -85,15 +198,36 @@ class RelatoriosManager {
         apiService.getRelatorioDividas(startDate, endDate),
       ]);
 
-      this.relatorioVendas = relatorioVendas;
+      const dividasFiltradas = relatorioDividas?.dividas || [];
+      this.relatorioVendas = relatorioVendas
+        ? {
+            ...relatorioVendas,
+            vendas: (relatorioVendas.vendas || []).map((venda) => {
+              const divida = dividasFiltradas.find(
+                (d) => d.id === venda.dividaId
+              );
+              return {
+                ...venda,
+                status: this.mapStatusDividaToVendaStatus(
+                  divida ? divida.statusDivida : null
+                ),
+              };
+            }),
+          }
+        : relatorioVendas;
       this.relatorioDividas = relatorioDividas;
 
+      this.atualizarTituloRelatorio(startDate, endDate);
       this.renderizarRelatorios();
       this.updateCharts();
-      showToast("Relatórios atualizados com sucesso!", "success");
+      if (mostrarToast) {
+        showToast("Relatórios atualizados com sucesso!", "success");
+      }
     } catch (error) {
       console.error("Erro ao aplicar filtros:", error);
-      showToast("Erro ao aplicar filtros", "error");
+      if (mostrarToast) {
+        showToast("Erro ao aplicar filtros", "error");
+      }
     }
   }
 
@@ -704,8 +838,12 @@ class RelatoriosManager {
         return "bg-green-100 text-green-800";
       case "PENDENTE":
         return "bg-red-100 text-red-800";
+      case "PARCIAL":
+        return "bg-yellow-100 text-yellow-800";
       case "CANCELADO":
         return "bg-gray-100 text-gray-800";
+      case "VENCIDA":
+        return "bg-red-100 text-red-800";
       default:
         return "bg-yellow-100 text-yellow-800";
     }
@@ -717,8 +855,12 @@ class RelatoriosManager {
         return "Pago";
       case "PENDENTE":
         return "Pendente";
+      case "PARCIAL":
+        return "Parcial";
       case "CANCELADO":
         return "Cancelado";
+      case "VENCIDA":
+        return "Vencida";
       default:
         return "Parcial";
     }
