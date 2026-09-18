@@ -811,7 +811,7 @@ class RelatoriosManager {
     const headers = ["Nome", "Telefone", "Email", "Saldo Devedor"];
     const rows = (this.clientes || []).map((cliente) => [
       cliente.nome,
-      cliente.telefone || "N/A",
+      formatarTelefone(cliente.telefone) || "N/A",
       cliente.email || "N/A",
       cliente.saldoDevedor || 0,
     ]);
