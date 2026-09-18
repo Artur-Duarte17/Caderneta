@@ -89,6 +89,18 @@ class VendasManager {
       addItemBtn.addEventListener("click", () => this.adicionarItem());
     }
 
+    const itemsContainer = document.getElementById("itemsContainer");
+    if (itemsContainer) {
+      itemsContainer.addEventListener("input", (e) => {
+        if (
+          e.target.classList.contains("item-quantidade") ||
+          e.target.classList.contains("item-valor")
+        ) {
+          this.atualizarValorTotalCalculado();
+        }
+      });
+    }
+
     const saveSaleBtn = document.getElementById("saveSaleBtn");
     if (saveSaleBtn) {
       saveSaleBtn.addEventListener("click", () => this.salvarEdicaoVenda());
@@ -533,7 +545,22 @@ class VendasManager {
     removeBtn.addEventListener("click", (e) => {
       e.target.closest(".item-row").remove();
       this.atualizarNumeracaoItens();
+      this.atualizarValorTotalCalculado();
     });
+
+    this.atualizarValorTotalCalculado();
+  }
+
+  atualizarValorTotalCalculado() {
+    const totalDisplay = document.getElementById("valorTotalCalculado");
+    if (!totalDisplay) return;
+
+    const total = this.coletarItens().reduce(
+      (soma, item) => soma + item.quantidade * item.precoUnitario,
+      0
+    );
+
+    totalDisplay.value = this.formatarMoeda(total);
   }
 
   atualizarNumeracaoItens() {
@@ -566,6 +593,7 @@ class VendasManager {
 
   limparItens() {
     document.getElementById("itemsContainer").innerHTML = "";
+    this.atualizarValorTotalCalculado();
   }
 
   validarFormularioVenda(form) {
