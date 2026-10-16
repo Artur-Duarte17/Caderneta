@@ -1,0 +1,5 @@
+build/
+.dart_tool/
+.idea/
+Documentação/
+pubspec.lock
