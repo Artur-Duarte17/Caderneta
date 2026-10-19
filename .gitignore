@@ -55,3 +55,8 @@ coverage/
 # Hosting/platform dirs
 .vercel/
 .netlify/
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins-dependencies
+*.iml
