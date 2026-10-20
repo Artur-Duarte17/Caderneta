@@ -2,6 +2,7 @@
 
 Interface web do sistema de vendas a prazo, escrita em Flutter (apenas web).
 
+
 ## Executar em desenvolvimento
 
 ```bash
