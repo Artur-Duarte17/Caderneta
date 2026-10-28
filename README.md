@@ -4,6 +4,7 @@ Interface do sistema de vendas a prazo, escrita em Flutter. O mesmo código roda
 navegador e como app Android; abaixo de 900 px de largura o layout muda para o de
 celular (barra de navegação inferior e formulários em tela cheia).
 
+
 ## Executar em desenvolvimento
 
 ```bash
