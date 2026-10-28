@@ -46,13 +46,13 @@ class _VendasPageState extends State<VendasPage> {
               subtitulo: '${lista.length} de ${s.vendas.length} venda(s) · ${moeda(lista.fold<double>(0, (t, v) => t + v.valorTotal))}',
               acoes: [
                 FilledButton.icon(
-                  onPressed: s.clientes.isEmpty ? null : () => _form(context, s, null),
+                  onPressed: s.clientes.isEmpty ? null : () => abrirFormVenda(context, s.clientes),
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Nova venda'),
+                  label: Text(isMobile(context) ? 'Nova' : 'Nova venda'),
                 ),
               ],
             ),
-            Wrap(spacing: Gap.md, runSpacing: Gap.md, children: [
+            Wrap(spacing: Gap.md, runSpacing: Gap.md - 4, children: [
               FilterField(width: 300, child: SearchField(hint: 'Buscar por cliente ou nº da venda', onChanged: (v) => setState(() => _busca = v))),
               FilterField(
                 child: Dropdown<Status?>(
@@ -66,18 +66,18 @@ class _VendasPageState extends State<VendasPage> {
                 child: Dropdown<int>(label: 'Período', value: _periodo, itens: periodos, onChanged: (v) => setState(() => _periodo = v)),
               ),
             ]),
-            const SizedBox(height: Gap.lg),
+            const SizedBox(height: Gap.md),
             if (lista.isEmpty)
               const EmptyState(icon: Icons.receipt_long, titulo: 'Nenhuma venda encontrada', mensagem: 'Ajuste os filtros ou registre uma nova venda.')
             else
-              ResponsiveGrid(minWidth: 300, children: [
+              ResponsiveGrid(minWidth: 280, spacing: Gap.md - 4, children: [
                 for (final v in lista)
                   _VendaCard(
                     venda: v,
                     cliente: s.nomeCliente(v.clienteId),
                     status: s.statusVenda(v),
                     onDetalhes: () => _detalhes(context, s, v),
-                    onEditar: () => _form(context, s, v),
+                    onEditar: () => abrirFormVenda(context, s.clientes, v),
                   ),
               ]),
           ]);
@@ -86,7 +86,7 @@ class _VendasPageState extends State<VendasPage> {
 
   void _detalhes(BuildContext context, Snapshot s, Venda v) {
     final d = s.divida(v.dividaId);
-    showAppDialog(context, titulo: 'Venda #${v.id}', width: 640, builder: (ctx, _) {
+    showAppDialog(context, titulo: 'Venda #${v.id}', width: 640, builder: (ctx) {
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Row(children: [Expanded(child: Text(s.nomeCliente(v.clienteId), style: Theme.of(ctx).textTheme.titleMedium)), StatusBadge(d?.status)]),
         const SizedBox(height: Gap.sm),
@@ -113,13 +113,16 @@ class _VendasPageState extends State<VendasPage> {
     });
   }
 
-  Future<void> _form(BuildContext context, Snapshot s, Venda? v) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => v == null ? _NovaVendaForm(clientes: s.clientes) : _EditarVendaForm(venda: v, clientes: s.clientes),
-    );
-    if (ok == true) NotificacoesService.instance.dadosAlterados();
-  }
+}
+
+/// Abre o formulário de nova venda, ou de edição quando [v] é informado.
+/// Usado também pela Visão Geral.
+Future<void> abrirFormVenda(BuildContext context, List<Cliente> clientes, [Venda? v]) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (_) => v == null ? _NovaVendaForm(clientes: clientes) : _EditarVendaForm(venda: v, clientes: clientes),
+  );
+  if (ok == true) NotificacoesService.instance.dadosAlterados();
 }
 
 class _VendaCard extends StatelessWidget {
@@ -132,7 +135,7 @@ class _VendaCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
         child: Padding(
-          padding: const EdgeInsets.all(Gap.md + 4),
+          padding: const EdgeInsets.all(Gap.md),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Expanded(
@@ -143,7 +146,7 @@ class _VendaCard extends StatelessWidget {
               ),
               StatusBadge(status),
             ]),
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.md - 4),
             Row(children: [
               const Icon(Icons.person_outline, size: 18, color: AppColors.muted),
               const SizedBox(width: Gap.sm),
@@ -151,7 +154,7 @@ class _VendaCard extends StatelessWidget {
             ]),
             const SizedBox(height: Gap.xs),
             Text(moeda(venda.valorTotal), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.primary)),
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.md - 4),
             const Spacer(),
             Row(children: [
               Expanded(child: OutlinedButton.icon(onPressed: onDetalhes, icon: const Icon(Icons.visibility_outlined, size: 18), label: const Text('Detalhes'))),
@@ -217,9 +220,9 @@ class _NovaVendaFormState extends State<_NovaVendaForm> {
   }
 
   Widget _item(int idx, _ItemCtrl i) => Container(
-        margin: const EdgeInsets.only(bottom: Gap.md),
-        padding: const EdgeInsets.all(Gap.md),
-        decoration: BoxDecoration(border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(8)),
+        margin: const EdgeInsets.only(bottom: Gap.md - 4),
+        padding: const EdgeInsets.fromLTRB(Gap.md - 4, Gap.xs, Gap.md - 4, Gap.md - 4),
+        decoration: BoxDecoration(color: AppColors.surface, border: Border.all(color: AppColors.border), borderRadius: BorderRadius.circular(8)),
         child: Column(children: [
           Row(children: [
             Text('Item ${idx + 1}', style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -265,14 +268,15 @@ class _NovaVendaFormState extends State<_NovaVendaForm> {
       );
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-        title: const Text('Nova venda a prazo'),
-        content: SizedBox(
-          width: 600,
-          child: Form(
-            key: _form,
-            child: SingleChildScrollView(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+  Widget build(BuildContext context) => AppFormDialog(
+        titulo: 'Nova venda a prazo',
+        width: 600,
+        busy: _salvando,
+        rodape: Text('Total: ${moeda(_total)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        acao: BusyButton(label: 'Registrar venda', busy: _salvando, onPressed: _salvar),
+        child: Form(
+          key: _form,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 _clienteSelect(widget.clientes, _cliente, (v) => setState(() => _cliente = v)),
                 const SizedBox(height: Gap.sm),
                 Text('O vencimento é calculado pelo prazo padrão do cliente.', style: Theme.of(context).textTheme.bodySmall),
@@ -287,16 +291,8 @@ class _NovaVendaFormState extends State<_NovaVendaForm> {
                     label: const Text('Adicionar item'),
                   ),
                 ),
-              ]),
-            ),
-          ),
+          ]),
         ),
-        actions: [
-          Text('Total: ${moeda(_total)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-          const SizedBox(width: Gap.md),
-          TextButton(onPressed: _salvando ? null : () => Navigator.pop(context), child: const Text('Cancelar')),
-          BusyButton(label: 'Registrar venda', busy: _salvando, onPressed: _salvar),
-        ],
       );
 }
 
@@ -331,11 +327,12 @@ class _EditarVendaFormState extends State<_EditarVendaForm> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-        title: Text('Editar venda #${widget.venda.id}'),
-        content: SizedBox(
-          width: 480,
-          child: Form(
+  Widget build(BuildContext context) => AppFormDialog(
+        titulo: 'Editar venda #${widget.venda.id}',
+        width: 480,
+        busy: _salvando,
+        acao: BusyButton(label: 'Salvar alterações', busy: _salvando, onPressed: _salvar),
+        child: Form(
             key: _form,
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               _clienteSelect(widget.clientes, _cliente, (v) => setState(() => _cliente = v)),
@@ -359,6 +356,7 @@ class _EditarVendaFormState extends State<_EditarVendaForm> {
               TextFormField(
                 controller: _valor,
                 decoration: const InputDecoration(labelText: 'Valor total *', prefixText: r'R$ '),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 validator: (v) => (parseValor(v ?? '') ?? 0) <= 0 ? 'Informe um valor válido' : null,
               ),
               if (widget.venda.itens.isNotEmpty) ...[
@@ -368,10 +366,5 @@ class _EditarVendaFormState extends State<_EditarVendaForm> {
               ],
             ]),
           ),
-        ),
-        actions: [
-          TextButton(onPressed: _salvando ? null : () => Navigator.pop(context), child: const Text('Cancelar')),
-          BusyButton(label: 'Salvar alterações', busy: _salvando, onPressed: _salvar),
-        ],
       );
 }

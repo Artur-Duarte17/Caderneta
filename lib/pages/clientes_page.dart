@@ -32,25 +32,25 @@ class _ClientesPageState extends State<ClientesPage> {
               subtitulo: '${s.clientes.length} cliente(s) cadastrado(s)',
               acoes: [
                 FilledButton.icon(
-                  onPressed: () => _abrirForm(context, null),
+                  onPressed: () => abrirFormCliente(context),
                   icon: const Icon(Icons.person_add_alt, size: 18),
-                  label: const Text('Novo cliente'),
+                  label: Text(isMobile(context) ? 'Novo' : 'Novo cliente'),
                 ),
               ],
             ),
             FilterField(width: 360, child: SearchField(hint: 'Buscar por nome ou telefone', onChanged: (v) => setState(() => _busca = v))),
-            const SizedBox(height: Gap.lg),
+            const SizedBox(height: Gap.md),
             if (lista.isEmpty)
               const EmptyState(icon: Icons.person_off_outlined, titulo: 'Nenhum cliente encontrado')
             else
-              ResponsiveGrid(minWidth: 300, children: [
+              ResponsiveGrid(minWidth: 280, spacing: Gap.md - 4, children: [
                 for (final c in lista)
                   _ClienteCard(
                     cliente: c,
                     saldo: s.saldoDevedor(c.id),
                     atraso: s.emAtraso(c.id),
                     onDetalhes: () => _detalhes(context, s, c),
-                    onEditar: () => _abrirForm(context, c),
+                    onEditar: () => abrirFormCliente(context, c),
                   ),
               ]),
           ]);
@@ -60,7 +60,7 @@ class _ClientesPageState extends State<ClientesPage> {
   void _detalhes(BuildContext context, Snapshot s, Cliente c) {
     final saldo = s.saldoDevedor(c.id);
     final disponivel = c.limiteCredito - saldo;
-    showAppDialog(context, titulo: 'Detalhes do cliente', builder: (ctx, _) {
+    showAppDialog(context, titulo: 'Detalhes do cliente', builder: (ctx) {
       return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Avatar(c.nome, size: 48),
@@ -84,10 +84,12 @@ class _ClientesPageState extends State<ClientesPage> {
     });
   }
 
-  Future<void> _abrirForm(BuildContext context, Cliente? c) async {
-    final ok = await showDialog<bool>(context: context, builder: (_) => _ClienteForm(cliente: c));
-    if (ok == true) NotificacoesService.instance.dadosAlterados();
-  }
+}
+
+/// Abre o formulário de cliente (novo quando [c] é nulo). Usado também pela Visão Geral.
+Future<void> abrirFormCliente(BuildContext context, [Cliente? c]) async {
+  final ok = await showDialog<bool>(context: context, builder: (_) => _ClienteForm(cliente: c));
+  if (ok == true) NotificacoesService.instance.dadosAlterados();
 }
 
 Widget _situacao(double saldo, bool atraso) {
@@ -106,7 +108,7 @@ class _ClienteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Card(
         child: Padding(
-          padding: const EdgeInsets.all(Gap.md + 4),
+          padding: const EdgeInsets.all(Gap.md),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Row(children: [
               Avatar(cliente.nome),
@@ -118,7 +120,7 @@ class _ClienteCard extends StatelessWidget {
                 ]),
               ),
             ]),
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.md - 4),
             Row(children: [
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -130,7 +132,7 @@ class _ClienteCard extends StatelessWidget {
               ),
               _situacao(saldo, atraso),
             ]),
-            const SizedBox(height: Gap.md),
+            const SizedBox(height: Gap.md - 4),
             const Spacer(),
             Row(children: [
               Expanded(child: OutlinedButton.icon(onPressed: onDetalhes, icon: const Icon(Icons.visibility_outlined, size: 18), label: const Text('Detalhes'))),
@@ -219,19 +221,19 @@ class _ClienteFormState extends State<_ClienteForm> {
       );
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-        title: Text(_editando ? 'Editar cliente' : 'Novo cliente'),
-        content: SizedBox(
-          width: 600,
-          child: Form(
-            key: _form,
-            child: SingleChildScrollView(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+  Widget build(BuildContext context) => AppFormDialog(
+        titulo: _editando ? 'Editar cliente' : 'Novo cliente',
+        width: 600,
+        busy: _salvando,
+        acao: BusyButton(label: _editando ? 'Salvar alterações' : 'Cadastrar', busy: _salvando, onPressed: _salvar),
+        child: Form(
+          key: _form,
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 const FormSection('Dados pessoais'),
                 _row([TextFormField(controller: _nome, decoration: const InputDecoration(labelText: 'Nome completo *'), validator: _obrigatorio)]),
                 _row([
-                  TextFormField(controller: _tel, decoration: const InputDecoration(labelText: 'Telefone *'), validator: _obrigatorio),
-                  TextFormField(controller: _email, decoration: const InputDecoration(labelText: 'E-mail')),
+                  TextFormField(controller: _tel, decoration: const InputDecoration(labelText: 'Telefone *'), keyboardType: TextInputType.phone, validator: _obrigatorio),
+                  TextFormField(controller: _email, decoration: const InputDecoration(labelText: 'E-mail'), keyboardType: TextInputType.emailAddress),
                 ]),
                 _row([
                   TextFormField(
@@ -244,8 +246,9 @@ class _ClienteFormState extends State<_ClienteForm> {
                 _row([TextFormField(controller: _end, decoration: const InputDecoration(labelText: 'Endereço'), maxLines: 2)]),
                 const FormSection('Crédito'),
                 _row([
-                  TextFormField(controller: _limite, decoration: const InputDecoration(labelText: 'Limite de crédito', prefixText: r'R$ ')),
-                  TextFormField(controller: _prazo, decoration: const InputDecoration(labelText: 'Prazo de pagamento', suffixText: 'dias')),
+                  TextFormField(controller: _limite, decoration: const InputDecoration(labelText: 'Limite de crédito', prefixText: r'R$ '),
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true)),
+                  TextFormField(controller: _prazo, decoration: const InputDecoration(labelText: 'Prazo de pagamento', suffixText: 'dias'), keyboardType: TextInputType.number),
                 ]),
                 if (!_editando) ...[
                   SwitchListTile(
@@ -258,8 +261,8 @@ class _ClienteFormState extends State<_ClienteForm> {
                     const FormSection('Fiador'),
                     _row([TextFormField(controller: _fNome, decoration: const InputDecoration(labelText: 'Nome completo *'), validator: _obrigatorio)]),
                     _row([
-                      TextFormField(controller: _fTel, decoration: const InputDecoration(labelText: 'Telefone *'), validator: _obrigatorio),
-                      TextFormField(controller: _fEmail, decoration: const InputDecoration(labelText: 'E-mail')),
+                      TextFormField(controller: _fTel, decoration: const InputDecoration(labelText: 'Telefone *'), keyboardType: TextInputType.phone, validator: _obrigatorio),
+                      TextFormField(controller: _fEmail, decoration: const InputDecoration(labelText: 'E-mail'), keyboardType: TextInputType.emailAddress),
                     ]),
                     _row([
                       TextFormField(controller: _fCpf, decoration: const InputDecoration(labelText: 'CPF/CNPJ')),
@@ -267,13 +270,7 @@ class _ClienteFormState extends State<_ClienteForm> {
                     ]),
                   ],
                 ],
-              ]),
-            ),
-          ),
+          ]),
         ),
-        actions: [
-          TextButton(onPressed: _salvando ? null : () => Navigator.pop(context), child: const Text('Cancelar')),
-          BusyButton(label: _editando ? 'Salvar alterações' : 'Cadastrar', busy: _salvando, onPressed: _salvar),
-        ],
       );
 }

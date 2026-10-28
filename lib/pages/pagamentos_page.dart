@@ -42,7 +42,7 @@ class _PagamentosPageState extends State<PagamentosPage> {
 
           return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const PageHeader(titulo: 'Pagamentos', subtitulo: 'Acompanhe dívidas e registre pagamentos recebidos'),
-            ResponsiveGrid(minWidth: 240, children: [
+            ResponsiveGrid(minWidth: isMobile(context) ? 160 : 220, spacing: Gap.md - 4, preencher: true, children: [
               StatCard(label: 'Saldo pendente', valor: moeda(abertas.fold<double>(0, (t, d) => t + d.valorPendente)),
                   icon: Icons.account_balance_wallet_outlined, rodape: '${abertas.length} dívida(s) em aberto'),
               StatCard(label: 'Recebido no mês', valor: moeda(pagsMes.fold<double>(0, (t, p) => t + p.valorPago)),
@@ -50,8 +50,8 @@ class _PagamentosPageState extends State<PagamentosPage> {
               StatCard(label: 'Dívidas vencidas', valor: '${vencidas.length}', icon: Icons.warning_amber_rounded, cor: AppColors.danger,
                   rodape: moeda(vencidas.fold<double>(0, (t, d) => t + d.valorPendente))),
             ]),
-            const SizedBox(height: Gap.lg),
-            Wrap(spacing: Gap.md, runSpacing: Gap.md, crossAxisAlignment: WrapCrossAlignment.center, children: [
+            const SizedBox(height: Gap.md),
+            Wrap(spacing: Gap.md, runSpacing: Gap.md - 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
               FilterField(width: 300, child: SearchField(hint: 'Buscar cliente', onChanged: (v) => setState(() => _busca = v))),
               FilterField(
                 child: Dropdown<Status?>(
@@ -65,11 +65,11 @@ class _PagamentosPageState extends State<PagamentosPage> {
                 child: Dropdown<int>(label: 'Emissão', value: _periodo, itens: periodos, onChanged: (v) => setState(() => _periodo = v)),
               ),
             ]),
-            const SizedBox(height: Gap.lg),
+            const SizedBox(height: Gap.md),
             if (lista.isEmpty)
               const EmptyState(icon: Icons.inbox_outlined, titulo: 'Nenhuma dívida encontrada')
             else
-              ResponsiveGrid(minWidth: 320, children: [
+              ResponsiveGrid(minWidth: 300, spacing: Gap.md - 4, children: [
                 for (final d in lista) _DividaCard(divida: d, cliente: s.nomeCliente(d.clienteId), onPagar: () => _pagar(context, s, d)),
               ]),
           ]);
@@ -77,9 +77,14 @@ class _PagamentosPageState extends State<PagamentosPage> {
       );
 
   Future<void> _pagar(BuildContext context, Snapshot s, Divida d) async {
-    final ok = await showDialog<bool>(context: context, builder: (_) => _PagamentoForm(divida: d, cliente: s.nomeCliente(d.clienteId)));
-    if (ok == true) NotificacoesService.instance.dadosAlterados();
+    await abrirFormPagamento(context, d, s.nomeCliente(d.clienteId));
   }
+}
+
+/// Abre o formulário de pagamento de uma dívida. Usado também pela Visão Geral.
+Future<void> abrirFormPagamento(BuildContext context, Divida d, String cliente) async {
+  final ok = await showDialog<bool>(context: context, builder: (_) => _PagamentoForm(divida: d, cliente: cliente));
+  if (ok == true) NotificacoesService.instance.dadosAlterados();
 }
 
 class _DividaCard extends StatelessWidget {
@@ -101,7 +106,7 @@ class _DividaCard extends StatelessWidget {
     final vencida = d.status == Status.vencida;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(Gap.md + 4),
+        padding: const EdgeInsets.all(Gap.md),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(
@@ -112,7 +117,7 @@ class _DividaCard extends StatelessWidget {
             ),
             StatusBadge(d.status),
           ]),
-          const SizedBox(height: Gap.md),
+          const SizedBox(height: Gap.md - 4),
           Container(
             padding: const EdgeInsets.all(Gap.md - 4),
             decoration: BoxDecoration(color: AppColors.bg, borderRadius: BorderRadius.circular(8)),
@@ -144,7 +149,7 @@ class _DividaCard extends StatelessWidget {
                 ]),
               ),
           ],
-          const SizedBox(height: Gap.md),
+          const SizedBox(height: Gap.md - 4),
           const Spacer(),
           if (d.status.emAberto)
             FilledButton.icon(onPressed: onPagar, icon: const Icon(Icons.payments_outlined, size: 18), label: const Text('Registrar pagamento'))
@@ -205,11 +210,12 @@ class _PagamentoFormState extends State<_PagamentoForm> {
   @override
   Widget build(BuildContext context) {
     final aviso = _aviso();
-    return AlertDialog(
-      title: const Text('Registrar pagamento'),
-      content: SizedBox(
-        width: 440,
-        child: Form(
+    return AppFormDialog(
+      titulo: 'Registrar pagamento',
+      width: 440,
+      busy: _salvando,
+      acao: BusyButton(label: 'Confirmar pagamento', busy: _salvando, onPressed: _salvar),
+      child: Form(
           key: _form,
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             InfoRow('Dívida', '${widget.divida.vendaId == null ? '#${widget.divida.id}' : 'Venda #${widget.divida.vendaId}'} · ${widget.cliente}'),
@@ -217,7 +223,8 @@ class _PagamentoFormState extends State<_PagamentoForm> {
             const SizedBox(height: Gap.md),
             TextFormField(
               controller: _valor,
-              autofocus: true,
+              autofocus: !isMobile(context),
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 labelText: 'Valor pago *',
                 prefixText: r'R$ ',
@@ -245,11 +252,6 @@ class _PagamentoFormState extends State<_PagamentoForm> {
             ),
           ]),
         ),
-      ),
-      actions: [
-        TextButton(onPressed: _salvando ? null : () => Navigator.pop(context), child: const Text('Cancelar')),
-        BusyButton(label: 'Confirmar pagamento', busy: _salvando, onPressed: _salvar),
-      ],
     );
   }
 }

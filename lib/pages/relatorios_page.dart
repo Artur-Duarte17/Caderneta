@@ -1,15 +1,14 @@
 import 'dart:convert';
-import 'dart:js_interop';
 import 'dart:typed_data';
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:web/web.dart' as web;
 
 import '../core/api.dart';
 import '../core/format.dart';
 import '../core/models.dart';
+import '../core/salvar_arquivo.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 
@@ -59,7 +58,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
           titulo: 'Relatórios',
           subtitulo: 'Período: ${data(_periodo.start)} a ${data(_periodo.end)}',
           acoes: [
-            OutlinedButton.icon(onPressed: _escolherPeriodo, icon: const Icon(Icons.date_range, size: 18), label: const Text('Alterar período')),
+            OutlinedButton.icon(onPressed: _escolherPeriodo, icon: const Icon(Icons.date_range, size: 18), label: Text(isMobile(context) ? 'Período' : 'Alterar período')),
           ],
         ),
         AsyncView<_Relatorio>(
@@ -78,19 +77,19 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
         : r.dividas.where((d) => d.status == Status.vencida).fold<double>(0, (t, d) => t + d.valorPendente) / totalVendido * 100;
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      ResponsiveGrid(minWidth: 240, children: [
+      ResponsiveGrid(minWidth: isMobile(context) ? 160 : 220, spacing: Gap.md - 4, preencher: true, children: [
         StatCard(label: 'Total vendido', valor: moeda(totalVendido), icon: Icons.receipt_long_outlined, rodape: '${r.vendas.length} venda(s)'),
         StatCard(label: 'Total recebido', valor: moeda(totalRecebido), icon: Icons.payments_outlined, cor: AppColors.success),
         StatCard(label: 'Saldo pendente', valor: moeda(totalPendente), icon: Icons.account_balance_wallet_outlined, cor: AppColors.warning),
         StatCard(label: 'Inadimplência', valor: '${inadimplencia.toStringAsFixed(1).replaceAll('.', ',')}%', icon: Icons.trending_down,
             cor: AppColors.danger, rodape: '${r.vendas.map((v) => v.clienteId).toSet().length} cliente(s) ativos'),
       ]),
-      const SizedBox(height: Gap.lg),
-      ResponsiveGrid(minWidth: 460, spacing: Gap.lg, children: [
-        SectionCard(titulo: 'Vendas por dia', child: SizedBox(height: 260, child: _graficoVendas(r))),
-        SectionCard(titulo: 'Recebimentos por método', child: SizedBox(height: 260, child: _graficoMetodos(r))),
+      const SizedBox(height: Gap.md - 4),
+      ResponsiveGrid(minWidth: 420, spacing: Gap.md - 4, children: [
+        SectionCard(titulo: 'Vendas por dia', child: SizedBox(height: 240, child: _graficoVendas(r))),
+        SectionCard(titulo: 'Recebimentos por método', child: SizedBox(height: 240, child: _graficoMetodos(r))),
       ]),
-      const SizedBox(height: Gap.lg),
+      const SizedBox(height: Gap.md - 4),
       SectionCard(
         titulo: 'Detalhamento',
         acao: OutlinedButton.icon(onPressed: () => _exportar(r), icon: const Icon(Icons.download, size: 18), label: const Text('Exportar CSV')),
@@ -228,7 +227,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     }
   }
 
-  void _exportar(_Relatorio r) {
+  Future<void> _exportar(_Relatorio r) async {
     final num2 = NumberFormat('0.00', 'pt_BR');
     final (cab, linhas, nome) = switch (_tabela) {
       _Tabela.vendas => (
@@ -254,13 +253,12 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     // Separador ";" e BOM para abrir corretamente no Excel em português.
     final csv = '﻿${[cab, ...linhas].map((l) => l.map(esc).join(';')).join('\r\n')}';
     final bytes = Uint8List.fromList(utf8.encode(csv));
-    final blob = web.Blob([bytes.toJS].toJS, web.BlobPropertyBag(type: 'text/csv;charset=utf-8'));
-    final url = web.URL.createObjectURL(blob);
-    web.HTMLAnchorElement()
-      ..href = url
-      ..download = 'relatorio-$nome-${isoDate(_periodo.start)}_${isoDate(_periodo.end)}.csv'
-      ..click();
-    web.URL.revokeObjectURL(url);
-    toast(context, 'CSV exportado');
+    final arquivo = 'relatorio-$nome-${isoDate(_periodo.start)}_${isoDate(_periodo.end)}.csv';
+    try {
+      if (!await salvarArquivo(arquivo, bytes, 'text/csv;charset=utf-8') || !mounted) return;
+      toast(context, 'CSV exportado');
+    } catch (e) {
+      if (mounted) toast(context, 'Não foi possível exportar: $e', erro: true);
+    }
   }
 }

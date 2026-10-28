@@ -24,11 +24,16 @@ class Gap {
   static const xs = 4.0;
   static const sm = 8.0;
   static const md = 16.0;
-  static const lg = 24.0;
-  static const xl = 32.0;
+  static const lg = 20.0;
+  static const xl = 28.0;
 }
 
-const kRadius = 12.0;
+const kRadius = 10.0;
+
+/// Abaixo desta largura o app usa o layout de celular (barra inferior).
+const kMobileBreakpoint = 900.0;
+
+bool isMobile(BuildContext context) => MediaQuery.sizeOf(context).width < kMobileBreakpoint;
 
 ThemeData buildTheme() {
   final scheme = ColorScheme.fromSeed(
@@ -60,18 +65,18 @@ ThemeData buildTheme() {
     ),
     cardTheme: CardThemeData(
       color: AppColors.surface,
-      elevation: 0,
       margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(kRadius),
-        side: const BorderSide(color: AppColors.border),
-      ),
+      // Sem contorno: o cartão se destaca do fundo só pela cor e por uma sombra leve.
+      shadowColor: const Color(0x14101828),
+      elevation: 1,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kRadius)),
     ),
     inputDecorationTheme: InputDecorationTheme(
       isDense: true,
       filled: true,
       fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: border,
       enabledBorder: border,
       focusedBorder: border.copyWith(borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
@@ -79,14 +84,14 @@ ThemeData buildTheme() {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        minimumSize: const Size(0, 44),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        minimumSize: const Size(0, 40),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size(0, 40),
+        minimumSize: const Size(0, 38),
         foregroundColor: AppColors.primary,
         side: const BorderSide(color: AppColors.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -94,7 +99,7 @@ ThemeData buildTheme() {
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        minimumSize: const Size(0, 40),
+        minimumSize: const Size(0, 36),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     ),
@@ -103,6 +108,18 @@ ThemeData buildTheme() {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kRadius)),
     ),
     dividerTheme: const DividerThemeData(color: AppColors.border, space: 1),
-    snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating, width: 420),
+    snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
+    navigationBarTheme: NavigationBarThemeData(
+      height: 64,
+      backgroundColor: AppColors.surface,
+      indicatorColor: AppColors.primary.withValues(alpha: .1),
+      labelTextStyle: WidgetStateProperty.resolveWith((s) => TextStyle(
+            fontSize: 11,
+            fontWeight: s.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
+            color: s.contains(WidgetState.selected) ? AppColors.primary : AppColors.muted,
+          )),
+      iconTheme: WidgetStateProperty.resolveWith(
+          (s) => IconThemeData(size: 22, color: s.contains(WidgetState.selected) ? AppColors.primary : AppColors.muted)),
+    ),
   );
 }

@@ -7,6 +7,9 @@ import '../core/theme.dart';
 
 // ===== Feedback =====
 
+/// No desktop o aviso fica num cartão estreito; no celular ocupa a largura toda.
+double? snackWidth(BuildContext context) => isMobile(context) ? null : 420;
+
 void toast(BuildContext context, String msg, {bool erro = false}) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
@@ -17,6 +20,7 @@ void toast(BuildContext context, String msg, {bool erro = false}) {
         Expanded(child: Text(msg)),
       ]),
       backgroundColor: erro ? AppColors.danger : AppColors.success,
+      width: snackWidth(context),
     ));
 }
 
@@ -115,10 +119,10 @@ class EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: Gap.xl * 1.5, horizontal: Gap.lg),
+          padding: const EdgeInsets.symmetric(vertical: Gap.xl, horizontal: Gap.lg),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, size: 48, color: AppColors.muted.withValues(alpha: .5)),
-            const SizedBox(height: Gap.md),
+            Icon(icon, size: 40, color: AppColors.muted.withValues(alpha: .5)),
+            const SizedBox(height: Gap.sm),
             Text(titulo, style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center),
             if (mensagem != null) ...[
               const SizedBox(height: Gap.xs),
@@ -139,44 +143,48 @@ class PageHeader extends StatelessWidget {
   final List<Widget> acoes;
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: Gap.lg),
-        child: Wrap(
-          alignment: WrapAlignment.spaceBetween,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          runSpacing: Gap.md,
-          spacing: Gap.md,
-          children: [
-            Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              Text(titulo, style: Theme.of(context).textTheme.headlineSmall),
-              if (subtitulo != null) ...[
-                const SizedBox(height: Gap.xs),
-                Text(subtitulo!, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 14)),
-              ],
-            ]),
-            if (acoes.isNotEmpty) Wrap(spacing: Gap.sm, runSpacing: Gap.sm, children: acoes),
-          ],
-        ),
-      );
+  Widget build(BuildContext context) {
+    final mobile = isMobile(context);
+    final texto = Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+      Text(titulo, style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontSize: mobile ? 20 : 22)),
+      if (subtitulo != null) ...[
+        const SizedBox(height: 2),
+        Text(subtitulo!, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 13)),
+      ],
+    ]);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Gap.md),
+      child: Row(children: [
+        Expanded(child: texto),
+        if (acoes.isNotEmpty) ...[
+          const SizedBox(width: Gap.sm),
+          Wrap(spacing: Gap.sm, runSpacing: Gap.sm, children: acoes),
+        ],
+      ]),
+    );
+  }
 }
 
 /// Grade responsiva: distribui [children] em colunas de largura mínima
 /// [minWidth]; os itens de uma mesma linha ficam com a mesma altura.
+/// Com [preencher], nunca sobra espaço vazio: os itens da última linha se
+/// esticam para ocupá-la (útil para linhas de indicadores).
 class ResponsiveGrid extends StatelessWidget {
-  const ResponsiveGrid({super.key, required this.children, this.minWidth = 280, this.spacing = Gap.md});
+  const ResponsiveGrid({super.key, required this.children, this.minWidth = 280, this.spacing = Gap.md, this.preencher = false});
   final List<Widget> children;
   final double minWidth;
   final double spacing;
+  final bool preencher;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(builder: (context, c) {
-        final cols = (c.maxWidth / minWidth).floor().clamp(1, 6);
+        final cols = (c.maxWidth / minWidth).floor().clamp(1, preencher ? children.length : 6);
         return Column(children: [
           for (var i = 0; i < children.length; i += cols) ...[
             if (i > 0) SizedBox(height: spacing),
             IntrinsicHeight(
               child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                for (var j = 0; j < cols; j++) ...[
+                for (var j = 0; j < (preencher ? (children.length - i).clamp(1, cols) : cols); j++) ...[
                   if (j > 0) SizedBox(width: spacing),
                   Expanded(child: i + j < children.length ? children[i + j] : const SizedBox.shrink()),
                 ],
@@ -188,7 +196,7 @@ class ResponsiveGrid extends StatelessWidget {
 }
 
 class SectionCard extends StatelessWidget {
-  const SectionCard({super.key, this.titulo, this.acao, required this.child, this.padding = const EdgeInsets.all(Gap.lg)});
+  const SectionCard({super.key, this.titulo, this.acao, required this.child, this.padding = const EdgeInsets.all(Gap.md)});
   final String? titulo;
   final Widget? acao;
   final Widget child;
@@ -200,11 +208,14 @@ class SectionCard extends StatelessWidget {
           padding: padding,
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             if (titulo != null) ...[
-              Row(children: [
-                Expanded(child: Text(titulo!, style: Theme.of(context).textTheme.titleMedium)),
-                ?acao,
-              ]),
-              const SizedBox(height: Gap.md),
+              SizedBox(
+                height: 36,
+                child: Row(children: [
+                  Expanded(child: Text(titulo!, style: Theme.of(context).textTheme.titleMedium)),
+                  ?acao,
+                ]),
+              ),
+              const SizedBox(height: Gap.sm),
             ],
             child,
           ]),
@@ -221,33 +232,44 @@ class StatCard extends StatelessWidget {
   final String? rodape;
 
   @override
-  Widget build(BuildContext context) => Card(
-        child: Padding(
-          padding: const EdgeInsets.all(Gap.lg - 4),
-          child: Row(children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(color: cor.withValues(alpha: .1), borderRadius: BorderRadius.circular(10)),
-              child: Icon(icon, color: cor),
-            ),
-            const SizedBox(width: Gap.md),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 13)),
-                const SizedBox(height: 2),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(valor, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.text)),
-                ),
-                // Linha sempre presente para todos os cards terem a mesma altura.
-                Text(rodape ?? '', style: Theme.of(context).textTheme.bodySmall),
+  Widget build(BuildContext context) {
+    final mobile = isMobile(context);
+    final icone = Container(
+      width: mobile ? 28 : 40,
+      height: mobile ? 28 : 40,
+      decoration: BoxDecoration(color: cor.withValues(alpha: .1), borderRadius: BorderRadius.circular(mobile ? 7 : 10)),
+      child: Icon(icon, color: cor, size: mobile ? 16 : 24),
+    );
+    final rotulo = Text(label,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 12.5), maxLines: 1, overflow: TextOverflow.ellipsis);
+    final textos = <Widget>[
+      FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text(valor, style: TextStyle(fontSize: mobile ? 18 : 20, fontWeight: FontWeight.w700, color: AppColors.text)),
+      ),
+      // Linha sempre presente para todos os cards terem a mesma altura.
+      Text(rodape ?? '', style: Theme.of(context).textTheme.bodySmall, maxLines: 1, overflow: TextOverflow.ellipsis),
+    ];
+
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(mobile ? Gap.md - 4 : Gap.md - 2),
+        // No celular (duas colunas estreitas) o ícone vai para a linha do rótulo.
+        child: mobile
+            ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [icone, const SizedBox(width: Gap.sm), Expanded(child: rotulo)]),
+                const SizedBox(height: Gap.sm),
+                ...textos,
+              ])
+            : Row(children: [
+                icone,
+                const SizedBox(width: Gap.md - 4),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [rotulo, const SizedBox(height: 2), ...textos])),
               ]),
-            ),
-          ]),
-        ),
-      );
+      ),
+    );
+  }
 }
 
 // ===== Elementos =====
@@ -303,7 +325,7 @@ class InfoRow extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          SizedBox(width: 140, child: Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 14))),
+          SizedBox(width: isMobile(context) ? 120 : 140, child: Text(label, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 14))),
           Expanded(
             child: Text(valor,
                 style: TextStyle(fontWeight: FontWeight.w500, color: destaque ?? AppColors.text)),
@@ -313,13 +335,21 @@ class InfoRow extends StatelessWidget {
 }
 
 /// Campo de filtro com largura fixa, para as barras de filtro ficarem alinhadas.
+/// Em telas estreitas a busca ocupa a linha toda e os demais filtros ficam
+/// dois por linha (assume o espaçamento [Gap.md] do Wrap que os contém).
 class FilterField extends StatelessWidget {
   const FilterField({super.key, required this.child, this.width = 220});
   final Widget child;
   final double width;
+
   @override
-  Widget build(BuildContext context) =>
-      SizedBox(width: MediaQuery.sizeOf(context).width < 600 ? double.infinity : width, child: child);
+  Widget build(BuildContext context) {
+    if (MediaQuery.sizeOf(context).width >= 600) return SizedBox(width: width, child: child);
+    final busca = child is SearchField;
+    return LayoutBuilder(
+      builder: (_, c) => SizedBox(width: busca ? c.maxWidth : (c.maxWidth - Gap.md) / 2, child: child),
+    );
+  }
 }
 
 class SearchField extends StatelessWidget {
@@ -353,32 +383,80 @@ class Dropdown<T> extends StatelessWidget {
 
 // ===== Diálogos =====
 
-/// Diálogo padrão para formulários e detalhes (substitui a mistura de
-/// modais/offcanvas do front antigo).
-Future<T?> showAppDialog<T>(
-  BuildContext context, {
-  required String titulo,
-  required Widget Function(BuildContext context, StateSetter setState) builder,
-  List<Widget> Function(BuildContext context, StateSetter setState)? acoes,
-  double width = 560,
-}) {
-  return showDialog<T>(
-    context: context,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setState) => AlertDialog(
-        titlePadding: const EdgeInsets.fromLTRB(Gap.lg, Gap.lg, Gap.sm, 0),
-        title: Row(children: [
-          Expanded(child: Text(titulo, style: Theme.of(ctx).textTheme.titleLarge)),
-          IconButton(onPressed: () => Navigator.pop(ctx), icon: const Icon(Icons.close), tooltip: 'Fechar'),
-        ]),
-        contentPadding: const EdgeInsets.fromLTRB(Gap.lg, Gap.md, Gap.lg, Gap.sm),
-        content: SizedBox(width: width, child: SingleChildScrollView(child: builder(ctx, setState))),
-        actionsPadding: const EdgeInsets.fromLTRB(Gap.lg, Gap.sm, Gap.lg, Gap.lg),
-        actions: acoes?.call(ctx, setState),
-      ),
-    ),
-  );
+/// Diálogo padrão de formulários e detalhes. No desktop é um diálogo central;
+/// no celular abre em tela cheia, com a ação principal fixa no rodapé.
+class AppFormDialog extends StatelessWidget {
+  const AppFormDialog({super.key, required this.titulo, required this.child, this.acao, this.rodape, this.busy = false, this.width = 560});
+  final String titulo;
+  final Widget child;
+
+  /// Botão principal (ex.: [BusyButton]). Sem ele o diálogo só tem "Fechar".
+  final Widget? acao;
+
+  /// Informação exibida ao lado das ações (ex.: total da venda).
+  final Widget? rodape;
+  final bool busy;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    void fechar() => Navigator.pop(context);
+
+    if (isMobile(context)) {
+      return Dialog.fullscreen(
+        backgroundColor: AppColors.bg,
+        child: Scaffold(
+          backgroundColor: AppColors.bg,
+          appBar: AppBar(
+            backgroundColor: AppColors.surface,
+            surfaceTintColor: Colors.transparent,
+            leading: IconButton(onPressed: busy ? null : fechar, icon: const Icon(Icons.close), tooltip: 'Fechar'),
+            title: Text(titulo, style: Theme.of(context).textTheme.titleLarge),
+            titleSpacing: 0,
+          ),
+          body: SingleChildScrollView(padding: const EdgeInsets.all(Gap.md), child: child),
+          bottomNavigationBar: acao == null && rodape == null
+              ? null
+              : Material(
+                  color: AppColors.surface,
+                  elevation: 8,
+                  child: SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: Gap.md, vertical: Gap.sm + 2),
+                      child: Row(children: [
+                        if (rodape != null) Expanded(child: rodape!),
+                        if (acao != null) rodape == null ? Expanded(child: acao!) : acao!,
+                      ]),
+                    ),
+                  ),
+                ),
+        ),
+      );
+    }
+
+    return AlertDialog(
+      titlePadding: const EdgeInsets.fromLTRB(Gap.lg, Gap.md, Gap.sm, 0),
+      title: Row(children: [
+        Expanded(child: Text(titulo, style: Theme.of(context).textTheme.titleLarge)),
+        IconButton(onPressed: busy ? null : fechar, icon: const Icon(Icons.close), tooltip: 'Fechar'),
+      ]),
+      contentPadding: const EdgeInsets.fromLTRB(Gap.lg, Gap.sm, Gap.lg, Gap.sm),
+      content: SizedBox(width: width, child: SingleChildScrollView(child: child)),
+      actionsPadding: const EdgeInsets.fromLTRB(Gap.lg, Gap.sm, Gap.lg, Gap.md),
+      actions: acao == null
+          ? null
+          : [
+              if (rodape != null) ...[rodape!, const SizedBox(width: Gap.md)],
+              TextButton(onPressed: busy ? null : fechar, child: const Text('Cancelar')),
+              acao!,
+            ],
+    );
+  }
 }
+
+/// Atalho para diálogos só de leitura (detalhes).
+Future<T?> showAppDialog<T>(BuildContext context, {required String titulo, required WidgetBuilder builder, double width = 560}) =>
+    showDialog<T>(context: context, builder: (ctx) => AppFormDialog(titulo: titulo, width: width, child: builder(ctx)));
 
 /// Botão primário que mostra spinner enquanto a ação assíncrona roda.
 class BusyButton extends StatelessWidget {
@@ -425,9 +503,9 @@ class AppTable extends StatelessWidget {
           child: ConstrainedBox(
             constraints: BoxConstraints(minWidth: c.maxWidth),
             child: DataTable(
-              headingRowHeight: 40,
-              dataRowMinHeight: 52,
-              dataRowMaxHeight: 60,
+              headingRowHeight: 36,
+              dataRowMinHeight: 44,
+              dataRowMaxHeight: 52,
               horizontalMargin: 0,
               columnSpacing: Gap.lg,
               headingTextStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.muted),

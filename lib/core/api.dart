@@ -6,7 +6,7 @@ import 'models.dart';
 
 /// URL do backend. Pode ser trocada no build:
 ///   flutter build web --dart-define=API_URL=http://meu-servidor:8080
-const apiBaseUrl = String.fromEnvironment('API_URL', defaultValue: 'http://localhost:8080');
+const apiBaseUrl = String.fromEnvironment('API_URL', defaultValue: 'http://localhost:8082');
 
 /// Enquanto não há login, todas as vendas são registradas por este funcionário.
 const funcionarioPadraoId = 1;

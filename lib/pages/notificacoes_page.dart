@@ -43,11 +43,11 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
                 OutlinedButton.icon(
                   onPressed: _service.naoLidas == 0 ? null : _service.marcarTodas,
                   icon: const Icon(Icons.done_all, size: 18),
-                  label: const Text('Marcar todas como lidas'),
+                  label: Text(isMobile(context) ? 'Ler todas' : 'Marcar todas como lidas'),
                 ),
               ],
             ),
-            Wrap(spacing: Gap.md, runSpacing: Gap.md, children: [
+            Wrap(spacing: Gap.md, runSpacing: Gap.md - 4, children: [
               FilterField(
                 child: Dropdown<String?>(
                   label: 'Tipo',
@@ -73,7 +73,7 @@ class _NotificacoesPageState extends State<NotificacoesPage> {
                 ),
               ),
             ]),
-            const SizedBox(height: Gap.lg),
+            const SizedBox(height: Gap.md),
             if (_service.carregando && _service.itens.isEmpty)
               const LoadingState()
             else if (_service.erro != null && _service.itens.isEmpty)
@@ -108,7 +108,7 @@ class _NotificacaoTile extends StatelessWidget {
     final estreito = MediaQuery.sizeOf(context).width < 600;
     return Container(
         color: n.lida ? null : AppColors.primary.withValues(alpha: .03),
-        padding: const EdgeInsets.symmetric(horizontal: Gap.lg - 4, vertical: Gap.md),
+        padding: const EdgeInsets.symmetric(horizontal: Gap.md, vertical: Gap.md - 4),
         child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Container(
             width: 40,
