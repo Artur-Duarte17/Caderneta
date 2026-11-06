@@ -23,9 +23,12 @@ class AppColors {
 class Gap {
   static const xs = 4.0;
   static const sm = 8.0;
+  static const ms = 12.0;
   static const md = 16.0;
+  static const ml = 20.0;
   static const lg = 24.0;
   static const xl = 32.0;
+  static const xxl = 48.0;
 }
 
 const kRadius = 12.0;
@@ -51,9 +54,21 @@ ThemeData buildTheme() {
     scaffoldBackgroundColor: AppColors.bg,
     fontFamily: 'Roboto',
     textTheme: const TextTheme(
-      headlineSmall: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: AppColors.text),
-      titleLarge: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AppColors.text),
-      titleMedium: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.text),
+      headlineSmall: TextStyle(
+        fontSize: 22,
+        fontWeight: FontWeight.w600,
+        color: AppColors.text,
+      ),
+      titleLarge: TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        color: AppColors.text,
+      ),
+      titleMedium: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: AppColors.text,
+      ),
       bodyMedium: TextStyle(fontSize: 14, color: AppColors.text),
       bodySmall: TextStyle(fontSize: 12, color: AppColors.muted),
       labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
@@ -71,22 +86,29 @@ ThemeData buildTheme() {
       isDense: true,
       filled: true,
       fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: Gap.ms,
+        vertical: Gap.md,
+      ),
       border: border,
       enabledBorder: border,
-      focusedBorder: border.copyWith(borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
-      errorBorder: border.copyWith(borderSide: const BorderSide(color: AppColors.danger)),
+      focusedBorder: border.copyWith(
+        borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+      ),
+      errorBorder: border.copyWith(
+        borderSide: const BorderSide(color: AppColors.danger),
+      ),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         minimumSize: const Size(0, 44),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(horizontal: Gap.ml),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size(0, 40),
+        minimumSize: const Size(0, 44),
         foregroundColor: AppColors.primary,
         side: const BorderSide(color: AppColors.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -94,15 +116,17 @@ ThemeData buildTheme() {
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        minimumSize: const Size(0, 40),
+        minimumSize: const Size(0, 44),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     ),
     dialogTheme: DialogThemeData(
       backgroundColor: AppColors.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(kRadius)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(kRadius),
+      ),
     ),
     dividerTheme: const DividerThemeData(color: AppColors.border, space: 1),
-    snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating, width: 420),
+    snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
   );
 }

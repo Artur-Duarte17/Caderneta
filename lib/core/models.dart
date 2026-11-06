@@ -1,19 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import 'format.dart';
+import 'dates.dart';
+import 'permissoes.dart';
+export 'permissoes.dart' show Perfil;
 import 'theme.dart';
 
-double _num(dynamic v) => v == null ? 0 : (v is num ? v.toDouble() : double.tryParse('$v') ?? 0);
-
-/// Aceita datas do Jackson como string ISO ou como array [y, m, d, h, min, s].
-DateTime? _date(dynamic v) {
-  if (v == null) return null;
-  if (v is List && v.length >= 3) {
-    final p = v.map((e) => (e as num).toInt()).toList();
-    return DateTime(p[0], p[1], p[2], p.length > 3 ? p[3] : 0, p.length > 4 ? p[4] : 0, p.length > 5 ? p[5] : 0);
-  }
-  return DateTime.tryParse('$v');
-}
+double _num(dynamic v) =>
+    v == null ? 0 : (v is num ? v.toDouble() : double.tryParse('$v') ?? 0);
 
 // ===== Status (fonte única de verdade para rótulo e cor) =====
 
@@ -68,20 +63,24 @@ class Cliente {
   final int prazoPagamentoPadraoDias;
 
   factory Cliente.fromJson(Map<String, dynamic> j) => Cliente(
-        id: j['id'],
-        nome: j['nome'] ?? '',
-        cpf: j['cpf'],
-        email: j['email'],
-        telefone: j['telefone'],
-        endereco: j['endereco'],
-        limiteCredito: _num(j['limiteCredito']),
-        prazoPagamentoPadraoDias: j['prazoPagamentoPadraoDias'] ?? 30,
-      );
+    id: j['id'],
+    nome: j['nome'] ?? '',
+    cpf: j['cpf'],
+    email: j['email'],
+    telefone: j['telefone'],
+    endereco: j['endereco'],
+    limiteCredito: _num(j['limiteCredito']),
+    prazoPagamentoPadraoDias: j['prazoPagamentoPadraoDias'] ?? 30,
+  );
 }
 
 class ItemVenda {
-  ItemVenda({required this.descricao, required this.quantidade, required this.precoUnitario, double? subtotal})
-      : subtotal = subtotal ?? quantidade * precoUnitario;
+  ItemVenda({
+    required this.descricao,
+    required this.quantidade,
+    required this.precoUnitario,
+    double? subtotal,
+  }) : subtotal = subtotal ?? quantidade * precoUnitario;
 
   final String descricao;
   final int quantidade;
@@ -89,18 +88,28 @@ class ItemVenda {
   final double subtotal;
 
   factory ItemVenda.fromJson(Map<String, dynamic> j) => ItemVenda(
-        descricao: j['descricaoProduto'] ?? '',
-        quantidade: (j['quantidade'] as num?)?.toInt() ?? 0,
-        precoUnitario: _num(j['precoUnitario']),
-        subtotal: j['subtotal'] == null ? null : _num(j['subtotal']),
-      );
+    descricao: j['descricaoProduto'] ?? '',
+    quantidade: (j['quantidade'] as num?)?.toInt() ?? 0,
+    precoUnitario: _num(j['precoUnitario']),
+    subtotal: j['subtotal'] == null ? null : _num(j['subtotal']),
+  );
 
-  Map<String, dynamic> toJson() =>
-      {'descricaoProduto': descricao, 'quantidade': quantidade, 'precoUnitario': precoUnitario};
+  Map<String, dynamic> toJson() => {
+    'descricaoProduto': descricao,
+    'quantidade': quantidade,
+    'precoUnitario': precoUnitario,
+  };
 }
 
 class Venda {
-  Venda({required this.id, this.dataHora, required this.valorTotal, required this.clienteId, this.dividaId, this.itens = const []});
+  Venda({
+    required this.id,
+    this.dataHora,
+    required this.valorTotal,
+    required this.clienteId,
+    this.dividaId,
+    this.itens = const [],
+  });
 
   final int id;
   final DateTime? dataHora;
@@ -110,13 +119,15 @@ class Venda {
   final List<ItemVenda> itens;
 
   factory Venda.fromJson(Map<String, dynamic> j) => Venda(
-        id: j['id'],
-        dataHora: _date(j['dataHora']),
-        valorTotal: _num(j['valorTotal']),
-        clienteId: j['clienteId'],
-        dividaId: j['dividaId'],
-        itens: ((j['itens'] as List?) ?? []).map((e) => ItemVenda.fromJson(e)).toList(),
-      );
+    id: j['id'],
+    dataHora: parseData(j['dataHora']),
+    valorTotal: _num(j['valorTotal']),
+    clienteId: j['clienteId'],
+    dividaId: j['dividaId'],
+    itens: ((j['itens'] as List?) ?? [])
+        .map((e) => ItemVenda.fromJson(e))
+        .toList(),
+  );
 }
 
 class Pagamento {
@@ -127,10 +138,10 @@ class Pagamento {
   final MetodoPagamento? metodo;
 
   factory Pagamento.fromJson(Map<String, dynamic> j) => Pagamento(
-        valorPago: _num(j['valorPago']),
-        dataPagamento: _date(j['dataPagamento']),
-        metodo: MetodoPagamento.parse(j['metodoPagamento']),
-      );
+    valorPago: _num(j['valorPago']),
+    dataPagamento: parseData(j['dataPagamento']),
+    metodo: MetodoPagamento.parse(j['metodoPagamento']),
+  );
 }
 
 class Divida {
@@ -156,9 +167,11 @@ class Divida {
 
   double get valorPago => pagamentos.fold<double>(0, (s, p) => s + p.valorPago);
 
-  bool get vencida => dataVencimento != null && dataVencimento!.isBefore(hoje());
+  bool get vencida =>
+      dataVencimento != null && dataVencimento!.isBefore(hoje());
 
-  int get diasAtraso => dataVencimento == null ? 0 : hoje().difference(dataVencimento!).inDays;
+  int get diasAtraso =>
+      dataVencimento == null ? 0 : hoje().difference(dataVencimento!).inDays;
 
   /// Status exibido: o backend só marca VENCIDA em rotina; aqui qualquer dívida
   /// em aberto com vencimento passado já aparece como vencida.
@@ -178,66 +191,172 @@ class Divida {
   }
 
   factory Divida.fromJson(Map<String, dynamic> j) => Divida(
-        id: j['id'],
-        valorOriginal: _num(j['valorOriginal']),
-        valorPendente: _num(j['valorPendente']),
-        dataEmissao: _date(j['dataEmissao']),
-        dataVencimento: _date(j['dataVencimento']),
-        statusBackend: j['statusDivida'],
-        clienteId: j['clienteId'],
-        vendaId: j['vendaId'],
-        pagamentos: ((j['pagamentos'] as List?) ?? []).map((e) => Pagamento.fromJson(e)).toList(),
-      );
+    id: j['id'],
+    valorOriginal: _num(j['valorOriginal']),
+    valorPendente: _num(j['valorPendente']),
+    dataEmissao: parseData(j['dataEmissao']),
+    dataVencimento: parseData(j['dataVencimento']),
+    statusBackend: j['statusDivida'],
+    clienteId: j['clienteId'],
+    vendaId: j['vendaId'],
+    pagamentos: ((j['pagamentos'] as List?) ?? [])
+        .map((e) => Pagamento.fromJson(e))
+        .toList(),
+  );
 }
 
-enum TipoNotif {
-  pagamento('Pagamentos', Icons.payments, AppColors.success),
-  vencimento('Vencimentos', Icons.notifications_active, AppColors.warning),
-  vencida('Vencimentos', Icons.error, AppColors.danger),
-  venda('Sistema', Icons.shopping_cart, AppColors.info),
-  cliente('Sistema', Icons.person_add, AppColors.secondary),
-  sistema('Sistema', Icons.info, AppColors.neutral);
+class Usuario {
+  const Usuario({
+    required this.id,
+    required this.pessoaId,
+    required this.nome,
+    required this.perfil,
+    this.login = '',
+  });
+  final int id, pessoaId;
+  final String nome, login;
+  final Perfil? perfil;
+  factory Usuario.fromJson(Map<String, dynamic> j) => Usuario(
+    id: (j['id'] as num?)?.toInt() ?? 0,
+    pessoaId: (j['pessoaId'] as num?)?.toInt() ?? 0,
+    nome: j['nome'] as String? ?? '',
+    login: j['login'] as String? ?? '',
+    perfil: Perfil.parse(j['perfil']),
+  );
+}
 
-  const TipoNotif(this.grupo, this.icon, this.color);
-  final String grupo;
+enum TipoEvento {
+  LEMBRETE_PAGAMENTO(
+    'Lembrete de pagamento',
+    Icons.schedule,
+    AppColors.warning,
+  ),
+  AVISO_DIVIDA_VENCIDA('Dívida vencida', Icons.error_outline, AppColors.danger),
+  CONFIRMACAO_COMPRA(
+    'Compra confirmada',
+    Icons.shopping_bag_outlined,
+    AppColors.info,
+  ),
+  CONFIRMACAO_PAGAMENTO(
+    'Pagamento confirmado',
+    Icons.check_circle_outline,
+    AppColors.success,
+  ),
+  CADASTRO_CLIENTE(
+    'Cliente cadastrado',
+    Icons.person_add_outlined,
+    AppColors.secondary,
+  ),
+  PAGAMENTO_RECEBIDO(
+    'Pagamento recebido',
+    Icons.payments_outlined,
+    AppColors.success,
+  ),
+  COMPRA_REALIZADA(
+    'Compra realizada',
+    Icons.shopping_cart_outlined,
+    AppColors.info,
+  ),
+  LEMBRETE_VENCIMENTO(
+    'Vencimento próximo',
+    Icons.event_outlined,
+    AppColors.warning,
+  );
+
+  const TipoEvento(this.label, this.icon, this.color);
+  final String label;
   final IconData icon;
   final Color color;
+  static TipoEvento? parse(dynamic value) =>
+      values.where((v) => v.name == value).firstOrNull;
+  static Iterable<TipoEvento> permitidos(Perfil? perfil) =>
+      perfil == Perfil.funcionario
+      ? const [CADASTRO_CLIENTE, COMPRA_REALIZADA, PAGAMENTO_RECEBIDO]
+      : values;
 }
 
-class Notificacao {
-  Notificacao({required this.id, required this.mensagem, this.dataEnvio, this.tipoBackend, this.lida = false});
-
+class EventoHistorico {
+  EventoHistorico({
+    required this.id,
+    required this.mensagem,
+    this.dataEnvio,
+    this.tipo,
+    this.destinatario = '',
+  });
   final int id;
-  final String mensagem;
+  final String mensagem, destinatario;
   final DateTime? dataEnvio;
-  final String? tipoBackend;
-  bool lida;
+  final TipoEvento? tipo;
+  factory EventoHistorico.fromJson(Map<String, dynamic> j) {
+    final dest = j['destinatario'];
+    return EventoHistorico(
+      id: (j['id'] as num).toInt(),
+      mensagem: j['mensagem'] ?? '',
+      dataEnvio: parseData(j['dataEnvio']),
+      tipo: TipoEvento.parse(j['tipo']),
+      destinatario: dest is Map
+          ? (dest['nome'] ?? '')
+          : (dest?.toString() ?? ''),
+    );
+  }
+}
 
-  TipoNotif get tipo => switch (tipoBackend) {
-        'PAGAMENTO_RECEBIDO' || 'CONFIRMACAO_PAGAMENTO' => TipoNotif.pagamento,
-        'LEMBRETE_VENCIMENTO' || 'LEMBRETE_PAGAMENTO' => TipoNotif.vencimento,
-        'AVISO_DIVIDA_VENCIDA' => TipoNotif.vencida,
-        'COMPRA_REALIZADA' || 'CONFIRMACAO_COMPRA' => TipoNotif.venda,
-        'CADASTRO_CLIENTE' => TipoNotif.cliente,
-        _ => TipoNotif.sistema,
-      };
+class ContaAcesso {
+  ContaAcesso({
+    required this.id,
+    required this.nome,
+    required this.login,
+    required this.perfil,
+    required this.ativo,
+  });
+  final int id;
+  final String nome, login;
+  final Perfil? perfil;
+  final bool ativo;
+  factory ContaAcesso.fromJson(Map<String, dynamic> j) => ContaAcesso(
+    id: (j['id'] as num).toInt(),
+    nome: j['nome'] ?? '',
+    login: j['login'] ?? '',
+    perfil: Perfil.parse(j['perfil']),
+    ativo: j['ativo'] == true,
+  );
+}
 
-  String get titulo => switch (tipoBackend) {
-        'PAGAMENTO_RECEBIDO' => 'Pagamento recebido',
-        'CONFIRMACAO_PAGAMENTO' => 'Pagamento confirmado',
-        'LEMBRETE_VENCIMENTO' => 'Vencimento próximo',
-        'LEMBRETE_PAGAMENTO' => 'Lembrete de pagamento',
-        'AVISO_DIVIDA_VENCIDA' => 'Dívida vencida',
-        'COMPRA_REALIZADA' || 'CONFIRMACAO_COMPRA' => 'Nova venda',
-        'CADASTRO_CLIENTE' => 'Novo cliente',
-        _ => 'Sistema',
-      };
+class Convite {
+  Convite(this.codigo, this.expiraEm);
+  final String codigo;
+  final DateTime? expiraEm;
+  factory Convite.fromJson(Map<String, dynamic> j) =>
+      Convite(j['codigo'], parseData(j['expiraEm']));
+}
 
-  factory Notificacao.fromJson(Map<String, dynamic> j) => Notificacao(
-        id: j['id'] ?? DateTime.now().millisecondsSinceEpoch,
-        mensagem: j['mensagem'] ?? '',
-        dataEnvio: _date(j['dataEnvio']),
-        tipoBackend: j['tipoNotificacao'],
-        lida: j['lida'] == true,
-      );
+class AuditoriaEvento {
+  AuditoriaEvento(this.json);
+  final Map<String, dynamic> json;
+  factory AuditoriaEvento.fromJson(Map<String, dynamic> j) {
+    dynamic alteracoes = j['alteracoes'];
+    if (alteracoes is String) {
+      try {
+        alteracoes = jsonDecode(alteracoes);
+      } on FormatException {
+        alteracoes = 'Detalhes indisponíveis.';
+      }
+    }
+    return AuditoriaEvento({...j, 'alteracoes': alteracoes});
+  }
+  String get ator => json['ator'] is Map
+      ? (json['ator']['login'] ?? json['ator']['nome'] ?? '—').toString()
+      : texto('ator');
+  String get perfil => json['ator'] is Map
+      ? (json['ator']['perfil'] ?? '—').toString()
+      : texto('perfil');
+  String get recurso => json['recurso'] is Map
+      ? '${json['recurso']['tipo'] ?? '—'} #${json['recurso']['id'] ?? '—'}'
+      : '${texto('recursoTipo')} #${texto('recursoId')}';
+  String texto(String key) {
+    final v = json[key];
+    return v is Map
+        ? (v['nome'] ?? v['id'] ?? '—').toString()
+        : (v ?? '—').toString();
+  }
 }

@@ -6,11 +6,15 @@ final _dataHora = DateFormat('dd/MM/yyyy HH:mm', 'pt_BR');
 
 String moeda(num? v) => _moeda.format(v ?? 0);
 String data(DateTime? d) => d == null ? '—' : _data.format(d);
-String dataHora(DateTime? d) => d == null ? '—' : _dataHora.format(d);
+String dataHora(DateTime? d) => d == null ? '—' : _dataHora.format(d.toLocal());
 String isoDate(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
 
 String iniciais(String nome) {
-  final partes = nome.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+  final partes = nome
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((p) => p.isNotEmpty)
+      .toList();
   if (partes.isEmpty) return '?';
   if (partes.length == 1) return partes.first[0].toUpperCase();
   return (partes.first[0] + partes.last[0]).toUpperCase();
@@ -22,7 +26,9 @@ String tempoRelativo(DateTime? d) {
   if (diff.inMinutes < 1) return 'agora';
   if (diff.inHours < 1) return 'há ${diff.inMinutes} min';
   if (diff.inDays < 1) return 'há ${diff.inHours} h';
-  if (diff.inDays < 7) return 'há ${diff.inDays} dia${diff.inDays > 1 ? 's' : ''}';
+  if (diff.inDays < 7) {
+    return 'há ${diff.inDays} dia${diff.inDays > 1 ? 's' : ''}';
+  }
   return data(d);
 }
 

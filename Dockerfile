@@ -5,8 +5,10 @@ WORKDIR /app
 COPY pubspec.yaml ./
 RUN flutter pub get
 COPY . .
-ARG API_URL=http://localhost:8080
-RUN flutter build web --release --dart-define=API_URL=${API_URL}
+# Vazio = caminho relativo (/api/...), servido pelo proxy do nginx na mesma origem.
+ARG API_URL=
+# --no-web-resources-cdn: CanvasKit e fontes vêm no pacote, não do gstatic (funciona sem internet externa).
+RUN flutter build web --release --no-web-resources-cdn --dart-define=API_URL=${API_URL} --dart-define=MOCK_API=false
 
 # Etapa 2: servir com NGINX
 FROM nginx:alpine

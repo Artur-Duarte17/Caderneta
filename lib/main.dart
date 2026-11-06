@@ -1,60 +1,93 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
-
-import 'core/notificacoes_service.dart';
+import 'app_router.dart';
+import 'core/app_runtime.dart';
+import 'core/browser_setup.dart';
+import 'core/session.dart';
 import 'core/theme.dart';
-import 'pages/clientes_page.dart';
-import 'pages/dashboard_page.dart';
-import 'pages/notificacoes_page.dart';
-import 'pages/pagamentos_page.dart';
-import 'pages/relatorios_page.dart';
-import 'pages/vendas_page.dart';
-import 'widgets/app_shell.dart';
+import 'dev/fakes.dart';
 
-Future<void> main() async {
-  usePathUrlStrategy();
-  await initializeDateFormatting('pt_BR');
-  NotificacoesService.instance.iniciar();
-  runApp(const CadernetaApp());
+const kMockApi = bool.fromEnvironment('MOCK_API', defaultValue: false);
+void verificarModo({required bool release, required bool mock}) {
+  if (release && mock) {
+    throw StateError(
+      'MOCK_API é permitido somente em desenvolvimento e testes.',
+    );
+  }
 }
 
-GoRoute _rota(String path, Widget page) =>
-    GoRoute(path: path, pageBuilder: (_, _) => NoTransitionPage(child: page));
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  verificarModo(release: kReleaseMode, mock: kMockApi);
+  prepararNavegador();
+  await initializeDateFormatting('pt_BR');
+  final runtime = AppRuntime(
+    client: kMockApi ? criarClienteSimulado() : null,
+    simulado: kMockApi,
+  );
+  runApp(CadernetaApp(runtime: runtime));
+}
 
-final _router = GoRouter(
-  routes: [
-    ShellRoute(
-      builder: (context, state, child) => AppShell(location: state.uri.path, child: child),
-      routes: [
-        _rota('/', const DashboardPage()),
-        _rota('/clientes', const ClientesPage()),
-        _rota('/vendas', const VendasPage()),
-        _rota('/pagamentos', const PagamentosPage()),
-        _rota('/relatorios', const RelatoriosPage()),
-        _rota('/notificacoes', const NotificacoesPage()),
-      ],
-    ),
-  ],
-);
+class CadernetaApp extends StatefulWidget {
+  const CadernetaApp({super.key, required this.runtime, this.initialLocation});
+  final AppRuntime runtime;
+  final String? initialLocation;
+  @override
+  State<CadernetaApp> createState() => _CadernetaAppState();
+}
 
-class CadernetaApp extends StatelessWidget {
-  const CadernetaApp({super.key});
+class _CadernetaAppState extends State<CadernetaApp> {
+  late final GoRouter _router;
+  @override
+  void initState() {
+    super.initState();
+    _router = criarRouter(
+      widget.runtime,
+      initialLocation: widget.initialLocation,
+    );
+    unawaited(widget.runtime.sessao.restaurar());
+  }
 
   @override
-  Widget build(BuildContext context) => MaterialApp.router(
-        title: 'Caderneta - Vendas a Prazo',
-        debugShowCheckedModeBanner: false,
-        theme: buildTheme(),
-        routerConfig: _router,
-        locale: const Locale('pt', 'BR'),
-        supportedLocales: const [Locale('pt', 'BR')],
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-      );
+  void dispose() {
+    _router.dispose();
+    widget.runtime.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AppScope(
+    runtime: widget.runtime,
+    child: MaterialApp.router(
+      title: 'Caderneta - Vendas a Prazo',
+      debugShowCheckedModeBanner: false,
+      theme: buildTheme(),
+      routerConfig: _router,
+      locale: const Locale('pt', 'BR'),
+      supportedLocales: const [Locale('pt', 'BR')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      builder: (context, child) => ListenableBuilder(
+        listenable: widget.runtime.sessao,
+        builder: (context, _) {
+          if (widget.runtime.sessao.estado == EstadoSessao.verificando) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+          return KeyedSubtree(
+            key: ValueKey(widget.runtime.sessao.epoca),
+            child: child!,
+          );
+        },
+      ),
+    ),
+  );
 }

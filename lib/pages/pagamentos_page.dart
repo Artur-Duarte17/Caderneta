@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/api.dart';
 import '../core/format.dart';
 import '../core/models.dart';
-import '../core/notificacoes_service.dart';
+import '../core/historico_service.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 import 'vendas_page.dart' show periodos, dentroDoPeriodo;
@@ -21,79 +21,174 @@ class _PagamentosPageState extends State<PagamentosPage> {
 
   @override
   Widget build(BuildContext context) => AsyncView<Snapshot>(
-        load: Snapshot.load,
-        builder: (context, s, _) {
-          final termo = _busca.toLowerCase();
-          final lista = s.dividas.where((d) {
-            if (termo.isNotEmpty && !s.nomeCliente(d.clienteId).toLowerCase().contains(termo)) return false;
-            if (_status != null && d.status != _status) return false;
-            return dentroDoPeriodo(d.dataEmissao, _periodo);
-          }).toList()
+    load: Snapshot.load,
+    builder: (context, s, _) {
+      final termo = _busca.toLowerCase();
+      final lista =
+          s.dividas.where((d) {
+              if (termo.isNotEmpty &&
+                  !s.nomeCliente(d.clienteId).toLowerCase().contains(termo)) {
+                return false;
+              }
+              if (_status != null && d.status != _status) return false;
+              return dentroDoPeriodo(d.dataEmissao, _periodo);
+            }).toList()
             // Em aberto primeiro, ordenadas pelo vencimento mais próximo.
             ..sort((a, b) {
-              if (a.status.emAberto != b.status.emAberto) return a.status.emAberto ? -1 : 1;
-              return (a.dataVencimento ?? DateTime(9999)).compareTo(b.dataVencimento ?? DateTime(9999));
+              if (a.status.emAberto != b.status.emAberto) {
+                return a.status.emAberto ? -1 : 1;
+              }
+              return (a.dataVencimento ?? DateTime(9999)).compareTo(
+                b.dataVencimento ?? DateTime(9999),
+              );
             });
 
-          final abertas = lista.where((d) => d.status.emAberto);
-          final inicioMes = DateTime(DateTime.now().year, DateTime.now().month);
-          final pagsMes = lista.expand((d) => d.pagamentos).where((p) => p.dataPagamento != null && !p.dataPagamento!.isBefore(inicioMes));
-          final vencidas = lista.where((d) => d.status == Status.vencida);
+      final abertas = lista.where((d) => d.status.emAberto);
+      final inicioMes = DateTime(DateTime.now().year, DateTime.now().month);
+      final pagsMes = lista
+          .expand((d) => d.pagamentos)
+          .where(
+            (p) =>
+                p.dataPagamento != null &&
+                !p.dataPagamento!.isBefore(inicioMes),
+          );
+      final vencidas = lista.where((d) => d.status == Status.vencida);
 
-          return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            const PageHeader(titulo: 'Pagamentos', subtitulo: 'Acompanhe dívidas e registre pagamentos recebidos'),
-            ResponsiveGrid(minWidth: 240, children: [
-              StatCard(label: 'Saldo pendente', valor: moeda(abertas.fold<double>(0, (t, d) => t + d.valorPendente)),
-                  icon: Icons.account_balance_wallet_outlined, rodape: '${abertas.length} dívida(s) em aberto'),
-              StatCard(label: 'Recebido no mês', valor: moeda(pagsMes.fold<double>(0, (t, p) => t + p.valorPago)),
-                  icon: Icons.payments_outlined, cor: AppColors.success, rodape: '${pagsMes.length} pagamento(s)'),
-              StatCard(label: 'Dívidas vencidas', valor: '${vencidas.length}', icon: Icons.warning_amber_rounded, cor: AppColors.danger,
-                  rodape: moeda(vencidas.fold<double>(0, (t, d) => t + d.valorPendente))),
-            ]),
-            const SizedBox(height: Gap.lg),
-            Wrap(spacing: Gap.md, runSpacing: Gap.md, crossAxisAlignment: WrapCrossAlignment.center, children: [
-              FilterField(width: 300, child: SearchField(hint: 'Buscar cliente', onChanged: (v) => setState(() => _busca = v))),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const PageHeader(
+            titulo: 'Pagamentos',
+            subtitulo: 'Acompanhe dívidas e registre pagamentos recebidos',
+          ),
+          ResponsiveGrid(
+            minWidth: 240,
+            children: [
+              StatCard(
+                label: 'Saldo pendente',
+                valor: moeda(
+                  abertas.fold<double>(0, (t, d) => t + d.valorPendente),
+                ),
+                icon: Icons.account_balance_wallet_outlined,
+                rodape: '${abertas.length} dívida(s) em aberto',
+              ),
+              StatCard(
+                label: 'Recebido no mês',
+                valor: moeda(
+                  pagsMes.fold<double>(0, (t, p) => t + p.valorPago),
+                ),
+                icon: Icons.payments_outlined,
+                cor: AppColors.success,
+                rodape: '${pagsMes.length} pagamento(s)',
+              ),
+              StatCard(
+                label: 'Dívidas vencidas',
+                valor: '${vencidas.length}',
+                icon: Icons.warning_amber_rounded,
+                cor: AppColors.danger,
+                rodape: moeda(
+                  vencidas.fold<double>(0, (t, d) => t + d.valorPendente),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: Gap.lg),
+          Wrap(
+            spacing: Gap.md,
+            runSpacing: Gap.md,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              FilterField(
+                width: 300,
+                child: SearchField(
+                  hint: 'Buscar cliente',
+                  onChanged: (v) => setState(() => _busca = v),
+                ),
+              ),
               FilterField(
                 child: Dropdown<Status?>(
                   label: 'Status',
                   value: _status,
-                  itens: {null: 'Todos', for (final st in Status.values) st: st.label},
+                  itens: {
+                    null: 'Todos',
+                    for (final st in Status.values) st: st.label,
+                  },
                   onChanged: (v) => setState(() => _status = v),
                 ),
               ),
               FilterField(
-                child: Dropdown<int>(label: 'Emissão', value: _periodo, itens: periodos, onChanged: (v) => setState(() => _periodo = v)),
+                child: Dropdown<int>(
+                  label: 'Emissão',
+                  value: _periodo,
+                  itens: periodos,
+                  onChanged: (v) => setState(() => _periodo = v),
+                ),
               ),
-            ]),
-            const SizedBox(height: Gap.lg),
-            if (lista.isEmpty)
-              const EmptyState(icon: Icons.inbox_outlined, titulo: 'Nenhuma dívida encontrada')
-            else
-              ResponsiveGrid(minWidth: 320, children: [
-                for (final d in lista) _DividaCard(divida: d, cliente: s.nomeCliente(d.clienteId), onPagar: () => _pagar(context, s, d)),
-              ]),
-          ]);
-        },
+            ],
+          ),
+          const SizedBox(height: Gap.lg),
+          if (lista.isEmpty)
+            const EmptyState(
+              icon: Icons.inbox_outlined,
+              titulo: 'Nenhuma dívida encontrada',
+            )
+          else
+            ResponsiveGrid(
+              minWidth: 320,
+              children: [
+                for (final d in lista)
+                  _DividaCard(
+                    divida: d,
+                    cliente: s.nomeCliente(d.clienteId),
+                    onPagar: () => _pagar(context, s, d),
+                  ),
+              ],
+            ),
+        ],
       );
+    },
+  );
 
   Future<void> _pagar(BuildContext context, Snapshot s, Divida d) async {
-    final ok = await showDialog<bool>(context: context, builder: (_) => _PagamentoForm(divida: d, cliente: s.nomeCliente(d.clienteId)));
-    if (ok == true) NotificacoesService.instance.dadosAlterados();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) =>
+          _PagamentoForm(divida: d, cliente: s.nomeCliente(d.clienteId)),
+    );
+    if (ok == true) HistoricoService.instance.dadosAlterados();
   }
 }
 
 class _DividaCard extends StatelessWidget {
-  const _DividaCard({required this.divida, required this.cliente, required this.onPagar});
+  const _DividaCard({
+    required this.divida,
+    required this.cliente,
+    required this.onPagar,
+  });
   final Divida divida;
   final String cliente;
   final VoidCallback onPagar;
 
-  Widget _valor(BuildContext context, String label, String valor, {Color? cor}) => Expanded(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: Theme.of(context).textTheme.bodySmall),
-          Text(valor, style: TextStyle(fontWeight: FontWeight.w600, color: cor ?? AppColors.text)),
-        ]),
-      );
+  Widget _valor(
+    BuildContext context,
+    String label,
+    String valor, {
+    Color? cor,
+  }) => Expanded(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        Text(
+          valor,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: cor ?? AppColors.text,
+          ),
+        ),
+      ],
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -101,60 +196,125 @@ class _DividaCard extends StatelessWidget {
     final vencida = d.status == Status.vencida;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(Gap.md + 4),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(d.vendaId == null ? 'Dívida #${d.id}' : 'Venda #${d.vendaId}', style: Theme.of(context).textTheme.titleMedium),
-                Text(cliente, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 14)),
-              ]),
+        padding: const EdgeInsets.all(Gap.ml),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        d.vendaId == null
+                            ? 'Dívida #${d.id}'
+                            : 'Venda #${d.vendaId}',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      Text(
+                        cliente,
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+                StatusBadge(d.status),
+              ],
             ),
-            StatusBadge(d.status),
-          ]),
-          const SizedBox(height: Gap.md),
-          Container(
-            padding: const EdgeInsets.all(Gap.md - 4),
-            decoration: BoxDecoration(color: AppColors.bg, borderRadius: BorderRadius.circular(8)),
-            child: Column(children: [
-              Row(children: [
-                _valor(context, 'Valor original', moeda(d.valorOriginal)),
-                _valor(context, 'Valor pendente', moeda(d.valorPendente), cor: d.valorPendente > 0 ? AppColors.danger : AppColors.success),
-              ]),
-              const SizedBox(height: Gap.sm),
-              Row(children: [
-                _valor(context, 'Emissão', data(d.dataEmissao)),
-                _valor(context, 'Vencimento', data(d.dataVencimento), cor: vencida ? AppColors.danger : null),
-              ]),
-            ]),
-          ),
-          if (d.pagamentos.isNotEmpty) ...[
             const SizedBox(height: Gap.md),
-            Text('Pagamentos realizados', style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600)),
-            const SizedBox(height: Gap.xs),
-            for (final p in d.pagamentos)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                child: Row(children: [
-                  const Icon(Icons.check_circle, size: 16, color: AppColors.success),
-                  const SizedBox(width: Gap.xs),
-                  Text(moeda(p.valorPago), style: const TextStyle(fontWeight: FontWeight.w500)),
-                  const Spacer(),
-                  Text('${data(p.dataPagamento)} · ${p.metodo?.label ?? '—'}', style: Theme.of(context).textTheme.bodySmall),
-                ]),
+            Container(
+              padding: const EdgeInsets.all(Gap.ms),
+              decoration: BoxDecoration(
+                color: AppColors.bg,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      _valor(context, 'Valor original', moeda(d.valorOriginal)),
+                      _valor(
+                        context,
+                        'Valor pendente',
+                        moeda(d.valorPendente),
+                        cor: d.valorPendente > 0
+                            ? AppColors.danger
+                            : AppColors.success,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: Gap.sm),
+                  Row(
+                    children: [
+                      _valor(context, 'Emissão', data(d.dataEmissao)),
+                      _valor(
+                        context,
+                        'Vencimento',
+                        data(d.dataVencimento),
+                        cor: vencida ? AppColors.danger : null,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (d.pagamentos.isNotEmpty) ...[
+              const SizedBox(height: Gap.md),
+              Text(
+                'Pagamentos realizados',
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: Gap.xs),
+              for (final p in d.pagamentos)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: Gap.xs),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
+                        size: 16,
+                        color: AppColors.success,
+                      ),
+                      const SizedBox(width: Gap.xs),
+                      Text(
+                        moeda(p.valorPago),
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '${data(p.dataPagamento)} · ${p.metodo?.label ?? '—'}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+            const SizedBox(height: Gap.md),
+            const Spacer(),
+            if (d.status.emAberto)
+              FilledButton.icon(
+                onPressed: onPagar,
+                icon: const Icon(Icons.payments_outlined, size: 18),
+                label: const Text('Registrar pagamento'),
+              )
+            else
+              OutlinedButton.icon(
+                onPressed: null,
+                icon: Icon(d.status.icon, size: 18),
+                label: Text(
+                  d.status == Status.pago
+                      ? 'Dívida quitada'
+                      : 'Dívida cancelada',
+                ),
               ),
           ],
-          const SizedBox(height: Gap.md),
-          const Spacer(),
-          if (d.status.emAberto)
-            FilledButton.icon(onPressed: onPagar, icon: const Icon(Icons.payments_outlined, size: 18), label: const Text('Registrar pagamento'))
-          else
-            OutlinedButton.icon(
-              onPressed: null,
-              icon: Icon(d.status.icon, size: 18),
-              label: Text(d.status == Status.pago ? 'Dívida quitada' : 'Dívida cancelada'),
-            ),
-        ]),
+        ),
       ),
     );
   }
@@ -174,13 +334,23 @@ class _PagamentoFormState extends State<_PagamentoForm> {
   MetodoPagamento? _metodo;
   bool _salvando = false;
 
+  @override
+  void dispose() {
+    _valor.dispose();
+    super.dispose();
+  }
+
   double get _pendente => widget.divida.valorPendente;
 
   Future<void> _salvar() async {
-    if (!_form.currentState!.validate()) return;
+    if (_salvando || !_form.currentState!.validate()) return;
     setState(() => _salvando = true);
     try {
-      await Api.instance.registrarPagamento(widget.divida.id, parseValor(_valor.text)!, _metodo!);
+      await Api.instance.registrarPagamento(
+        widget.divida.id,
+        parseValor(_valor.text)!,
+        _metodo!,
+      );
       if (!mounted) return;
       toast(context, 'Pagamento registrado com sucesso');
       Navigator.pop(context, true);
@@ -198,7 +368,9 @@ class _PagamentoFormState extends State<_PagamentoForm> {
     return Pill(
       cor: quita ? AppColors.success : AppColors.info,
       icon: quita ? Icons.check_circle : Icons.timelapse,
-      label: quita ? 'Este pagamento quita a dívida' : 'Pagamento parcial · restará ${moeda(_pendente - v)}',
+      label: quita
+          ? 'Este pagamento quita a dívida'
+          : 'Pagamento parcial · restará ${moeda(_pendente - v)}',
     );
   }
 
@@ -209,46 +381,81 @@ class _PagamentoFormState extends State<_PagamentoForm> {
       title: const Text('Registrar pagamento'),
       content: SizedBox(
         width: 440,
-        child: Form(
-          key: _form,
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            InfoRow('Dívida', '${widget.divida.vendaId == null ? '#${widget.divida.id}' : 'Venda #${widget.divida.vendaId}'} · ${widget.cliente}'),
-            InfoRow('Valor pendente', moeda(_pendente), destaque: AppColors.danger),
-            const SizedBox(height: Gap.md),
-            TextFormField(
-              controller: _valor,
-              autofocus: true,
-              decoration: InputDecoration(
-                labelText: 'Valor pago *',
-                prefixText: r'R$ ',
-                suffixIcon: TextButton(
-                  onPressed: () => setState(() => _valor.text = _pendente.toStringAsFixed(2).replaceAll('.', ',')),
-                  child: const Text('Total'),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _form,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                InfoRow(
+                  'Dívida',
+                  '${widget.divida.vendaId == null ? '#${widget.divida.id}' : 'Venda #${widget.divida.vendaId}'} · ${widget.cliente}',
                 ),
-              ),
-              onChanged: (_) => setState(() {}),
-              validator: (t) {
-                final v = parseValor(t ?? '');
-                if (v == null || v <= 0) return 'Informe um valor válido';
-                if (v > _pendente + .001) return 'Valor maior que o pendente';
-                return null;
-              },
+                InfoRow(
+                  'Valor pendente',
+                  moeda(_pendente),
+                  destaque: AppColors.danger,
+                ),
+                const SizedBox(height: Gap.md),
+                TextFormField(
+                  controller: _valor,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: 'Valor pago *',
+                    prefixText: r'R$ ',
+                    suffixIcon: TextButton(
+                      onPressed: () => setState(
+                        () => _valor.text = _pendente
+                            .toStringAsFixed(2)
+                            .replaceAll('.', ','),
+                      ),
+                      child: const Text('Total'),
+                    ),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                  validator: (t) {
+                    final v = parseValor(t ?? '');
+                    if (v == null || v <= 0) return 'Informe um valor válido';
+                    if (v > _pendente + .001) {
+                      return 'Valor maior que o pendente';
+                    }
+                    return null;
+                  },
+                ),
+                if (aviso != null) ...[
+                  const SizedBox(height: Gap.sm),
+                  Align(alignment: Alignment.centerLeft, child: aviso),
+                ],
+                const SizedBox(height: Gap.md),
+                DropdownButtonFormField<MetodoPagamento>(
+                  isExpanded: true,
+                  initialValue: _metodo,
+                  decoration: const InputDecoration(
+                    labelText: 'Método de pagamento *',
+                  ),
+                  validator: (v) => v == null ? 'Selecione o método' : null,
+                  items: [
+                    for (final m in MetodoPagamento.values)
+                      DropdownMenuItem(value: m, child: Text(m.label)),
+                  ],
+                  onChanged: (v) => setState(() => _metodo = v),
+                ),
+              ],
             ),
-            if (aviso != null) ...[const SizedBox(height: Gap.sm), Align(alignment: Alignment.centerLeft, child: aviso)],
-            const SizedBox(height: Gap.md),
-            DropdownButtonFormField<MetodoPagamento>(
-              initialValue: _metodo,
-              decoration: const InputDecoration(labelText: 'Método de pagamento *'),
-              validator: (v) => v == null ? 'Selecione o método' : null,
-              items: [for (final m in MetodoPagamento.values) DropdownMenuItem(value: m, child: Text(m.label))],
-              onChanged: (v) => setState(() => _metodo = v),
-            ),
-          ]),
+          ),
         ),
       ),
       actions: [
-        TextButton(onPressed: _salvando ? null : () => Navigator.pop(context), child: const Text('Cancelar')),
-        BusyButton(label: 'Confirmar pagamento', busy: _salvando, onPressed: _salvar),
+        TextButton(
+          onPressed: _salvando ? null : () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        BusyButton(
+          label: 'Confirmar pagamento',
+          busy: _salvando,
+          onPressed: _salvar,
+        ),
       ],
     );
   }
