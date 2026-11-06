@@ -2,6 +2,8 @@
 
 Interface web do sistema de vendas a prazo, escrita em Flutter (apenas web).
 
+Use Flutter **3.47.6**, conforme .fvmrc, e pubspec.lock. As regras atuais estão em [contratos e permissões do integrador](../docs/contratos-e-permissoes.md); os resultados finais, em [entrega](../docs/entrega-homologacao-2026-11-05.md).
+
 
 ## Como o frontend fala com a API
 
@@ -39,8 +41,7 @@ flutter run -d chrome --dart-define=MOCK_API=true
 flutter build web --release --dart-define=MOCK_API=false
 ```
 
-Os arquivos ficam em `build/web/`. O `Dockerfile` faz o build e serve com nginx (porta 80, mapeada
-para 3000 no `docker-compose.yml`). Para sobrescrever a base da API: `--build-arg API_URL=...`.
+Os arquivos ficam em `build/web/`. O `Dockerfile` consome o build já testado e serve com nginx (porta 80, mapeada para 3000 no Compose local). Execute `scripts/Preparar-Entrega.ps1` na raiz do integrador para validar lockfile, análise, testes e build antes de empacotar. Para uma base alternativa da API, use `--dart-define=API_URL=...` na compilação Flutter.
 
 ## Testes
 
@@ -80,7 +81,7 @@ A simulação fica em memória e volta ao estado inicial ao recarregar. A restau
 
 O usuário entra pela tela de login; o primeiro acesso de um cliente exige CPF e convite gerado
 por gerente ou funcionário. Clientes acessam apenas `/api/me/*`. Relatórios, Auditoria, Acessos
-e edição de venda ficam disponíveis ao gerente. `/notificacoes` redireciona para Histórico.
+ficam disponíveis ao gerente. Funcionário também edita suas próprias vendas, sem acesso às vendas de outro vendedor. Itens são opcionais e não alteram automaticamente o total financeiro. `/notificacoes` redireciona para Histórico.
 
 Para validar o proxy depois de gerar `build/web`:
 
@@ -94,6 +95,6 @@ Confere SPA, caminho da API, JSON, cookie, cache e preservação de erros do ups
 Resultados, contratos e limites: [integração](docs/integracao-frontend.md).
 Avaliação do bot, sem implementação: [recomendação](docs/bot-recomendacao.md).
 
-O [plano compartilhado vigente](../docs/plano-execucao-caderneta-atualizado.md) substitui os rascunhos anteriores de contrato.
+O [contrato atual](../docs/contratos-e-permissoes.md) substitui decisões divergentes dos planos anteriores.
 Para validar com menor concorrência, execute análise, testes e build um de cada vez. O build JavaScript pode usar
 `flutter build web --release --no-wasm-dry-run --dart-define=MOCK_API=false`; a opção pula a compilação adicional de verificação Wasm.

@@ -1,0 +1,1 @@
+void abrirComprovante(String caminho) {}

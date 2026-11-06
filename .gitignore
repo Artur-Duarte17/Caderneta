@@ -60,3 +60,6 @@ coverage/
 .dart_tool/
 .flutter-plugins-dependencies
 *.iml
+
+# Imagens temporárias de falhas nos testes visuais
+test/failures/

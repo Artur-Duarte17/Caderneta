@@ -32,15 +32,20 @@ void main() {
       final api = Api(gateway: gateway);
       await api.criarVenda(20, [
         ItemVenda(descricao: 'Produto', quantidade: 2, precoUnitario: 3),
-      ]);
+      ], valorTotal: 6);
       await api.atualizarVenda(
         1,
         clienteId: 20,
         valorTotal: 6,
+        versao: 0,
+        itens: const [],
         data: DateTime(2026, 11, 5),
       );
       expect(corpos.every((c) => !c.containsKey('funcionarioId')), true);
-      expect(corpos[1]['dataHora'], '2026-11-05T00:00:00');
+      expect(
+        corpos[1]['dataHora'],
+        DateTime(2026, 11, 5).toUtc().toIso8601String(),
+      );
     },
   );
   test('timeout cobre envio pendente e não repete mutação', () async {

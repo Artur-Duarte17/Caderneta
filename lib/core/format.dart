@@ -5,7 +5,8 @@ final _data = DateFormat('dd/MM/yyyy', 'pt_BR');
 final _dataHora = DateFormat('dd/MM/yyyy HH:mm', 'pt_BR');
 
 String moeda(num? v) => _moeda.format(v ?? 0);
-String data(DateTime? d) => d == null ? '—' : _data.format(d);
+String data(DateTime? d) =>
+    d == null ? '—' : _data.format(d.isUtc ? d.toLocal() : d);
 String dataHora(DateTime? d) => d == null ? '—' : _dataHora.format(d.toLocal());
 String isoDate(DateTime d) => DateFormat('yyyy-MM-dd').format(d);
 
@@ -37,10 +38,21 @@ double? parseValor(String s) {
   var t = s.trim().replaceAll(r'R$', '').replaceAll(' ', '');
   if (t.isEmpty) return null;
   if (t.contains(',')) t = t.replaceAll('.', '').replaceAll(',', '.');
-  return double.tryParse(t);
+  final valor = double.tryParse(t);
+  return valor != null && valor.isFinite ? valor : null;
 }
 
 DateTime hoje() {
   final n = DateTime.now();
   return DateTime(n.year, n.month, n.day);
+}
+
+int? parseCentavos(String s) {
+  var t = s.trim().replaceAll(r'R$', '').replaceAll(' ', '');
+  if (t.contains(',')) t = t.replaceAll('.', '').replaceAll(',', '.');
+  if (!RegExp(r'^\d+(\.\d{1,2})?$').hasMatch(t)) return null;
+  final p = t.split('.');
+  final n = int.tryParse(p[0]);
+  if (n == null || n > 9999999999) return null;
+  return n * 100 + (p.length == 1 ? 0 : int.parse(p[1].padRight(2, '0')));
 }

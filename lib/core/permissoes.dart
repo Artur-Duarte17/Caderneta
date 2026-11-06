@@ -17,8 +17,9 @@ enum Acao { operacao, editarVenda, gerencial, minhaCaderneta, gerarConvite }
 
 bool pode(Perfil? perfil, Acao acao) => switch (acao) {
   Acao.operacao ||
+  Acao.editarVenda ||
   Acao.gerarConvite => perfil == Perfil.gerente || perfil == Perfil.funcionario,
-  Acao.editarVenda || Acao.gerencial => perfil == Perfil.gerente,
+  Acao.gerencial => perfil == Perfil.gerente,
   Acao.minhaCaderneta => perfil == Perfil.cliente,
 };
 

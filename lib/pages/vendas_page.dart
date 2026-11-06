@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/api.dart';
+import '../core/comprovante.dart';
 import '../core/app_runtime.dart';
 import '../core/permissoes.dart';
 import '../core/format.dart';
@@ -31,12 +32,20 @@ class VendasPage extends StatefulWidget {
 
 class _VendasPageState extends State<VendasPage> {
   String _busca = '';
+  int _page = 0;
   Status? _status;
   int _periodo = 0;
 
   @override
   Widget build(BuildContext context) => AsyncView<Snapshot>(
-    load: Snapshot.load,
+    key: ValueKey((_page, _busca, _status, _periodo)),
+    load: () => Snapshot.load(
+      recurso: 'vendas',
+      page: _page,
+      q: _busca,
+      status: _status?.backend,
+      periodo: _periodo,
+    ),
     builder: (context, s, _) {
       final termo = _busca.toLowerCase();
       final lista =
@@ -59,13 +68,10 @@ class _VendasPageState extends State<VendasPage> {
         children: [
           PageHeader(
             titulo: 'Vendas a prazo',
-            subtitulo:
-                '${lista.length} de ${s.vendas.length} venda(s) · ${moeda(lista.fold<double>(0, (t, v) => t + v.valorTotal))}',
+            subtitulo: '${s.total} venda(s) · Página ${_page + 1}',
             acoes: [
               FilledButton.icon(
-                onPressed: s.clientes.isEmpty
-                    ? null
-                    : () => _form(context, s, null),
+                onPressed: () => _form(context, s, null),
                 icon: const Icon(Icons.add, size: 18),
                 label: const Text('Nova venda'),
               ),
@@ -79,7 +85,10 @@ class _VendasPageState extends State<VendasPage> {
                 width: 300,
                 child: SearchField(
                   hint: 'Buscar por cliente ou nº da venda',
-                  onChanged: (v) => setState(() => _busca = v),
+                  onChanged: (v) => setState(() {
+                    _busca = v;
+                    _page = 0;
+                  }),
                 ),
               ),
               FilterField(
@@ -90,7 +99,10 @@ class _VendasPageState extends State<VendasPage> {
                     null: 'Todos',
                     for (final st in Status.values) st: st.label,
                   },
-                  onChanged: (v) => setState(() => _status = v),
+                  onChanged: (v) => setState(() {
+                    _status = v;
+                    _page = 0;
+                  }),
                 ),
               ),
               FilterField(
@@ -98,12 +110,21 @@ class _VendasPageState extends State<VendasPage> {
                   label: 'Período',
                   value: _periodo,
                   itens: periodos,
-                  onChanged: (v) => setState(() => _periodo = v),
+                  onChanged: (v) => setState(() {
+                    _periodo = v;
+                    _page = 0;
+                  }),
                 ),
               ),
             ],
           ),
           const SizedBox(height: Gap.lg),
+          OperacaoPaginador(
+            page: _page,
+            total: s.total,
+            last: s.last,
+            onPage: (p) => setState(() => _page = p),
+          ),
           if (lista.isEmpty)
             const EmptyState(
               icon: Icons.receipt_long,
@@ -159,6 +180,64 @@ class _VendasPageState extends State<VendasPage> {
             const SizedBox(height: Gap.sm),
             InfoRow('Data da venda', dataHora(v.dataHora)),
             InfoRow('Valor total', moeda(v.valorTotal)),
+            Wrap(
+              spacing: Gap.md,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () =>
+                      abrirComprovante('/vendas/${v.id}/comprovante'),
+                  icon: const Icon(Icons.print),
+                  label: const Text('Comprovante'),
+                ),
+                if (AppScope.of(context).sessao.usuario?.perfil ==
+                        Perfil.gerente &&
+                    !v.temPagamentos)
+                  TextButton(
+                    onPressed: () async {
+                      final confirmar = await showDialog<bool>(
+                        context: ctx,
+                        builder: (c) => AlertDialog(
+                          title: const Text('Excluir venda?'),
+                          content: const Text(
+                            'A venda e sua dívida sem pagamentos serão excluídas. A auditoria será preservada.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(c, false),
+                              child: const Text('Cancelar'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(c, true),
+                              child: const Text('Excluir'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmar == true) {
+                        try {
+                          await Api.instance.excluirVenda(v.id);
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          HistoricoService.instance.dadosAlterados();
+                        } catch (e) {
+                          if (ctx.mounted) toast(ctx, '$e', erro: true);
+                        }
+                      }
+                    },
+                    child: const Text('Excluir venda'),
+                  ),
+              ],
+            ),
+            InfoRow(
+              'Soma dos itens',
+              moeda(v.itens.fold<double>(0, (t, i) => t + i.subtotal)),
+            ),
+            InfoRow(
+              'Valor não detalhado',
+              moeda(
+                v.valorTotal -
+                    v.itens.fold<double>(0, (t, i) => t + i.subtotal),
+              ),
+            ),
             if (d != null) ...[
               InfoRow(
                 'Vencimento',
@@ -204,11 +283,16 @@ class _VendasPageState extends State<VendasPage> {
   }
 
   Future<void> _form(BuildContext context, Snapshot s, Venda? v) async {
+    final clientes = await Api.instance.clientes();
+    if (v != null && !clientes.any((c) => c.id == v.clienteId)) {
+      clientes.add(await Api.instance.cliente(v.clienteId));
+    }
+    if (!context.mounted) return;
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => v == null
-          ? _NovaVendaForm(clientes: s.clientes)
-          : _EditarVendaForm(venda: v, clientes: s.clientes),
+          ? _NovaVendaForm(clientes: clientes)
+          : _EditarVendaForm(venda: v, clientes: clientes),
     );
     if (ok == true) HistoricoService.instance.dadosAlterados();
   }
@@ -247,7 +331,7 @@ class _VendaCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     Text(
-                      data(venda.dataHora),
+                      data(venda.dataNegocio ?? venda.dataHora),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -331,61 +415,148 @@ DropdownButtonFormField<int> _clienteSelect(
 );
 
 class _ItemCtrl {
-  final desc = TextEditingController();
-  final qtd = TextEditingController(text: '1');
-  final valor = TextEditingController();
+  _ItemCtrl([ItemVenda? item]) {
+    desc.text = item?.descricao ?? '';
+    qtd.text = '${item?.quantidade ?? 1}';
+    valor.text = item == null
+        ? ''
+        : item.precoUnitario.toStringAsFixed(2).replaceAll('.', ',');
+  }
+  final desc = TextEditingController(),
+      qtd = TextEditingController(),
+      valor = TextEditingController();
+  int get subtotalCentavos =>
+      (int.tryParse(qtd.text) ?? 0) * (parseCentavos(valor.text) ?? 0);
   void dispose() {
     desc.dispose();
     qtd.dispose();
     valor.dispose();
   }
-
-  double get subtotal =>
-      (int.tryParse(qtd.text) ?? 0) * (parseValor(valor.text) ?? 0);
 }
 
-class _NovaVendaForm extends StatefulWidget {
+class _NovaVendaForm extends StatelessWidget {
   const _NovaVendaForm({required this.clientes});
   final List<Cliente> clientes;
   @override
-  State<_NovaVendaForm> createState() => _NovaVendaFormState();
+  Widget build(BuildContext context) => _VendaForm(clientes: clientes);
 }
 
-class _NovaVendaFormState extends State<_NovaVendaForm> {
-  final _form = GlobalKey<FormState>();
-  int? _cliente;
-  final _itens = [_ItemCtrl()];
-  bool _salvando = false;
+class _EditarVendaForm extends StatelessWidget {
+  const _EditarVendaForm({required this.venda, required this.clientes});
+  final Venda venda;
+  final List<Cliente> clientes;
+  @override
+  Widget build(BuildContext context) =>
+      _VendaForm(clientes: clientes, venda: venda);
+}
 
+class _VendaForm extends StatefulWidget {
+  const _VendaForm({required this.clientes, this.venda});
+  final List<Cliente> clientes;
+  final Venda? venda;
+  @override
+  State<_VendaForm> createState() => _VendaFormState();
+}
+
+class _VendaFormState extends State<_VendaForm> {
+  final _form = GlobalKey<FormState>();
+  late List<Cliente> _clientes = List.of(widget.clientes);
+  int _buscaCliente = 0;
+  Future<void> _buscarClientes(String q) async {
+    final pedido = ++_buscaCliente;
+    try {
+      final encontrados = (await Api.instance.pagina(
+        '/clientes',
+        Cliente.fromJson,
+        q: q,
+        size: 100,
+      )).content;
+      if (!mounted || pedido != _buscaCliente) return;
+      final atual = _clientes.where((c) => c.id == _cliente).firstOrNull;
+      if (atual != null && !encontrados.any((c) => c.id == atual.id)) {
+        encontrados.add(atual);
+      }
+      setState(() => _clientes = encontrados);
+    } catch (e) {
+      if (mounted) toast(context, '$e', erro: true);
+    }
+  }
+
+  late int? _cliente = widget.venda?.clienteId;
+  late DateTime? _data = widget.venda?.dataHora?.toLocal();
+  late final _valor = TextEditingController(
+    text: widget.venda?.valorTotal.toStringAsFixed(2).replaceAll('.', ','),
+  );
+  late final _itens = <_ItemCtrl>[
+    for (final i in widget.venda?.itens ?? <ItemVenda>[]) _ItemCtrl(i),
+  ];
+  bool _salvando = false, _dataAlterada = false;
+  String? _erro;
+  bool get _editando => widget.venda != null;
+  bool get _bloqueado => widget.venda?.temPagamentos ?? false;
+  int get _soma => _itens.fold(0, (t, i) => t + i.subtotalCentavos);
+  int get _total => parseCentavos(_valor.text) ?? 0;
   @override
   void dispose() {
+    _valor.dispose();
     for (final i in _itens) {
       i.dispose();
     }
     super.dispose();
   }
 
-  double get _total => _itens.fold<double>(0, (t, i) => t + i.subtotal);
-
   Future<void> _salvar() async {
     if (_salvando || !_form.currentState!.validate()) return;
-    setState(() => _salvando = true);
+    if (_soma > _total) {
+      setState(
+        () => _erro = 'A soma dos itens não pode ultrapassar o total da venda.',
+      );
+      return;
+    }
+    setState(() {
+      _salvando = true;
+      _erro = null;
+    });
+    final itens = [
+      for (final i in _itens)
+        ItemVenda(
+          descricao: i.desc.text.trim(),
+          quantidade: int.parse(i.qtd.text),
+          precoUnitario: parseCentavos(i.valor.text)! / 100,
+        ),
+    ];
     try {
-      await Api.instance.criarVenda(_cliente!, [
-        for (final i in _itens)
-          ItemVenda(
-            descricao: i.desc.text.trim(),
-            quantidade: int.parse(i.qtd.text),
-            precoUnitario: parseValor(i.valor.text)!,
-          ),
-      ]);
+      if (_editando) {
+        await Api.instance.atualizarVenda(
+          widget.venda!.id,
+          clienteId: _cliente!,
+          valorTotal: _total / 100,
+          versao: widget.venda!.versao,
+          itens: itens,
+          data: _dataAlterada ? _data : null,
+        );
+      } else {
+        await Api.instance.criarVenda(
+          _cliente!,
+          itens,
+          valorTotal: _total / 100,
+        );
+      }
       if (!mounted) return;
-      toast(context, 'Venda registrada com sucesso');
+      toast(
+        context,
+        _editando
+            ? 'Venda atualizada com sucesso'
+            : 'Venda registrada com sucesso',
+      );
       Navigator.pop(context, true);
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _salvando = false);
-      toast(context, '$e', erro: true);
+      if (mounted) {
+        setState(() {
+          _salvando = false;
+          _erro = '$e';
+        });
+      }
     }
   }
 
@@ -400,35 +571,25 @@ class _NovaVendaFormState extends State<_NovaVendaForm> {
       children: [
         Row(
           children: [
-            Text(
-              'Item ${idx + 1}',
-              style: const TextStyle(fontWeight: FontWeight.w600),
+            Expanded(child: Text('Item ${idx + 1}')),
+            Expanded(child: Text(moeda(i.subtotalCentavos / 100))),
+            IconButton(
+              tooltip: 'Remover item',
+              onPressed: _salvando
+                  ? null
+                  : () => setState(() => _itens.removeAt(idx).dispose()),
+              icon: const Icon(Icons.delete_outline),
             ),
-            const Spacer(),
-            Text(
-              moeda(i.subtotal),
-              style: const TextStyle(color: AppColors.muted),
-            ),
-            if (_itens.length > 1)
-              IconButton(
-                tooltip: 'Remover item',
-                icon: const Icon(
-                  Icons.delete_outline,
-                  color: AppColors.danger,
-                  size: 20,
-                ),
-                onPressed: () => setState(() => _itens.removeAt(idx).dispose()),
-              ),
           ],
         ),
-        const SizedBox(height: Gap.sm),
         TextFormField(
           controller: i.desc,
           decoration: const InputDecoration(labelText: 'Descrição *'),
+          maxLength: 200,
           validator: (v) =>
               (v ?? '').trim().isEmpty ? 'Informe a descrição' : null,
         ),
-        const SizedBox(height: Gap.md),
+        const SizedBox(height: Gap.sm),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -438,8 +599,12 @@ class _NovaVendaFormState extends State<_NovaVendaForm> {
                 decoration: const InputDecoration(labelText: 'Qtd *'),
                 keyboardType: TextInputType.number,
                 onChanged: (_) => setState(() {}),
-                validator: (v) =>
-                    (int.tryParse(v ?? '') ?? 0) < 1 ? 'Inválida' : null,
+                validator: (v) {
+                  final n = int.tryParse(v ?? '');
+                  return n == null || n < 1 || n > 1000000
+                      ? 'Quantidade inválida'
+                      : null;
+                },
               ),
             ),
             const SizedBox(width: Gap.md),
@@ -455,8 +620,9 @@ class _NovaVendaFormState extends State<_NovaVendaForm> {
                   decimal: true,
                 ),
                 onChanged: (_) => setState(() {}),
-                validator: (v) =>
-                    (parseValor(v ?? '') ?? 0) <= 0 ? 'Informe um valor' : null,
+                validator: (v) => (parseCentavos(v ?? '') ?? 0) <= 0
+                    ? 'Informe valor com até 2 casas'
+                    : null,
               ),
             ),
           ],
@@ -464,113 +630,13 @@ class _NovaVendaFormState extends State<_NovaVendaForm> {
       ],
     ),
   );
-
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('Nova venda a prazo'),
+    title: Text(
+      _editando ? 'Editar venda #${widget.venda!.id}' : 'Nova venda a prazo',
+    ),
     content: SizedBox(
       width: 600,
-      child: Form(
-        key: _form,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _clienteSelect(
-                widget.clientes,
-                _cliente,
-                (v) => setState(() => _cliente = v),
-              ),
-              const SizedBox(height: Gap.sm),
-              Text(
-                'O vencimento é calculado pelo prazo padrão do cliente.',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-              const SizedBox(height: Gap.md),
-              const FormSection('Itens da venda'),
-              for (var i = 0; i < _itens.length; i++) _item(i, _itens[i]),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: OutlinedButton.icon(
-                  onPressed: () => setState(() => _itens.add(_ItemCtrl())),
-                  icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Adicionar item'),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-    actions: [
-      Text(
-        'Total: ${moeda(_total)}',
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-      ),
-      const SizedBox(width: Gap.md),
-      TextButton(
-        onPressed: _salvando ? null : () => Navigator.pop(context),
-        child: const Text('Cancelar'),
-      ),
-      BusyButton(label: 'Registrar venda', busy: _salvando, onPressed: _salvar),
-    ],
-  );
-}
-
-class _EditarVendaForm extends StatefulWidget {
-  const _EditarVendaForm({required this.venda, required this.clientes});
-  final Venda venda;
-  final List<Cliente> clientes;
-  @override
-  State<_EditarVendaForm> createState() => _EditarVendaFormState();
-}
-
-class _EditarVendaFormState extends State<_EditarVendaForm> {
-  final _form = GlobalKey<FormState>();
-  late int? _cliente = widget.venda.clienteId;
-  late DateTime? _data = widget.venda.dataHora;
-  late final _valor = TextEditingController(
-    text: widget.venda.valorTotal.toStringAsFixed(2).replaceAll('.', ','),
-  );
-  bool _salvando = false;
-  String? _erro;
-
-  @override
-  void dispose() {
-    _valor.dispose();
-    super.dispose();
-  }
-
-  Future<void> _salvar() async {
-    if (_salvando || !_form.currentState!.validate()) return;
-    setState(() {
-      _salvando = true;
-      _erro = null;
-    });
-    try {
-      await Api.instance.atualizarVenda(
-        widget.venda.id,
-        clienteId: _cliente!,
-        valorTotal: parseValor(_valor.text)!,
-        data: _data,
-      );
-      if (!mounted) return;
-      toast(context, 'Venda atualizada com sucesso');
-      Navigator.pop(context, true);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _salvando = false;
-        _erro = '$e';
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: Text('Editar venda #${widget.venda.id}'),
-    content: SizedBox(
-      width: 480,
       child: SingleChildScrollView(
         child: Form(
           key: _form,
@@ -586,48 +652,111 @@ class _EditarVendaFormState extends State<_EditarVendaForm> {
                     style: const TextStyle(color: AppColors.danger),
                   ),
                 ),
-              _clienteSelect(
-                widget.clientes,
-                _cliente,
-                (v) => setState(() => _cliente = v),
-              ),
-              const SizedBox(height: Gap.md),
-              InkWell(
-                onTap: () async {
-                  final d = await showDatePicker(
-                    context: context,
-                    initialDate: _data ?? DateTime.now(),
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime.now().add(const Duration(days: 365)),
-                  );
-                  if (d != null) setState(() => _data = d);
-                },
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Data da venda',
-                    suffixIcon: Icon(Icons.calendar_today, size: 18),
+              if (_bloqueado)
+                const Padding(
+                  padding: EdgeInsets.only(bottom: Gap.md),
+                  child: Text(
+                    'Esta venda possui pagamentos. Você pode corrigir apenas o detalhamento dos itens.',
                   ),
-                  child: Text(data(_data)),
+                ),
+              if (!_bloqueado) ...[
+                TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Buscar cliente por nome ou CPF',
+                  ),
+                  onChanged: _buscarClientes,
+                ),
+                const SizedBox(height: Gap.sm),
+              ],
+              AbsorbPointer(
+                absorbing: _bloqueado || _salvando,
+                child: _clienteSelect(
+                  _clientes,
+                  _cliente,
+                  (v) => setState(() => _cliente = v),
                 ),
               ),
               const SizedBox(height: Gap.md),
               TextFormField(
                 controller: _valor,
+                enabled: !_bloqueado && !_salvando,
                 decoration: const InputDecoration(
                   labelText: 'Valor total *',
                   prefixText: r'R$ ',
                 ),
-                validator: (v) => (parseValor(v ?? '') ?? 0) <= 0
-                    ? 'Informe um valor válido'
-                    : null,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                onChanged: (_) => setState(() {}),
+                validator: (v) {
+                  final n = parseCentavos(v ?? '');
+                  return n == null || n <= 0
+                      ? 'Informe valor positivo com até 2 casas decimais'
+                      : null;
+                },
               ),
-              if (widget.venda.itens.isNotEmpty) ...[
+              if (_editando) ...[
                 const SizedBox(height: Gap.md),
-                Text(
-                  'Itens: ${widget.venda.itens.map((i) => '${i.descricao} (${i.quantidade}x)').join(', ')}',
-                  style: Theme.of(context).textTheme.bodySmall,
+                OutlinedButton.icon(
+                  icon: const Icon(Icons.calendar_today, size: 18),
+                  label: Text(data(_data)),
+                  style: OutlinedButton.styleFrom(
+                    alignment: Alignment.centerLeft,
+                  ),
+                  onPressed: _bloqueado || _salvando
+                      ? null
+                      : () async {
+                          final d = await showDatePicker(
+                            context: context,
+                            initialDate: _data ?? DateTime.now(),
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 365),
+                            ),
+                          );
+                          if (d != null) {
+                            final t = _data ?? DateTime.now();
+                            setState(() {
+                              _data = DateTime(
+                                d.year,
+                                d.month,
+                                d.day,
+                                t.hour,
+                                t.minute,
+                                t.second,
+                                t.millisecond,
+                                t.microsecond,
+                              );
+                              _dataAlterada = true;
+                            });
+                          }
+                        },
                 ),
               ],
+              const SizedBox(height: Gap.md),
+              const FormSection('Itens opcionais'),
+              const Text(
+                'Registre rapidamente pelo valor total. Você pode completar os itens depois.',
+              ),
+              const SizedBox(height: Gap.md),
+              for (var i = 0; i < _itens.length; i++) _item(i, _itens[i]),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton.icon(
+                  onPressed: _salvando
+                      ? null
+                      : () => setState(() => _itens.add(_ItemCtrl())),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Adicionar item'),
+                ),
+              ),
+              const SizedBox(height: Gap.md),
+              InfoRow('Soma dos itens', moeda(_soma / 100)),
+              InfoRow(
+                'Valor não detalhado',
+                moeda((_total - _soma) / 100),
+                destaque: _soma > _total ? AppColors.danger : null,
+              ),
             ],
           ),
         ),
@@ -639,7 +768,7 @@ class _EditarVendaFormState extends State<_EditarVendaForm> {
         child: const Text('Cancelar'),
       ),
       BusyButton(
-        label: 'Salvar alterações',
+        label: _editando ? 'Salvar alterações' : 'Registrar venda',
         busy: _salvando,
         onPressed: _salvar,
       ),

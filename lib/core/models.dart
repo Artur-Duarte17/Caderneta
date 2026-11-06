@@ -24,6 +24,13 @@ enum Status {
   final Color color;
   final IconData icon;
 
+  String get backend => switch (this) {
+    Status.pendente => 'ABERTA',
+    Status.parcial => 'PAGA_PARCIALMENTE',
+    Status.pago => 'PAGA_TOTALMENTE',
+    Status.vencida => 'VENCIDA',
+    Status.cancelada => 'CANCELADA',
+  };
   bool get emAberto => this == pendente || this == parcial || this == vencida;
 }
 
@@ -54,6 +61,9 @@ class Cliente {
     this.endereco,
     this.limiteCredito = 0,
     this.prazoPagamentoPadraoDias = 30,
+    this.fiador,
+    this.saldoDevedor = 0,
+    this.emAtraso = false,
   });
 
   final int id;
@@ -61,6 +71,9 @@ class Cliente {
   final String? cpf, email, telefone, endereco;
   final double limiteCredito;
   final int prazoPagamentoPadraoDias;
+  final Map<String, dynamic>? fiador;
+  final double saldoDevedor;
+  final bool emAtraso;
 
   factory Cliente.fromJson(Map<String, dynamic> j) => Cliente(
     id: j['id'],
@@ -71,6 +84,9 @@ class Cliente {
     endereco: j['endereco'],
     limiteCredito: _num(j['limiteCredito']),
     prazoPagamentoPadraoDias: j['prazoPagamentoPadraoDias'] ?? 30,
+    fiador: j['fiador'],
+    saldoDevedor: _num(j['saldoDevedor']),
+    emAtraso: j['emAtraso'] == true,
   );
 }
 
@@ -105,25 +121,40 @@ class Venda {
   Venda({
     required this.id,
     this.dataHora,
+    this.dataNegocio,
     required this.valorTotal,
     required this.clienteId,
     this.dividaId,
+    this.versao = 0,
+    this.temPagamentos = false,
+    this.clienteNome,
+    this.statusDivida,
     this.itens = const [],
   });
 
   final int id;
   final DateTime? dataHora;
+  final DateTime? dataNegocio;
   final double valorTotal;
   final int clienteId;
   final int? dividaId;
+  final int versao;
+  final bool temPagamentos;
+  final String? statusDivida;
+  final String? clienteNome;
   final List<ItemVenda> itens;
 
   factory Venda.fromJson(Map<String, dynamic> j) => Venda(
     id: j['id'],
     dataHora: parseData(j['dataHora']),
+    dataNegocio: parseData(j['dataNegocio']),
     valorTotal: _num(j['valorTotal']),
     clienteId: j['clienteId'],
     dividaId: j['dividaId'],
+    versao: j['versao'] ?? 0,
+    temPagamentos: j['temPagamentos'] == true,
+    statusDivida: j['statusDivida'],
+    clienteNome: j['clienteNome'],
     itens: ((j['itens'] as List?) ?? [])
         .map((e) => ItemVenda.fromJson(e))
         .toList(),
@@ -131,13 +162,23 @@ class Venda {
 }
 
 class Pagamento {
-  Pagamento({required this.valorPago, this.dataPagamento, this.metodo});
+  Pagamento({
+    required this.valorPago,
+    this.dataPagamento,
+    this.metodo,
+    this.id,
+    this.dividaId,
+  });
+  final int? id;
+  final int? dividaId;
 
   final double valorPago;
   final DateTime? dataPagamento;
   final MetodoPagamento? metodo;
 
   factory Pagamento.fromJson(Map<String, dynamic> j) => Pagamento(
+    id: j['id'],
+    dividaId: j['dividaId'],
     valorPago: _num(j['valorPago']),
     dataPagamento: parseData(j['dataPagamento']),
     metodo: MetodoPagamento.parse(j['metodoPagamento']),
@@ -154,6 +195,7 @@ class Divida {
     this.statusBackend,
     required this.clienteId,
     this.vendaId,
+    this.clienteNome,
     this.pagamentos = const [],
   });
 
@@ -163,6 +205,7 @@ class Divida {
   final String? statusBackend;
   final int clienteId;
   final int? vendaId;
+  final String? clienteNome;
   final List<Pagamento> pagamentos;
 
   double get valorPago => pagamentos.fold<double>(0, (s, p) => s + p.valorPago);
@@ -199,6 +242,7 @@ class Divida {
     statusBackend: j['statusDivida'],
     clienteId: j['clienteId'],
     vendaId: j['vendaId'],
+    clienteNome: j['clienteNome'],
     pagamentos: ((j['pagamentos'] as List?) ?? [])
         .map((e) => Pagamento.fromJson(e))
         .toList(),

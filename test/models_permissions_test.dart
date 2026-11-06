@@ -33,7 +33,7 @@ void main() {
     for (final acao in Acao.values) {
       expect(pode(null, acao), false);
     }
-    expect(pode(Perfil.funcionario, Acao.editarVenda), false);
+    expect(pode(Perfil.funcionario, Acao.editarVenda), true);
     expect(pode(Perfil.gerente, Acao.editarVenda), true);
     expect(rotaPermitida(Perfil.cliente, '/clientes'), false);
     expect(rotaPermitida(Perfil.cliente, '/minha/compras'), true);

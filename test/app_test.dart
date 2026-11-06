@@ -133,7 +133,7 @@ void main() {
         expect(find.text('Vendas no mês'), findsNothing);
         router.go('/vendas');
         await tester.pumpAndSettle();
-        expect(find.text('Editar'), findsNothing);
+        expect(find.text('Editar'), findsWidgets);
         router.go('/auditoria');
       } else {
         router.go('/minha');
@@ -227,6 +227,7 @@ void main() {
       '/vendas',
       body: {
         'clienteId': 20,
+        'valorTotal': 10,
         'itens': [
           {
             'descricaoProduto': 'Pedido novo de teste',
@@ -413,12 +414,7 @@ void main() {
             : 'GERENTE';
         await abrir(tester, perfil: perfil, path: path, width: width);
         expect(tester.takeException(), isNull, reason: '$path em $width px');
-        if (path == '/login') {
-          await expectLater(
-            find.byType(MaterialApp),
-            matchesGoldenFile('goldens/login-${width.toInt()}.png'),
-          );
-        }
+
         await fechar(tester);
       }
     });

@@ -1,5 +1,7 @@
 # Integração do frontend — 05/11/2026
 
+> Registro histórico. Para regras atuais, enquadramento, testes visuais e resultados, consulte [contratos](../../docs/contratos-e-permissoes.md) e [entrega homologada](../../docs/entrega-homologacao-2026-11-05.md).
+
 A implementação inicial usou o plano detalhado do frontend. O plano compartilhado foi recebido posteriormente como anexo do usuário e agora está em [plano-execucao-caderneta-atualizado.md](../../docs/plano-execucao-caderneta-atualizado.md), que prevalece sobre os rascunhos. Os contratos novos foram conferidos diretamente no código do backend e no relatório publicado por seu responsável em `../../docs/backend-integracao.md`.
 
 ## Ambiente e autoria

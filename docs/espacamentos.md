@@ -1,5 +1,7 @@
 # Revisão de espaçamentos e responsividade
 
+> Registro histórico. Para regras atuais, enquadramento, testes visuais e resultados, consulte [contratos](../../docs/contratos-e-permissoes.md) e [entrega homologada](../../docs/entrega-homologacao-2026-11-05.md).
+
 Verificação de 05/11/2026. Mantidas paleta e tipografia do projeto.
 
 | Origem | Ajuste |

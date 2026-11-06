@@ -42,74 +42,77 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   @override
-  Widget build(BuildContext context) => PublicCard(
-    titulo: 'Entre na Caderneta',
-    child: AutofillGroup(
-      child: Form(
-        key: _form,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (widget.sessao.aviso != null) ...[
-              Text(
-                widget.sessao.aviso!,
-                style: const TextStyle(color: AppColors.warning),
+  Widget build(BuildContext context) => ListenableBuilder(
+    listenable: widget.sessao,
+    builder: (context, _) => PublicCard(
+      titulo: 'Entre na Caderneta',
+      child: AutofillGroup(
+        child: Form(
+          key: _form,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (widget.sessao.aviso != null) ...[
+                Text(
+                  widget.sessao.aviso!,
+                  style: const TextStyle(color: AppColors.warning),
+                ),
+                const SizedBox(height: Gap.md),
+                TextButton(
+                  onPressed: widget.sessao.ocupado
+                      ? null
+                      : widget.sessao.restaurar,
+                  child: const Text('Verificar conexão e sessão'),
+                ),
+              ],
+              TextFormField(
+                controller: _login,
+                autofillHints: const [AutofillHints.username],
+                decoration: const InputDecoration(labelText: 'Login'),
+                textInputAction: TextInputAction.next,
+                validator: obrigatorio,
               ),
               const SizedBox(height: Gap.md),
-              TextButton(
-                onPressed: widget.sessao.ocupado
-                    ? null
-                    : widget.sessao.restaurar,
-                child: const Text('Verificar conexão e sessão'),
-              ),
-            ],
-            TextFormField(
-              controller: _login,
-              autofillHints: const [AutofillHints.username],
-              decoration: const InputDecoration(labelText: 'Login'),
-              textInputAction: TextInputAction.next,
-              validator: obrigatorio,
-            ),
-            const SizedBox(height: Gap.md),
-            TextFormField(
-              controller: _senha,
-              obscureText: _oculta,
-              autofillHints: const [AutofillHints.password],
-              onFieldSubmitted: (_) => _entrar(),
-              decoration: InputDecoration(
-                labelText: 'Senha',
-                suffixIcon: IconButton(
-                  tooltip: _oculta ? 'Mostrar senha' : 'Ocultar senha',
-                  onPressed: () => setState(() => _oculta = !_oculta),
-                  icon: Icon(
-                    _oculta
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
+              TextFormField(
+                controller: _senha,
+                obscureText: _oculta,
+                autofillHints: const [AutofillHints.password],
+                onFieldSubmitted: (_) => _entrar(),
+                decoration: InputDecoration(
+                  labelText: 'Senha',
+                  suffixIcon: IconButton(
+                    tooltip: _oculta ? 'Mostrar senha' : 'Ocultar senha',
+                    onPressed: () => setState(() => _oculta = !_oculta),
+                    icon: Icon(
+                      _oculta
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                    ),
                   ),
                 ),
+                validator: obrigatorio,
               ),
-              validator: obrigatorio,
-            ),
-            if (_erro != null)
-              Padding(
-                padding: const EdgeInsets.only(top: Gap.md),
-                child: Text(
-                  _erro!,
-                  style: const TextStyle(color: AppColors.danger),
+              if (_erro != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: Gap.md),
+                  child: Text(
+                    _erro!,
+                    style: const TextStyle(color: AppColors.danger),
+                  ),
                 ),
+              const SizedBox(height: Gap.lg),
+              BusyButton(
+                label: 'Entrar',
+                busy: _busy || widget.sessao.ocupado,
+                onPressed: _entrar,
               ),
-            const SizedBox(height: Gap.lg),
-            BusyButton(
-              label: 'Entrar',
-              busy: _busy || widget.sessao.ocupado,
-              onPressed: _entrar,
-            ),
-            const SizedBox(height: Gap.sm),
-            TextButton(
-              onPressed: () => context.go('/ativar'),
-              child: const Text('Primeiro acesso'),
-            ),
-          ],
+              const SizedBox(height: Gap.sm),
+              TextButton(
+                onPressed: () => context.go('/ativar'),
+                child: const Text('Primeiro acesso'),
+              ),
+            ],
+          ),
         ),
       ),
     ),

@@ -19,6 +19,7 @@ class AppRuntime {
     gateway = HttpGateway(client: client, base: base);
     sessao = SessaoController(HttpAuthRepository(gateway));
     gateway.epoca = () => sessao.epoca;
+    gateway.usuarioId = () => sessao.usuario?.id;
     gateway.aoExpirar = () {
       gateway.csrf.limpar();
       sessao.expirar();

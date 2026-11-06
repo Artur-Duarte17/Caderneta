@@ -11,13 +11,24 @@ import '../core/theme.dart';
 import '../widgets/common.dart';
 
 class _Relatorio {
-  _Relatorio(this.vendas, this.dividas, this.clientes)
-    : _clientes = {for (final c in clientes) c.id: c};
+  _Relatorio(
+    this.vendas,
+    this.dividas,
+    this.clientes,
+    this.pagamentos,
+    this.resumo,
+  ) : _clientes = {for (final c in clientes) c.id: c};
+  final Map<String, dynamic> resumo;
   final List<Venda> vendas;
   final List<Divida> dividas;
   final List<Cliente> clientes;
+  final List<Pagamento> pagamentos;
   final Map<int, Cliente> _clientes;
-  String nome(int id) => _clientes[id]?.nome ?? 'Cliente #$id';
+  String nome(int id) =>
+      _clientes[id]?.nome ??
+      vendas.where((v) => v.clienteId == id).firstOrNull?.clienteNome ??
+      dividas.where((d) => d.clienteId == id).firstOrNull?.clienteNome ??
+      'Cliente #$id';
   Status? statusVenda(Venda v) =>
       dividas.where((d) => d.id == v.dividaId).firstOrNull?.status;
 }
@@ -46,12 +57,16 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     final r = await Future.wait([
       api.relatorioVendas(ini, fim),
       api.relatorioDividas(ini, fim),
-      api.clientes(),
+      api.relatorioPagamentos(ini, fim),
+      api.clientesRelatorio(ini, fim),
+      api.resumoRelatorio(ini, fim),
     ]);
     return _Relatorio(
       r[0] as List<Venda>,
       r[1] as List<Divida>,
-      r[2] as List<Cliente>,
+      r[3] as List<Cliente>,
+      r[2] as List<Pagamento>,
+      r[4] as Map<String, dynamic>,
     );
   }
 
@@ -90,18 +105,10 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
   );
 
   Widget _conteudo(BuildContext context, _Relatorio r) {
-    final totalVendido = r.vendas.fold<double>(0, (t, v) => t + v.valorTotal);
-    final totalRecebido = r.dividas.fold<double>(0, (t, d) => t + d.valorPago);
-    final totalPendente = r.dividas
-        .where((d) => d.status.emAberto)
-        .fold<double>(0, (t, d) => t + d.valorPendente);
-    final inadimplencia = totalVendido == 0
-        ? 0.0
-        : r.dividas
-                  .where((d) => d.status == Status.vencida)
-                  .fold<double>(0, (t, d) => t + d.valorPendente) /
-              totalVendido *
-              100;
+    final totalVendido = (r.resumo['vendido'] as num).toDouble();
+    final totalRecebido = (r.resumo['recebido'] as num).toDouble();
+    final totalPendente = (r.resumo['saldo'] as num).toDouble();
+    final inadimplencia = (r.resumo['inadimplencia'] as num).toDouble();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -113,7 +120,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
               label: 'Total vendido',
               valor: moeda(totalVendido),
               icon: Icons.receipt_long_outlined,
-              rodape: '${r.vendas.length} venda(s)',
+              rodape: '${r.resumo['quantidadeVendas']} venda(s)',
             ),
             StatCard(
               label: 'Total recebido',
@@ -122,19 +129,18 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
               cor: AppColors.success,
             ),
             StatCard(
-              label: 'Saldo pendente',
+              label: 'Saldo atual da carteira do período',
               valor: moeda(totalPendente),
               icon: Icons.account_balance_wallet_outlined,
               cor: AppColors.warning,
             ),
             StatCard(
-              label: 'Inadimplência',
+              label: 'Vencido / saldo atual da carteira',
               valor:
                   '${inadimplencia.toStringAsFixed(1).replaceAll('.', ',')}%',
               icon: Icons.trending_down,
               cor: AppColors.danger,
-              rodape:
-                  '${r.vendas.map((v) => v.clienteId).toSet().length} cliente(s) ativos',
+              rodape: '${r.resumo['clientesAtivos']} cliente(s) ativos',
             ),
           ],
         ),
@@ -212,7 +218,8 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
   Widget _graficoVendas(_Relatorio r) {
     final porDia = <DateTime, double>{};
     for (final v in r.vendas.where((v) => v.dataHora != null)) {
-      final d = DateTime(v.dataHora!.year, v.dataHora!.month, v.dataHora!.day);
+      final local = v.dataNegocio ?? v.dataHora!.toLocal();
+      final d = DateTime(local.year, local.month, local.day);
       porDia[d] = (porDia[d] ?? 0) + v.valorTotal;
     }
     if (porDia.isEmpty) return _vazio();
@@ -280,7 +287,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
 
   Widget _graficoMetodos(_Relatorio r) {
     final porMetodo = <MetodoPagamento, double>{};
-    for (final p in r.dividas.expand((d) => d.pagamentos)) {
+    for (final p in r.pagamentos) {
       final m = p.metodo ?? MetodoPagamento.DINHEIRO;
       porMetodo[m] = (porMetodo[m] ?? 0) + p.valorPago;
     }

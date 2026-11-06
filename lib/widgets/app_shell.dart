@@ -153,6 +153,7 @@ class AppShell extends StatelessWidget {
               title: const Text('Caderneta'),
             ),
       body: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (desktop)
             SizedBox(
@@ -162,12 +163,10 @@ class AppShell extends StatelessWidget {
           Expanded(
             child: SelectionArea(
               child: SingleChildScrollView(
-                padding: EdgeInsets.all(desktop ? Gap.xl : Gap.md),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1280),
-                    child: child,
-                  ),
+                padding: EdgeInsets.all(desktop ? Gap.lg : Gap.md),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: SizedBox(width: double.infinity, child: child),
                 ),
               ),
             ),

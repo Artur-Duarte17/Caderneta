@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'api_error.dart';
 import 'csrf.dart';
+import 'idempotencia.dart';
 import 'http_client_factory.dart';
 
 const apiBaseUrl = String.fromEnvironment('API_URL', defaultValue: '');
@@ -36,6 +37,7 @@ class HttpGateway {
   final Duration timeout;
   late final CsrfStore csrf;
   int Function() epoca = () => 0;
+  int? Function() usuarioId = () => null;
   void Function()? aoExpirar;
   Future<void> Function()? verificarSessao;
 
@@ -55,8 +57,14 @@ class HttpGateway {
       if (inicio != epoca()) throw const RespostaDescartada();
     }
 
+    final idempotente =
+        method == 'POST' &&
+        (path == '/vendas' ||
+            RegExp(r'^/dividas/\d+/pagamentos$').hasMatch(path));
+    final identidade = '${usuarioId()}:$method:$path:${jsonEncode(body)}';
     final req = http.Request(method, apiUri(base, path, query))
       ..headers.addAll({'Accept': 'application/json', ...?headers});
+    if (idempotente) req.headers['Idempotency-Key'] = chaveOperacao(identidade);
     if (!const ['GET', 'HEAD', 'OPTIONS'].contains(method)) {
       final token = await csrf.obter();
       conferir();
@@ -108,6 +116,7 @@ class HttpGateway {
     if (text.isNotEmpty && json == null) {
       throw const ApiException('Servidor indisponível. Tente novamente.');
     }
+    if (idempotente) concluirOperacao(identidade);
     return json;
   }
 

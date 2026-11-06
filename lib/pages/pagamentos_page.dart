@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../core/api.dart';
+import '../core/app_runtime.dart';
+import '../core/comprovante.dart';
 import '../core/format.dart';
 import '../core/models.dart';
 import '../core/historico_service.dart';
@@ -16,12 +18,20 @@ class PagamentosPage extends StatefulWidget {
 
 class _PagamentosPageState extends State<PagamentosPage> {
   String _busca = '';
+  int _page = 0;
   Status? _status;
   int _periodo = 0;
 
   @override
   Widget build(BuildContext context) => AsyncView<Snapshot>(
-    load: Snapshot.load,
+    key: ValueKey((_page, _busca, _status, _periodo)),
+    load: () => Snapshot.load(
+      recurso: 'dividas',
+      page: _page,
+      q: _busca,
+      status: _status?.backend,
+      periodo: _periodo,
+    ),
     builder: (context, s, _) {
       final termo = _busca.toLowerCase();
       final lista =
@@ -43,17 +53,6 @@ class _PagamentosPageState extends State<PagamentosPage> {
               );
             });
 
-      final abertas = lista.where((d) => d.status.emAberto);
-      final inicioMes = DateTime(DateTime.now().year, DateTime.now().month);
-      final pagsMes = lista
-          .expand((d) => d.pagamentos)
-          .where(
-            (p) =>
-                p.dataPagamento != null &&
-                !p.dataPagamento!.isBefore(inicioMes),
-          );
-      final vencidas = lista.where((d) => d.status == Status.vencida);
-
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -61,37 +60,7 @@ class _PagamentosPageState extends State<PagamentosPage> {
             titulo: 'Pagamentos',
             subtitulo: 'Acompanhe dívidas e registre pagamentos recebidos',
           ),
-          ResponsiveGrid(
-            minWidth: 240,
-            children: [
-              StatCard(
-                label: 'Saldo pendente',
-                valor: moeda(
-                  abertas.fold<double>(0, (t, d) => t + d.valorPendente),
-                ),
-                icon: Icons.account_balance_wallet_outlined,
-                rodape: '${abertas.length} dívida(s) em aberto',
-              ),
-              StatCard(
-                label: 'Recebido no mês',
-                valor: moeda(
-                  pagsMes.fold<double>(0, (t, p) => t + p.valorPago),
-                ),
-                icon: Icons.payments_outlined,
-                cor: AppColors.success,
-                rodape: '${pagsMes.length} pagamento(s)',
-              ),
-              StatCard(
-                label: 'Dívidas vencidas',
-                valor: '${vencidas.length}',
-                icon: Icons.warning_amber_rounded,
-                cor: AppColors.danger,
-                rodape: moeda(
-                  vencidas.fold<double>(0, (t, d) => t + d.valorPendente),
-                ),
-              ),
-            ],
-          ),
+          const ResumoOperacional(vendas: false),
           const SizedBox(height: Gap.lg),
           Wrap(
             spacing: Gap.md,
@@ -102,7 +71,10 @@ class _PagamentosPageState extends State<PagamentosPage> {
                 width: 300,
                 child: SearchField(
                   hint: 'Buscar cliente',
-                  onChanged: (v) => setState(() => _busca = v),
+                  onChanged: (v) => setState(() {
+                    _busca = v;
+                    _page = 0;
+                  }),
                 ),
               ),
               FilterField(
@@ -113,7 +85,10 @@ class _PagamentosPageState extends State<PagamentosPage> {
                     null: 'Todos',
                     for (final st in Status.values) st: st.label,
                   },
-                  onChanged: (v) => setState(() => _status = v),
+                  onChanged: (v) => setState(() {
+                    _status = v;
+                    _page = 0;
+                  }),
                 ),
               ),
               FilterField(
@@ -121,12 +96,21 @@ class _PagamentosPageState extends State<PagamentosPage> {
                   label: 'Emissão',
                   value: _periodo,
                   itens: periodos,
-                  onChanged: (v) => setState(() => _periodo = v),
+                  onChanged: (v) => setState(() {
+                    _periodo = v;
+                    _page = 0;
+                  }),
                 ),
               ),
             ],
           ),
           const SizedBox(height: Gap.lg),
+          OperacaoPaginador(
+            page: _page,
+            total: s.total,
+            last: s.last,
+            onPage: (p) => setState(() => _page = p),
+          ),
           if (lista.isEmpty)
             const EmptyState(
               icon: Icons.inbox_outlined,
@@ -262,6 +246,30 @@ class _DividaCard extends StatelessWidget {
                 ],
               ),
             ),
+            if (AppScope.of(context).sessao.usuario?.perfil == Perfil.gerente &&
+                d.status.emAberto)
+              TextButton.icon(
+                icon: const Icon(Icons.event),
+                label: const Text('Renegociar vencimento'),
+                onPressed: () async {
+                  final escolhido = await showDatePicker(
+                    context: context,
+                    initialDate: d.dataVencimento ?? DateTime.now(),
+                    firstDate: d.dataEmissao ?? DateTime(2000),
+                    lastDate: DateTime.now().add(const Duration(days: 3650)),
+                  );
+                  if (escolhido == null) return;
+                  try {
+                    await Api.instance.renegociar(d.id, escolhido);
+                    HistoricoService.instance.dadosAlterados();
+                    if (context.mounted) {
+                      toast(context, 'Vencimento atualizado');
+                    }
+                  } catch (e) {
+                    if (context.mounted) toast(context, '$e', erro: true);
+                  }
+                },
+              ),
             if (d.pagamentos.isNotEmpty) ...[
               const SizedBox(height: Gap.md),
               Text(
@@ -287,9 +295,19 @@ class _DividaCard extends StatelessWidget {
                         style: const TextStyle(fontWeight: FontWeight.w500),
                       ),
                       const Spacer(),
-                      Text(
-                        '${data(p.dataPagamento)} · ${p.metodo?.label ?? '—'}',
-                        style: Theme.of(context).textTheme.bodySmall,
+                      if (p.id != null)
+                        IconButton(
+                          tooltip: 'Comprovante do pagamento',
+                          onPressed: () => abrirComprovante(
+                            '/dividas/${d.id}/pagamentos/${p.id}/comprovante',
+                          ),
+                          icon: const Icon(Icons.print, size: 18),
+                        ),
+                      Flexible(
+                        child: Text(
+                          '${data(p.dataPagamento)} · ${p.metodo?.label ?? '—'}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
                       ),
                     ],
                   ),
@@ -348,7 +366,7 @@ class _PagamentoFormState extends State<_PagamentoForm> {
     try {
       await Api.instance.registrarPagamento(
         widget.divida.id,
-        parseValor(_valor.text)!,
+        parseCentavos(_valor.text)! / 100,
         _metodo!,
       );
       if (!mounted) return;
@@ -362,7 +380,8 @@ class _PagamentoFormState extends State<_PagamentoForm> {
   }
 
   Widget? _aviso() {
-    final v = parseValor(_valor.text);
+    final cents = parseCentavos(_valor.text);
+    final v = cents == null ? null : cents / 100;
     if (v == null || v <= 0 || v > _pendente + .001) return null;
     final quita = (v - _pendente).abs() < .01;
     return Pill(
@@ -415,9 +434,10 @@ class _PagamentoFormState extends State<_PagamentoForm> {
                   ),
                   onChanged: (_) => setState(() {}),
                   validator: (t) {
-                    final v = parseValor(t ?? '');
+                    final cents = parseCentavos(t ?? '');
+                    final v = cents == null ? null : cents / 100;
                     if (v == null || v <= 0) return 'Informe um valor válido';
-                    if (v > _pendente + .001) {
+                    if (cents! > (_pendente * 100).round()) {
                       return 'Valor maior que o pendente';
                     }
                     return null;

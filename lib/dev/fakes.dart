@@ -218,6 +218,15 @@ class ServidorSimulado {
     final perfil = usuario!['perfil'];
     final gerente = perfil == 'GERENTE', cliente = perfil == 'CLIENTE';
     if (path == '/auth/me') return _json({'usuario': usuario});
+    if (path == '/resumo' || path == '/me/resumo') {
+      return _json({
+        'saldo': 150.0,
+        'vencidas': 2,
+        'vendasMes': 100.0,
+        'recebidoMes': 50.0,
+        'proximoVencimento': '2026-11-20',
+      });
+    }
     if (path.startsWith('/me/')) {
       if (!cliente) return _erro(403);
       final pessoaId = usuario!['pessoaId'];
@@ -340,6 +349,22 @@ class ServidorSimulado {
           q,
         );
       }
+      if (path == '/relatorios/resumo') {
+        return _json({
+          'vendido': 100,
+          'recebido': 20,
+          'saldo': 80,
+          'inadimplencia': 0,
+          'quantidadeVendas': 1,
+          'clientesAtivos': 1,
+        });
+      }
+      if (path == '/relatorios/clientes') return _json(_clientes);
+      if (path == '/relatorios/pagamentos') {
+        return _json(
+          _dividas.expand((d) => (d['pagamentos'] as List)).toList(),
+        );
+      }
       return _json(
         path.endsWith('vendas-a-prazo')
             ? {'vendas': _vendas}
@@ -359,9 +384,37 @@ class ServidorSimulado {
             .toIso8601String(),
       }, 201);
     }
-    if (path == '/clientes' && method == 'GET') return _json(_clientes);
-    if (path == '/vendas' && method == 'GET') return _json(_vendas);
-    if (path == '/dividas' && method == 'GET') return _json(_dividas);
+    if (path.startsWith('/clientes/') && method == 'GET') {
+      final id = int.tryParse(path.split('/')[2]);
+      final c = _clientes.where((c) => c['id'] == id).firstOrNull;
+      return c == null ? _erro(404) : _json(c);
+    }
+    if (path == '/clientes' && method == 'GET') {
+      return _pagina(
+        _clientes.where(
+          (c) =>
+              (q['q'] ?? '').isEmpty ||
+              c['nome'].toString().toLowerCase().contains(
+                q['q']!.toLowerCase(),
+              ),
+        ),
+        q,
+      );
+    }
+    if (path == '/vendas' && method == 'GET') {
+      return _pagina(
+        _vendas.map(
+          (v) => {
+            ...v,
+            'versao': 0,
+            'statusDivida': 'ABERTA',
+            'clienteNome': v['clienteId'] == 20 ? 'Cliente A' : 'Cliente B',
+          },
+        ),
+        q,
+      );
+    }
+    if (path == '/dividas' && method == 'GET') return _pagina(_dividas, q);
     if (path == '/clientes' && method == 'POST') {
       final novo = {...body, 'id': ++_sequencia};
       _clientes.add(novo);
@@ -377,10 +430,7 @@ class ServidorSimulado {
     }
     if (path == '/vendas' && method == 'POST') {
       final itens = body['itens'] as List;
-      final total = itens.fold<double>(
-        0,
-        (s, i) => s + (i['quantidade'] as num) * (i['precoUnitario'] as num),
-      );
+      final total = (body['valorTotal'] as num).toDouble();
       final id = ++_sequencia;
       final v = {
         'id': id,
@@ -412,7 +462,7 @@ class ServidorSimulado {
       final v = _vendas.where((v) => v['id'] == id).firstOrNull;
       if (v == null) return _erro(404);
       if (method == 'PUT') {
-        if (!gerente) return _erro(403);
+        if (cliente) return _erro(403);
         v.addAll(body);
       }
       return _json(v);

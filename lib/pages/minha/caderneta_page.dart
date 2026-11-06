@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/app_runtime.dart';
 import '../../core/format.dart';
-import '../../core/minha_caderneta_repository.dart';
+import '../../core/comprovante.dart';
+
 import '../../core/models.dart';
 import '../../core/paged_controller.dart';
 import '../../core/pagina.dart';
@@ -32,20 +33,33 @@ class MinhaCadernetaPage extends StatelessWidget {
                 onPressed: () => showAppDialog(
                   context,
                   titulo: 'Compra #${v.id}',
-                  builder: (_, _) => v.itens.isEmpty
-                      ? const Text('Itens não informados.')
-                      : Column(
-                          children: [
-                            for (final i in v.itens)
-                              ListTile(
-                                title: Text(i.descricao),
-                                subtitle: Text(
-                                  '${i.quantidade} × ${moeda(i.precoUnitario)}',
-                                ),
-                                trailing: Text(moeda(i.subtotal)),
-                              ),
-                          ],
+                  builder: (_, _) => Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text('Total da compra: ${moeda(v.valorTotal)}'),
+                      Text(
+                        'Soma dos itens: ${moeda(v.itens.fold<double>(0, (s, i) => s + i.subtotal))}',
+                      ),
+                      Text(
+                        'Valor não detalhado: ${moeda(v.valorTotal - v.itens.fold<double>(0, (s, i) => s + i.subtotal))}',
+                      ),
+                      if (v.itens.isEmpty) const Text('Itens não informados.'),
+                      for (final i in v.itens)
+                        ListTile(
+                          title: Text(i.descricao),
+                          subtitle: Text(
+                            '${i.quantidade} × ${moeda(i.precoUnitario)}',
+                          ),
+                          trailing: Text(moeda(i.subtotal)),
                         ),
+                      TextButton.icon(
+                        onPressed: () =>
+                            abrirComprovante('/me/vendas/${v.id}/comprovante'),
+                        icon: const Icon(Icons.print),
+                        label: const Text('Comprovante da compra'),
+                      ),
+                    ],
+                  ),
                 ),
                 child: const Text('Detalhes'),
               ),
@@ -103,13 +117,23 @@ class MinhaCadernetaPage extends StatelessWidget {
       titulo: 'Meus pagamentos',
       load: (r, p, s) => r.minha.pagamentos(p, s),
       builder: (_, lista) => AppTable(
-        colunas: const ['Data', 'Valor', 'Método'],
+        colunas: const ['Data', 'Valor', 'Método', 'Comprovante'],
         linhas: [
           for (final p in lista)
             [
               Text(data(p.dataPagamento)),
               Text(moeda(p.valorPago)),
               Text(p.metodo?.label ?? '—'),
+              if (p.id != null && p.dividaId != null)
+                IconButton(
+                  tooltip: 'Comprovante do pagamento',
+                  onPressed: () => abrirComprovante(
+                    '/me/dividas/${p.dividaId}/pagamentos/${p.id}/comprovante',
+                  ),
+                  icon: const Icon(Icons.print),
+                )
+              else
+                const Text('—'),
             ],
         ],
       ),
@@ -168,84 +192,34 @@ class _Resumo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final runtime = AppScope.of(context);
-    return AsyncView<(ResumoCaderneta, Pagina<EventoHistorico>)>(
-      load: () async => (
-        await ResumoCaderneta.carregar(runtime.minha),
-        await runtime.historicoRepo.listar(pessoal: true, size: 5),
-      ),
-      builder: (context, result, reload) {
-        final resumo = result.$1,
-            emAberto = resumo.dividas.where((d) => d.status.emAberto).toList();
-        final vencimentos =
-            emAberto
-                .where((d) => d.dataVencimento != null)
-                .map((d) => d.dataVencimento!)
-                .toList()
-              ..sort();
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            PageHeader(
-              titulo: 'Minha caderneta',
-              subtitulo: 'Olá, ${runtime.sessao.usuario!.nome}',
-              acoes: [
-                OutlinedButton.icon(
-                  onPressed: reload,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Atualizar'),
-                ),
-              ],
-            ),
-            if (resumo.parcial)
-              const Padding(
-                padding: EdgeInsets.only(bottom: Gap.md),
-                child: Text(
-                  'Resumo parcial: limite de 1.000 dívidas atingido. Consulte as páginas para os demais registros.',
-                ),
-              ),
-            ResponsiveGrid(
-              children: [
-                StatCard(
-                  label: 'Saldo devedor',
-                  valor: moeda(
-                    emAberto.fold<double>(0, (s, d) => s + d.valorPendente),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        PageHeader(
+          titulo: 'Minha caderneta',
+          subtitulo: 'Olá, ${runtime.sessao.usuario!.nome}',
+        ),
+        const ResumoOperacional(pessoal: true),
+        const SizedBox(height: Gap.lg),
+        SectionCard(
+          titulo: 'Últimos eventos',
+          child: AsyncView<Pagina<EventoHistorico>>(
+            load: () => runtime.historicoRepo.listar(pessoal: true, size: 5),
+            builder: (context, eventos, _) => eventos.content.isEmpty
+                ? const Text('Nenhum evento registrado.')
+                : Column(
+                    children: [
+                      for (final e in eventos.content)
+                        ListTile(
+                          leading: Icon(e.tipo?.icon ?? Icons.history),
+                          title: Text(e.mensagem),
+                          subtitle: Text(dataHora(e.dataEnvio)),
+                        ),
+                    ],
                   ),
-                  icon: Icons.account_balance_wallet_outlined,
-                ),
-                StatCard(
-                  label: 'Próximo vencimento',
-                  valor: vencimentos.isEmpty ? '—' : data(vencimentos.first),
-                  icon: Icons.event_outlined,
-                ),
-                StatCard(
-                  label: 'Dívidas vencidas',
-                  valor:
-                      '${emAberto.where((d) => d.status == Status.vencida).length}',
-                  icon: Icons.warning_amber_rounded,
-                  cor: AppColors.danger,
-                ),
-              ],
-            ),
-            const SizedBox(height: Gap.lg),
-            SectionCard(
-              titulo: 'Últimos eventos',
-              child: result.$2.content.isEmpty
-                  ? const Text('Nenhum evento registrado.')
-                  : Column(
-                      children: [
-                        for (final e in result.$2.content)
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            leading: Icon(e.tipo?.icon ?? Icons.history),
-                            title: Text(e.mensagem),
-                            subtitle: Text(dataHora(e.dataEnvio)),
-                          ),
-                      ],
-                    ),
-            ),
-          ],
-        );
-      },
+          ),
+        ),
+      ],
     );
   }
 }

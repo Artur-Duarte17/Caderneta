@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/api.dart';
 import '../core/app_runtime.dart';
 import '../core/permissoes.dart';
+import 'ativar_page.dart' show cpfValido;
 import '../widgets/convite_dialog.dart';
 import '../core/format.dart';
 import '../core/models.dart';
@@ -18,10 +19,12 @@ class ClientesPage extends StatefulWidget {
 
 class _ClientesPageState extends State<ClientesPage> {
   String _busca = '';
+  int _page = 0;
 
   @override
   Widget build(BuildContext context) => AsyncView<Snapshot>(
-    load: Snapshot.load,
+    key: ValueKey((_page, _busca, null, 0)),
+    load: () => Snapshot.load(recurso: 'clientes', page: _page, q: _busca),
     builder: (context, s, reload) {
       final termo = _busca.toLowerCase();
       final lista =
@@ -42,7 +45,7 @@ class _ClientesPageState extends State<ClientesPage> {
         children: [
           PageHeader(
             titulo: 'Clientes',
-            subtitulo: '${s.clientes.length} cliente(s) cadastrado(s)',
+            subtitulo: '${s.total} cliente(s) cadastrado(s)',
             acoes: [
               FilledButton.icon(
                 onPressed: () => _abrirForm(context, null),
@@ -55,10 +58,19 @@ class _ClientesPageState extends State<ClientesPage> {
             width: 360,
             child: SearchField(
               hint: 'Buscar por nome ou telefone',
-              onChanged: (v) => setState(() => _busca = v),
+              onChanged: (v) => setState(() {
+                _busca = v;
+                _page = 0;
+              }),
             ),
           ),
           const SizedBox(height: Gap.lg),
+          OperacaoPaginador(
+            page: _page,
+            total: s.total,
+            last: s.last,
+            onPage: (p) => setState(() => _page = p),
+          ),
           if (lista.isEmpty)
             const EmptyState(
               icon: Icons.person_off_outlined,
@@ -297,7 +309,22 @@ class _ClienteFormState extends State<_ClienteForm> {
       _fTel = TextEditingController(),
       _fEmail = TextEditingController();
   final _fCpf = TextEditingController(), _fEnd = TextEditingController();
-  bool _temFiador = false;
+  late bool _temFiador = widget.cliente?.fiador != null;
+  bool get _gerente =>
+      AppScope.of(context).sessao.usuario?.perfil == Perfil.gerente;
+  @override
+  void initState() {
+    super.initState();
+    final f = widget.cliente?.fiador;
+    if (f != null) {
+      _fNome.text = f['nome'] ?? '';
+      _fTel.text = f['telefone'] ?? '';
+      _fEmail.text = f['email'] ?? '';
+      _fCpf.text = f['cpf'] ?? '';
+      _fEnd.text = f['endereco'] ?? '';
+    }
+  }
+
   bool _salvando = false;
 
   @override
@@ -322,6 +349,21 @@ class _ClienteFormState extends State<_ClienteForm> {
   }
 
   bool get _editando => widget.cliente != null;
+  bool get _fiadorAlterado {
+    final atual = widget.cliente?.fiador;
+    if (_temFiador != (atual != null)) return true;
+    if (!_temFiador) return false;
+    final campos = {
+      'nome': _fNome.text,
+      'cpf': _fCpf.text,
+      'telefone': _fTel.text,
+      'email': _fEmail.text,
+      'endereco': _fEnd.text,
+    };
+    return campos.entries.any(
+      (e) => (atual?[e.key] ?? '').toString().trim() != e.value.trim(),
+    );
+  }
 
   String? _obrigatorio(String? v) =>
       (v == null || v.trim().isEmpty) ? 'Campo obrigatório' : null;
@@ -336,26 +378,26 @@ class _ClienteFormState extends State<_ClienteForm> {
       'telefone': _tel.text.trim(),
       'email': _opt(_email),
       'endereco': _opt(_end),
-      'limiteCredito': parseValor(_limite.text) ?? 0,
-      'prazoPagamentoPadraoDias': int.tryParse(_prazo.text) ?? 30,
+      if (_gerente) 'limiteCredito': (parseCentavos(_limite.text) ?? 0) / 100,
+      if (_gerente) 'prazoPagamentoPadraoDias': int.tryParse(_prazo.text) ?? 30,
+      if (!_editando || _fiadorAlterado)
+        'fiador': _temFiador
+            ? {
+                if (widget.cliente?.fiador?['cpf'] == _fCpf.text.trim())
+                  'id': widget.cliente?.fiador?['id'],
+                'nome': _fNome.text.trim(),
+                'cpf': _fCpf.text.trim(),
+                'telefone': _fTel.text.trim(),
+                'email': _opt(_fEmail),
+                'endereco': _opt(_fEnd),
+              }
+            : null,
     };
     try {
       if (_editando) {
         await Api.instance.atualizarCliente(widget.cliente!.id, dados);
       } else {
-        final novo = await Api.instance.criarCliente({
-          ...dados,
-          'cpf': _cpf.text.trim(),
-        });
-        if (_temFiador) {
-          await Api.instance.criarFiadorParaCliente(novo.id, {
-            'nome': _fNome.text.trim(),
-            'telefone': _fTel.text.trim(),
-            'email': _opt(_fEmail),
-            'cpf': _opt(_fCpf),
-            'endereco': _opt(_fEnd),
-          });
-        }
+        await Api.instance.criarCliente({...dados, 'cpf': _cpf.text.trim()});
       }
       if (!mounted) return;
       toast(
@@ -432,12 +474,16 @@ class _ClienteFormState extends State<_ClienteForm> {
               _row([
                 TextFormField(
                   controller: _cpf,
+                  validator: (v) => _editando
+                      ? null
+                      : cpfValido(v ?? '')
+                      ? null
+                      : 'Informe um CPF válido',
                   enabled: !_editando,
                   decoration: InputDecoration(
                     labelText: 'CPF/CNPJ *',
                     helperText: _editando ? 'Não pode ser alterado' : null,
                   ),
-                  validator: _editando ? null : _obrigatorio,
                 ),
               ]),
               _row([
@@ -451,6 +497,12 @@ class _ClienteFormState extends State<_ClienteForm> {
               _row([
                 TextFormField(
                   controller: _limite,
+                  enabled: _gerente,
+                  validator: (v) => !_gerente
+                      ? null
+                      : parseCentavos(v ?? '') == null
+                      ? 'Informe limite com até 2 casas'
+                      : null,
                   decoration: const InputDecoration(
                     labelText: 'Limite de crédito',
                     prefixText: r'R$ ',
@@ -458,16 +510,25 @@ class _ClienteFormState extends State<_ClienteForm> {
                 ),
                 TextFormField(
                   controller: _prazo,
+                  enabled: _gerente,
+                  validator: (v) {
+                    final n = int.tryParse(v ?? '');
+                    return !_gerente
+                        ? null
+                        : n == null || n < 0 || n > 3650
+                        ? 'Prazo de 0 a 3650 dias'
+                        : null;
+                  },
                   decoration: const InputDecoration(
                     labelText: 'Prazo de pagamento',
                     suffixText: 'dias',
                   ),
                 ),
               ]),
-              if (!_editando) ...[
+              ...[
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Adicionar fiador'),
+                  title: const Text('Cliente possui fiador'),
                   value: _temFiador,
                   onChanged: (v) => setState(() => _temFiador = v),
                 ),
@@ -498,7 +559,14 @@ class _ClienteFormState extends State<_ClienteForm> {
                   _row([
                     TextFormField(
                       controller: _fCpf,
-                      decoration: const InputDecoration(labelText: 'CPF/CNPJ'),
+                      validator: (v) => _editando && !_fiadorAlterado
+                          ? null
+                          : cpfValido(v ?? '')
+                          ? null
+                          : 'Informe um CPF válido',
+                      decoration: const InputDecoration(
+                        labelText: 'CPF do fiador *',
+                      ),
                     ),
                     TextFormField(
                       controller: _fEnd,
