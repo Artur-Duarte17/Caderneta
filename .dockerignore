@@ -1,5 +1,13 @@
+# Não vai para o contexto de build (e não invalida o cache do Docker quando muda)
 build/
 .dart_tool/
 .idea/
+.vscode/
 Documentação/
+docs/
+test/
+scripts/
+README.md
 pubspec.lock
+Dockerfile.local
+Dockerfile.local.dockerignore
