@@ -5,6 +5,15 @@ final _data = DateFormat('dd/MM/yyyy', 'pt_BR');
 final _dataHora = DateFormat('dd/MM/yyyy HH:mm', 'pt_BR');
 
 String moeda(num? v) => _moeda.format(v ?? 0);
+
+/// Compatibilidade de apresentação com eventos anteriores à padronização pt-BR.
+/// Não altera o texto persistido nem interpreta mensagens livres.
+String mensagemFinanceira(String mensagem) => mensagem.replaceFirstMapped(
+  RegExp(
+    r'^(Nova compra de |Pagamento de |Lembrete: sua dívida #\d+, com saldo de )R\$ (\d+(?:\.\d{1,2})?)(?=\s|,\s|$)',
+  ),
+  (m) => '${m[1]}${moeda(double.parse(m[2]!)).replaceAll('\u00a0', ' ')}',
+);
 String data(DateTime? d) =>
     d == null ? '—' : _data.format(d.isUtc ? d.toLocal() : d);
 String dataHora(DateTime? d) => d == null ? '—' : _dataHora.format(d.toLocal());

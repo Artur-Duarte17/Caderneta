@@ -24,7 +24,7 @@ class _PagamentosPageState extends State<PagamentosPage> {
 
   @override
   Widget build(BuildContext context) => AsyncView<Snapshot>(
-    key: ValueKey((_page, _busca, _status, _periodo)),
+    queryKey: (_page, _busca, _status, _periodo),
     load: () => Snapshot.load(
       recurso: 'dividas',
       page: _page,

@@ -34,7 +34,14 @@ void toast(BuildContext context, String msg, {bool erro = false}) {
 /// Carrega dados, mostra loading/erro de forma uniforme e recarrega sozinho
 /// quando outra parte do app altera dados (venda criada, pagamento etc.).
 class AsyncView<T> extends StatefulWidget {
-  const AsyncView({super.key, required this.load, required this.builder});
+  const AsyncView({
+    super.key,
+    required this.load,
+    required this.builder,
+    this.queryKey,
+  });
+
+  final Object? queryKey;
 
   final Future<T> Function() load;
   final Widget Function(
@@ -60,6 +67,12 @@ class _AsyncViewState<T> extends State<AsyncView<T>> {
     super.initState();
     _reload();
     _revisao.addListener(_reload);
+  }
+
+  @override
+  void didUpdateWidget(covariant AsyncView<T> oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.queryKey != widget.queryKey) _reload();
   }
 
   @override
@@ -102,7 +115,10 @@ class _AsyncViewState<T> extends State<AsyncView<T>> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (_erro != null) ErrorState(mensagem: '$_erro', onRetry: _reload),
-        widget.builder(context, _data as T, _reload),
+        KeyedSubtree(
+          key: const ValueKey('async-content'),
+          child: widget.builder(context, _data as T, _reload),
+        ),
       ],
     );
   }
@@ -499,17 +515,44 @@ class FilterField extends StatelessWidget {
   );
 }
 
-class SearchField extends StatelessWidget {
+class SearchField extends StatefulWidget {
   const SearchField({super.key, required this.hint, required this.onChanged});
   final String hint;
   final ValueChanged<String> onChanged;
 
   @override
+  State<SearchField> createState() => _SearchFieldState();
+}
+
+class _SearchFieldState extends State<SearchField> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) => TextField(
-    onChanged: onChanged,
+    controller: _controller,
+    onChanged: (value) {
+      setState(() {});
+      widget.onChanged(value);
+    },
     decoration: InputDecoration(
-      hintText: hint,
+      hintText: widget.hint,
       prefixIcon: const Icon(Icons.search, size: 20),
+      suffixIcon: _controller.text.isEmpty
+          ? null
+          : IconButton(
+              tooltip: 'Limpar busca',
+              onPressed: () {
+                setState(_controller.clear);
+                widget.onChanged('');
+              },
+              icon: const Icon(Icons.clear),
+            ),
     ),
   );
 }

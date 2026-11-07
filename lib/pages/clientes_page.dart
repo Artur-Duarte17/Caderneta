@@ -23,7 +23,7 @@ class _ClientesPageState extends State<ClientesPage> {
 
   @override
   Widget build(BuildContext context) => AsyncView<Snapshot>(
-    key: ValueKey((_page, _busca, null, 0)),
+    queryKey: (_page, _busca),
     load: () => Snapshot.load(recurso: 'clientes', page: _page, q: _busca),
     builder: (context, s, reload) {
       final termo = _busca.toLowerCase();
@@ -122,7 +122,7 @@ class _ClientesPageState extends State<ClientesPage> {
             const FormSection('Informações pessoais'),
             InfoRow('Telefone', c.telefone ?? 'Não informado'),
             InfoRow('E-mail', c.email ?? 'Não informado'),
-            InfoRow('CPF/CNPJ', c.cpf ?? 'Não informado'),
+            InfoRow('CPF', c.cpf ?? 'Não informado'),
             InfoRow('Endereço', c.endereco ?? 'Não informado'),
             const SizedBox(height: Gap.sm),
             const FormSection('Situação financeira'),
@@ -326,9 +326,12 @@ class _ClienteFormState extends State<_ClienteForm> {
   }
 
   bool _salvando = false;
+  String? _erro;
+  final _scroll = ScrollController();
 
   @override
   void dispose() {
+    _scroll.dispose();
     for (final c in [
       _nome,
       _tel,
@@ -370,9 +373,20 @@ class _ClienteFormState extends State<_ClienteForm> {
   String? _opt(TextEditingController c) =>
       c.text.trim().isEmpty ? null : c.text.trim();
 
+  String? _validarEmail(String? value) {
+    final email = value?.trim() ?? '';
+    if (email.isEmpty) return null;
+    return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)
+        ? null
+        : 'Informe um e-mail válido';
+  }
+
   Future<void> _salvar() async {
     if (_salvando || !_form.currentState!.validate()) return;
-    setState(() => _salvando = true);
+    setState(() {
+      _salvando = true;
+      _erro = null;
+    });
     final dados = {
       'nome': _nome.text.trim(),
       'telefone': _tel.text.trim(),
@@ -409,8 +423,13 @@ class _ClienteFormState extends State<_ClienteForm> {
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _salvando = false);
-      toast(context, '$e', erro: true);
+      setState(() {
+        _salvando = false;
+        _erro = '$e';
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scroll.hasClients) _scroll.jumpTo(0);
+      });
     }
   }
 
@@ -447,9 +466,21 @@ class _ClienteFormState extends State<_ClienteForm> {
       child: Form(
         key: _form,
         child: SingleChildScrollView(
+          controller: _scroll,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (_erro != null)
+                Semantics(
+                  liveRegion: true,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: Gap.md),
+                    child: Text(
+                      _erro!,
+                      style: const TextStyle(color: AppColors.danger),
+                    ),
+                  ),
+                ),
               const FormSection('Dados pessoais'),
               _row([
                 TextFormField(
@@ -468,6 +499,8 @@ class _ClienteFormState extends State<_ClienteForm> {
                 ),
                 TextFormField(
                   controller: _email,
+                  validator: _validarEmail,
+                  keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(labelText: 'E-mail'),
                 ),
               ]),
@@ -481,7 +514,7 @@ class _ClienteFormState extends State<_ClienteForm> {
                       : 'Informe um CPF válido',
                   enabled: !_editando,
                   decoration: InputDecoration(
-                    labelText: 'CPF/CNPJ *',
+                    labelText: 'CPF *',
                     helperText: _editando ? 'Não pode ser alterado' : null,
                   ),
                 ),
@@ -553,6 +586,8 @@ class _ClienteFormState extends State<_ClienteForm> {
                     ),
                     TextFormField(
                       controller: _fEmail,
+                      validator: _validarEmail,
+                      keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(labelText: 'E-mail'),
                     ),
                   ]),

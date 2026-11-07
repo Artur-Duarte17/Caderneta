@@ -335,7 +335,7 @@ class EventoHistorico {
     final dest = j['destinatario'];
     return EventoHistorico(
       id: (j['id'] as num).toInt(),
-      mensagem: j['mensagem'] ?? '',
+      mensagem: mensagemFinanceira(j['mensagem'] ?? ''),
       dataEnvio: parseData(j['dataEnvio']),
       tipo: TipoEvento.parse(j['tipo']),
       destinatario: dest is Map
