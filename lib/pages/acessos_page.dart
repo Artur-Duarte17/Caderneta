@@ -62,6 +62,59 @@ class _AcessosPageState extends State<AcessosPage> {
     }
   }
 
+  /// Gerente promove funcionário a gerente (ou o inverso) com o mesmo login.
+  Future<void> _perfil(ContaAcesso conta) async {
+    if (_busy) return;
+    final runtime = AppScope.of(context);
+    final promover = conta.perfil == Perfil.funcionario;
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(promover ? 'Tornar gerente?' : 'Tornar funcionário?'),
+        content: Text(
+          '${conta.nome} (${conta.login})\n\n'
+          '${promover ? 'Passa a ter acesso de gerente: relatórios, auditoria, acessos, limite de crédito e edição de vendas.' : 'Perde o acesso de gerente e volta a ser funcionário.'}\n\n'
+          'O login e a senha continuam os mesmos. Se a pessoa estiver conectada, '
+          'precisará entrar de novo para o novo perfil valer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(promover ? 'Tornar gerente' : 'Tornar funcionário'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true || !mounted || _busy) return;
+    setState(() => _busy = true);
+    try {
+      await executarComCarregamento(
+        context,
+        promover ? 'Tornando gerente' : 'Tornando funcionário',
+        () => runtime.acessos.alterarPerfil(
+          conta.id,
+          promover ? Perfil.gerente : Perfil.funcionario,
+        ),
+      );
+      if (!mounted) return;
+      toast(
+        context,
+        promover
+            ? '${conta.nome} agora é gerente.'
+            : '${conta.nome} agora é funcionário.',
+      );
+      _c!.atualizar();
+    } catch (e) {
+      if (mounted) toast(context, '$e', erro: true);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _funcionario() async {
     final ok = await showDialog<bool>(
       context: context,
@@ -120,9 +173,26 @@ class _AcessosPageState extends State<AcessosPage> {
                   Text(conta.ativo ? 'Ativo' : 'Inativo'),
                   conta.id == r.sessao.usuario!.id
                       ? const Text('Sua conta')
-                      : TextButton(
-                          onPressed: _busy ? null : () => _ativo(conta),
-                          child: Text(conta.ativo ? 'Desativar' : 'Ativar'),
+                      : Row(
+                          // Uma linha só: a tabela tem altura de linha fixa (empilhar cortaria o botão).
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            TextButton(
+                              onPressed: _busy ? null : () => _ativo(conta),
+                              child: Text(conta.ativo ? 'Desativar' : 'Ativar'),
+                            ),
+                            // Só contas da equipe; clientes não viram gerente.
+                            if (conta.perfil == Perfil.funcionario ||
+                                conta.perfil == Perfil.gerente)
+                              TextButton(
+                                onPressed: _busy ? null : () => _perfil(conta),
+                                child: Text(
+                                  conta.perfil == Perfil.funcionario
+                                      ? 'Tornar gerente'
+                                      : 'Tornar funcionário',
+                                ),
+                              ),
+                          ],
                         ),
                 ],
             ],

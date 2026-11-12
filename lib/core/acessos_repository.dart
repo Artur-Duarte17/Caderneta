@@ -12,6 +12,9 @@ abstract interface class AcessosRepository {
     Map<String, String> filtros,
   );
   Future<void> ativo(int id, bool ativo);
+
+  /// Promove funcionário a gerente (ou o inverso). O login e a senha continuam os mesmos.
+  Future<void> alterarPerfil(int id, Perfil perfil);
   Future<Convite> convite(int clienteId);
   Future<void> criarFuncionario(Map<String, dynamic> dados);
 }
@@ -44,6 +47,15 @@ class HttpAcessosRepository implements AcessosRepository {
   @override
   Future<void> ativo(int id, bool ativo) async {
     await http.send('PATCH', '/usuarios/$id/ativo', body: {'ativo': ativo});
+  }
+
+  @override
+  Future<void> alterarPerfil(int id, Perfil perfil) async {
+    await http.send(
+      'PATCH',
+      '/usuarios/$id/perfil',
+      body: {'perfil': perfil == Perfil.gerente ? 'GERENTE' : 'FUNCIONARIO'},
+    );
   }
 
   @override

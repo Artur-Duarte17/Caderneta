@@ -291,6 +291,39 @@ class ServidorSimulado {
           q,
         );
       }
+      if (path.endsWith('/perfil')) {
+        final id = int.tryParse(path.split('/')[2]);
+        final conta = _contas.where((c) => c['id'] == id).firstOrNull;
+        if (conta == null) return _erro(404);
+        final novo = body['perfil'];
+        if (novo != 'GERENTE' && novo != 'FUNCIONARIO') {
+          return _erro(400, 'PERFIL_INVALIDO', 'Use GERENTE ou FUNCIONARIO.');
+        }
+        if (conta['perfil'] == 'CLIENTE') {
+          return _erro(
+            400,
+            'REGRA_NEGOCIO',
+            'Somente contas da equipe podem ser gerente ou funcionário.',
+          );
+        }
+        if (conta['perfil'] == 'GERENTE' &&
+            novo == 'FUNCIONARIO' &&
+            conta['ativo'] == true &&
+            _contas
+                    .where(
+                      (c) => c['perfil'] == 'GERENTE' && c['ativo'] == true,
+                    )
+                    .length ==
+                1) {
+          return _erro(
+            409,
+            'ULTIMO_GERENTE',
+            'Não é possível rebaixar o último gerente ativo.',
+          );
+        }
+        conta['perfil'] = novo;
+        return _json(null, 204);
+      }
       if (path.endsWith('/ativo')) {
         final id = int.tryParse(path.split('/')[2]);
         final conta = _contas.where((c) => c['id'] == id).firstOrNull;
