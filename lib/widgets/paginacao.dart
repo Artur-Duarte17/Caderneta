@@ -45,11 +45,12 @@ class PaginatedSection<T> extends StatelessWidget {
             ],
           ),
           const SizedBox(height: Gap.md),
-          if (c.carregando) const LinearProgressIndicator(),
+          if (c.carregando && r != null)
+            const BarraAtualizando(mensagem: 'Buscando registros'),
           if (c.erro != null)
             ErrorState(mensagem: '${c.erro}', onRetry: c.atualizar)
           else if (r == null)
-            const LoadingState()
+            const LoadingState(mensagem: 'Carregando registros')
           else if (r.content.isEmpty)
             EmptyState(
               icon: Icons.history,

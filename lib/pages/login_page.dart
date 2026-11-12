@@ -107,6 +107,7 @@ class _LoginPageState extends State<LoginPage> {
               const SizedBox(height: Gap.lg),
               BusyButton(
                 label: 'Entrar',
+                busyLabel: 'Entrando',
                 busy: _busy || widget.sessao.ocupado,
                 onPressed: _entrar,
               ),

@@ -47,7 +47,11 @@ class _AcessosPageState extends State<AcessosPage> {
     if (confirmar != true || !mounted || _busy) return;
     setState(() => _busy = true);
     try {
-      await runtime.acessos.ativo(conta.id, !conta.ativo);
+      await executarComCarregamento(
+        context,
+        conta.ativo ? 'Desativando acesso' : 'Ativando acesso',
+        () => runtime.acessos.ativo(conta.id, !conta.ativo),
+      );
       if (!mounted) return;
       toast(context, 'Acesso atualizado.');
       _c!.atualizar();
@@ -267,7 +271,12 @@ class _FuncionarioFormState extends State<_FuncionarioForm> {
         onPressed: _busy ? null : () => Navigator.pop(context),
         child: const Text('Cancelar'),
       ),
-      BusyButton(label: 'Criar acesso', busy: _busy, onPressed: _salvar),
+      BusyButton(
+        label: 'Criar acesso',
+        busyLabel: 'Criando acesso',
+        busy: _busy,
+        onPressed: _salvar,
+      ),
     ],
   );
 }

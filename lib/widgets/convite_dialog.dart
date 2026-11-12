@@ -78,7 +78,12 @@ class _ConviteDialogState extends State<ConviteDialog> {
         child: const Text('Fechar'),
       ),
       if (_convite == null)
-        BusyButton(label: 'Gerar código', busy: _busy, onPressed: _gerar)
+        BusyButton(
+          label: 'Gerar código',
+          busyLabel: 'Gerando código',
+          busy: _busy,
+          onPressed: _gerar,
+        )
       else
         FilledButton.icon(
           onPressed: () async {

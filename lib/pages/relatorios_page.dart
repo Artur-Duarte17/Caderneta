@@ -99,6 +99,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
       ),
       AsyncView<_Relatorio>(
         key: ValueKey(_periodo),
+        mensagem: 'Gerando relatório',
         load: _load,
         builder: (context, r, _) => _conteudo(context, r),
       ),

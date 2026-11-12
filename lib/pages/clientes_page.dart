@@ -26,6 +26,8 @@ class _ClientesPageState extends State<ClientesPage> {
   @override
   Widget build(BuildContext context) => AsyncView<Snapshot>(
     queryKey: (_page, _busca),
+    mensagem: 'Carregando clientes',
+    mensagemAtualizando: 'Buscando clientes',
     load: () => Snapshot.load(recurso: 'clientes', page: _page, q: _busca),
     builder: (context, s, reload) {
       final termo = _busca.toLowerCase();
@@ -666,6 +668,7 @@ class _ClienteFormState extends State<_ClienteForm> {
       ),
       BusyButton(
         label: _editando ? 'Salvar alterações' : 'Cadastrar',
+        busyLabel: 'Salvando',
         busy: _salvando,
         onPressed: _salvar,
       ),

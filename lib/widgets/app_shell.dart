@@ -34,7 +34,9 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sessao = AppScope.of(context).sessao;
-    if (!sessao.autenticado) return const Scaffold(body: LoadingState());
+    if (!sessao.autenticado) {
+      return const Scaffold(body: LoadingState(mensagem: 'Carregando'));
+    }
     final user = sessao.usuario!;
     final itens = navItems
         .where((i) => rotaPermitida(user.perfil, i.path))
@@ -127,7 +129,13 @@ class AppShell extends StatelessWidget {
                 const SizedBox(height: Gap.sm),
                 TextButton.icon(
                   style: TextButton.styleFrom(foregroundColor: Colors.white),
-                  onPressed: sessao.ocupado ? null : sessao.sair,
+                  onPressed: sessao.ocupado
+                      ? null
+                      : () => executarComCarregamento(
+                          context,
+                          'Saindo',
+                          sessao.sair,
+                        ),
                   icon: const Icon(Icons.logout),
                   label: const Text('Sair'),
                 ),

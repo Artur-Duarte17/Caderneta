@@ -5,6 +5,9 @@ import '../core/api.dart';
 import '../core/models.dart';
 import '../core/historico_service.dart';
 import '../core/theme.dart';
+import 'carregando.dart';
+
+export 'carregando.dart';
 
 // ===== Feedback =====
 
@@ -39,9 +42,14 @@ class AsyncView<T> extends StatefulWidget {
     required this.load,
     required this.builder,
     this.queryKey,
+    this.mensagem = 'Carregando dados',
+    this.mensagemAtualizando = 'Atualizando',
   });
 
   final Object? queryKey;
+
+  /// Texto do indicador na primeira carga (sem dados) e nas recargas (dados antigos na tela).
+  final String mensagem, mensagemAtualizando;
 
   final Future<T> Function() load;
   final Widget Function(
@@ -59,6 +67,7 @@ class _AsyncViewState<T> extends State<AsyncView<T>> {
   T? _data;
   Object? _erro;
   bool _carregando = true;
+  bool _atualizando = false;
   int _pedido = 0;
   final _revisao = HistoricoService.instance.revisao;
 
@@ -85,7 +94,10 @@ class _AsyncViewState<T> extends State<AsyncView<T>> {
 
   Future<void> _reload() async {
     final pedido = ++_pedido;
-    if (_data == null) setState(() => _carregando = true);
+    setState(() {
+      if (_data == null) _carregando = true;
+      _atualizando = _data != null;
+    });
     try {
       final d = await widget.load();
       if (mounted && pedido == _pedido) {
@@ -93,6 +105,7 @@ class _AsyncViewState<T> extends State<AsyncView<T>> {
           _data = d;
           _erro = null;
           _carregando = false;
+          _atualizando = false;
         });
       }
     } catch (e) {
@@ -100,6 +113,7 @@ class _AsyncViewState<T> extends State<AsyncView<T>> {
         setState(() {
           _erro = e;
           _carregando = false;
+          _atualizando = false;
         });
       }
     }
@@ -107,13 +121,17 @@ class _AsyncViewState<T> extends State<AsyncView<T>> {
 
   @override
   Widget build(BuildContext context) {
-    if (_carregando && _data == null) return const LoadingState();
+    if (_carregando && _data == null) {
+      return LoadingState(mensagem: widget.mensagem);
+    }
     if (_erro != null && _data == null) {
       return ErrorState(mensagem: '$_erro', onRetry: _reload);
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (_atualizando)
+          BarraAtualizando(mensagem: widget.mensagemAtualizando),
         if (_erro != null) ErrorState(mensagem: '$_erro', onRetry: _reload),
         KeyedSubtree(
           key: const ValueKey('async-content'),
@@ -125,14 +143,10 @@ class _AsyncViewState<T> extends State<AsyncView<T>> {
 }
 
 class LoadingState extends StatelessWidget {
-  const LoadingState({super.key});
+  const LoadingState({super.key, this.mensagem = 'Carregando'});
+  final String mensagem;
   @override
-  Widget build(BuildContext context) => const Center(
-    child: Padding(
-      padding: EdgeInsets.all(Gap.xl),
-      child: CircularProgressIndicator(),
-    ),
-  );
+  Widget build(BuildContext context) => Carregando(mensagem: mensagem);
 }
 
 class ErrorState extends StatelessWidget {
@@ -642,8 +656,12 @@ class BusyButton extends StatelessWidget {
     required this.busy,
     required this.onPressed,
     this.icon,
+    this.busyLabel,
   });
   final String label;
+
+  /// Texto enquanto ocupado (ex.: "Entrando"), com reticências animadas. Sem ele, mantém [label].
+  final String? busyLabel;
   final bool busy;
   final VoidCallback? onPressed;
   final IconData? icon;
@@ -661,7 +679,9 @@ class BusyButton extends StatelessWidget {
             ),
           )
         : Icon(icon ?? Icons.check, size: 18),
-    label: Text(label),
+    label: busy && busyLabel != null
+        ? TextoCarregando(busyLabel!)
+        : Text(label),
   );
 }
 
@@ -774,6 +794,7 @@ class ResumoOperacional extends StatelessWidget {
   final bool pessoal, vendas;
   @override
   Widget build(BuildContext context) => AsyncView<Map<String, dynamic>>(
+    mensagem: 'Carregando resumo',
     load: () => Api.instance.resumo(pessoal: pessoal),
     builder: (context, r, _) => ResponsiveGrid(
       minWidth: 240,

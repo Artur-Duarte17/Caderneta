@@ -31,6 +31,7 @@ class DashboardPage extends StatelessWidget {
             child: const Text('Ver todas'),
           ),
           child: AsyncView<Snapshot>(
+            mensagem: 'Carregando visão geral',
             load: () => Snapshot.load(),
             builder: (context, s, _) => s.vendas.isEmpty
                 ? const Text('Nenhuma venda registrada.')

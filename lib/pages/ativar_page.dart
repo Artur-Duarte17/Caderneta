@@ -130,7 +130,12 @@ class _AtivarPageState extends State<AtivarPage> {
               ),
             ),
           const SizedBox(height: Gap.lg),
-          BusyButton(label: 'Ativar acesso', busy: _busy, onPressed: _ativar),
+          BusyButton(
+            label: 'Ativar acesso',
+            busyLabel: 'Ativando acesso',
+            busy: _busy,
+            onPressed: _ativar,
+          ),
           TextButton(
             onPressed: () => context.go('/login'),
             child: const Text('Voltar para entrar'),

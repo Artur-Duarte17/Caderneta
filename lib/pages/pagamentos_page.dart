@@ -26,6 +26,8 @@ class _PagamentosPageState extends State<PagamentosPage> {
   @override
   Widget build(BuildContext context) => AsyncView<Snapshot>(
     queryKey: (_page, _busca, _status, _periodo),
+    mensagem: 'Carregando dívidas e pagamentos',
+    mensagemAtualizando: 'Buscando dívidas',
     load: () => Snapshot.load(
       recurso: 'dividas',
       page: _page,
@@ -259,9 +261,13 @@ class _DividaCard extends StatelessWidget {
                     firstDate: d.dataEmissao ?? DateTime(2000),
                     lastDate: DateTime.now().add(const Duration(days: 3650)),
                   );
-                  if (escolhido == null) return;
+                  if (escolhido == null || !context.mounted) return;
                   try {
-                    await Api.instance.renegociar(d.id, escolhido);
+                    await executarComCarregamento(
+                      context,
+                      'Atualizando vencimento',
+                      () => Api.instance.renegociar(d.id, escolhido),
+                    );
                     HistoricoService.instance.dadosAlterados();
                     if (context.mounted) {
                       toast(context, 'Vencimento atualizado');
@@ -476,6 +482,7 @@ class _PagamentoFormState extends State<_PagamentoForm> {
         ),
         BusyButton(
           label: 'Confirmar pagamento',
+          busyLabel: 'Registrando pagamento',
           busy: _salvando,
           onPressed: _salvar,
         ),

@@ -10,6 +10,7 @@ import 'core/browser_setup.dart';
 import 'core/session.dart';
 import 'core/theme.dart';
 import 'dev/fakes.dart';
+import 'widgets/carregando.dart';
 
 const kMockApi = bool.fromEnvironment('MOCK_API', defaultValue: false);
 void verificarModo({required bool release, required bool mock}) {
@@ -79,7 +80,7 @@ class _CadernetaAppState extends State<CadernetaApp> {
         builder: (context, _) {
           if (widget.runtime.sessao.estado == EstadoSessao.verificando) {
             return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
+              body: Carregando(mensagem: 'Verificando sua sessão'),
             );
           }
           return KeyedSubtree(

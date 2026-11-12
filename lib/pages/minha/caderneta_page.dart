@@ -204,6 +204,7 @@ class _Resumo extends StatelessWidget {
         SectionCard(
           titulo: 'Últimos eventos',
           child: AsyncView<Pagina<EventoHistorico>>(
+            mensagem: 'Carregando histórico',
             load: () => runtime.historicoRepo.listar(pessoal: true, size: 5),
             builder: (context, eventos, _) => eventos.content.isEmpty
                 ? const Text('Nenhum evento registrado.')

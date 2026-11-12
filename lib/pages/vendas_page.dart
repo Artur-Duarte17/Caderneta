@@ -42,6 +42,8 @@ class _VendasPageState extends State<VendasPage> {
   @override
   Widget build(BuildContext context) => AsyncView<Snapshot>(
     queryKey: (_page, _busca, _status, _periodo),
+    mensagem: 'Carregando vendas',
+    mensagemAtualizando: 'Buscando vendas',
     load: () => Snapshot.load(
       recurso: 'vendas',
       page: _page,
@@ -216,9 +218,13 @@ class _VendasPageState extends State<VendasPage> {
                           ],
                         ),
                       );
-                      if (confirmar == true) {
+                      if (confirmar == true && ctx.mounted) {
                         try {
-                          await Api.instance.excluirVenda(v.id);
+                          await executarComCarregamento(
+                            ctx,
+                            'Excluindo venda',
+                            () => Api.instance.excluirVenda(v.id),
+                          );
                           if (ctx.mounted) Navigator.pop(ctx);
                           HistoricoService.instance.dadosAlterados();
                         } catch (e) {
@@ -467,8 +473,11 @@ class _VendaFormState extends State<_VendaForm> {
   final _form = GlobalKey<FormState>();
   late List<Cliente> _clientes = List.of(widget.clientes);
   int _buscaCliente = 0;
+  bool _buscandoClientes = false;
+
   Future<void> _buscarClientes(String q) async {
     final pedido = ++_buscaCliente;
+    setState(() => _buscandoClientes = true);
     try {
       final encontrados = (await Api.instance.pagina(
         '/clientes',
@@ -484,6 +493,11 @@ class _VendaFormState extends State<_VendaForm> {
       setState(() => _clientes = encontrados);
     } catch (e) {
       if (mounted) toast(context, '$e', erro: true);
+    } finally {
+      // Só a busca mais recente desliga o indicador.
+      if (mounted && pedido == _buscaCliente) {
+        setState(() => _buscandoClientes = false);
+      }
     }
   }
 
@@ -669,6 +683,18 @@ class _VendaFormState extends State<_VendaForm> {
                 TextField(
                   decoration: InputDecoration(
                     labelText: 'Buscar cliente por nome ou CPF',
+                    suffixIcon: _buscandoClientes
+                        ? const Padding(
+                            padding: EdgeInsets.all(12),
+                            child: SizedBox.square(
+                              dimension: 20,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                        : null,
+                    helper: _buscandoClientes
+                        ? const TextoCarregando('Buscando clientes')
+                        : null,
                   ),
                   onChanged: _buscarClientes,
                 ),
@@ -774,6 +800,7 @@ class _VendaFormState extends State<_VendaForm> {
       ),
       BusyButton(
         label: _editando ? 'Salvar alterações' : 'Registrar venda',
+        busyLabel: _editando ? 'Salvando' : 'Registrando venda',
         busy: _salvando,
         onPressed: _salvar,
       ),
