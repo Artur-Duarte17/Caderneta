@@ -42,21 +42,3 @@ String entrada(Perfil? perfil) => perfil == Perfil.cliente ? '/minha' : '/';
 bool rotaPermitida(Perfil? perfil, String path) =>
     path == '/acesso-negado' ||
     (rotasAcoes.containsKey(path) && pode(perfil, rotasAcoes[path]!));
-String destinoSeguro(String? next, Perfil? perfil) {
-  if (next == null ||
-      !next.startsWith('/') ||
-      next.startsWith('//') ||
-      next.contains('\\') ||
-      next.contains('%') ||
-      next.contains(':')) {
-    return entrada(perfil);
-  }
-  final uri = Uri.tryParse(next);
-  if (uri == null ||
-      uri.hasAuthority ||
-      uri.hasScheme ||
-      !rotaPermitida(perfil, uri.path)) {
-    return entrada(perfil);
-  }
-  return uri.path;
-}

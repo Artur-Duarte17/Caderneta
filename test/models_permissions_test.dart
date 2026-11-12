@@ -39,19 +39,10 @@ void main() {
     expect(rotaPermitida(Perfil.cliente, '/minha/compras'), true);
     expect(rotaPermitida(Perfil.funcionario, '/auditoria'), false);
   });
-  test('next aceita somente rota interna conhecida e permitida', () {
-    expect(destinoSeguro('/clientes', Perfil.gerente), '/clientes');
-    for (final next in [
-      '//evil.com',
-      'https://x',
-      'javascript:',
-      '/\\evil.com',
-      '/%2F%2Fevil.com',
-      '/desconhecida',
-      '/auditoria',
-    ]) {
-      expect(destinoSeguro(next, Perfil.cliente), '/minha');
-    }
+  test('tela inicial após o login depende só do perfil', () {
+    expect(entrada(Perfil.gerente), '/');
+    expect(entrada(Perfil.funcionario), '/');
+    expect(entrada(Perfil.cliente), '/minha');
   });
   test('8 tipos exatos, fallback e campo tipo do contrato', () {
     expect(TipoEvento.values.length, 8);

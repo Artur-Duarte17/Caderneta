@@ -31,15 +31,12 @@ GoRouter criarRouter(AppRuntime runtime, {String? initialLocation}) {
       if (sessao.estado == EstadoSessao.verificando) return null;
       final path = state.uri.path;
       final publica = path == '/login' || path == '/ativar';
-      if (!sessao.autenticado) {
-        return publica
-            ? null
-            : Uri(path: '/login', queryParameters: {'next': path}).toString();
-      }
+      // Sem sessão: vai para o login SEM lembrar a tela atual. Assim quem entra em seguida
+      // (outro usuário, ou o mesmo depois de sair) começa sempre na tela inicial do perfil.
+      if (!sessao.autenticado) return publica ? null : '/login';
       final perfil = sessao.usuario?.perfil;
-      if (publica) {
-        return destinoSeguro(state.uri.queryParameters['next'], perfil);
-      }
+      // Acabou de entrar: tela inicial do perfil (Visão Geral; cliente: Minha caderneta).
+      if (publica) return entrada(perfil);
       if (path == '/notificacoes') {
         return perfil == Perfil.cliente ? '/minha/historico' : '/historico';
       }
