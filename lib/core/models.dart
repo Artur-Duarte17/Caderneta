@@ -256,16 +256,21 @@ class Usuario {
     required this.nome,
     required this.perfil,
     this.login = '',
+    this.lojaNome = '',
   });
   final int id, pessoaId;
   final String nome, login;
   final Perfil? perfil;
+
+  /// Loja da conta (cada loja só enxerga os próprios dados).
+  final String lojaNome;
   factory Usuario.fromJson(Map<String, dynamic> j) => Usuario(
     id: (j['id'] as num?)?.toInt() ?? 0,
     pessoaId: (j['pessoaId'] as num?)?.toInt() ?? 0,
     nome: j['nome'] as String? ?? '',
     login: j['login'] as String? ?? '',
     perfil: Perfil.parse(j['perfil']),
+    lojaNome: j['lojaNome'] as String? ?? '',
   );
 }
 

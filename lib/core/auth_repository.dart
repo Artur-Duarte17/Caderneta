@@ -7,6 +7,9 @@ abstract interface class AuthRepository {
   Future<Usuario> login(String login, String senha);
   Future<void> logout();
   Future<void> ativar(Map<String, dynamic> dados);
+
+  /// Cadastro público: cria uma loja nova e o dono dela (gerente).
+  Future<void> criarLoja(Map<String, dynamic> dados);
 }
 
 class HttpAuthRepository implements AuthRepository {
@@ -38,6 +41,11 @@ class HttpAuthRepository implements AuthRepository {
   @override
   Future<void> logout() async {
     await http.send('POST', '/auth/logout', autenticado: false);
+  }
+
+  @override
+  Future<void> criarLoja(Map<String, dynamic> dados) async {
+    await http.send('POST', '/auth/lojas', body: dados, autenticado: false);
   }
 
   @override

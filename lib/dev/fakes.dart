@@ -186,6 +186,26 @@ class ServidorSimulado {
       _token++;
       return _json(null, 204);
     }
+    if (path == '/auth/lojas') {
+      if (_contas.any((c) => c['login'] == body['login'])) {
+        return _erro(409, 'CONFLITO', 'Login já em uso.');
+      }
+      final id = ++_sequencia;
+      _contas.add({
+        'id': id,
+        'pessoaId': id,
+        'nome': body['nome'],
+        'login': body['login'],
+        'perfil': 'GERENTE',
+        'ativo': true,
+        'lojaNome': body['nomeLoja'],
+      });
+      return _json({
+        'lojaId': id,
+        'nomeLoja': body['nomeLoja'],
+        'login': body['login'],
+      }, 201);
+    }
     if (path == '/auth/registro-cliente') {
       final codigoInformado = '${body['codigoConvite']}'
           .replaceAll(RegExp(r'[\s-]'), '')

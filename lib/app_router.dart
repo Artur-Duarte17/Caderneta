@@ -8,6 +8,7 @@ import 'pages/acessos_page.dart';
 import 'pages/ativar_page.dart';
 import 'pages/auditoria_page.dart';
 import 'pages/clientes_page.dart';
+import 'pages/criar_loja_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/historico_page.dart';
 import 'pages/login_page.dart';
@@ -30,7 +31,8 @@ GoRouter criarRouter(AppRuntime runtime, {String? initialLocation}) {
     redirect: (context, state) {
       if (sessao.estado == EstadoSessao.verificando) return null;
       final path = state.uri.path;
-      final publica = path == '/login' || path == '/ativar';
+      final publica =
+          path == '/login' || path == '/ativar' || path == '/criar-loja';
       // Sem sessão: vai para o login SEM lembrar a tela atual. Assim quem entra em seguida
       // (outro usuário, ou o mesmo depois de sair) começa sempre na tela inicial do perfil.
       if (!sessao.autenticado) return publica ? null : '/login';
@@ -50,6 +52,7 @@ GoRouter criarRouter(AppRuntime runtime, {String? initialLocation}) {
         builder: (_, _) => LoginPage(sessao: sessao),
       ),
       _rota('/ativar', const AtivarPage()),
+      _rota('/criar-loja', const CriarLojaPage()),
       ShellRoute(
         builder: (_, state, child) => AppShell(
           key: ValueKey(sessao.epoca),

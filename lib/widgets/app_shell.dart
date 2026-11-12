@@ -46,26 +46,44 @@ class AppShell extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Padding(
-            padding: EdgeInsets.all(Gap.lg),
-            child: Row(
+          Padding(
+            padding: const EdgeInsets.all(Gap.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.menu_book, color: AppColors.accent),
-                SizedBox(width: Gap.sm),
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
+                const Row(
+                  children: [
+                    Icon(Icons.menu_book, color: AppColors.accent),
+                    SizedBox(width: Gap.sm),
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Caderneta',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (user.lojaNome.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: Gap.xs, left: 32),
                     child: Text(
-                      'Caderneta',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
+                      user.lojaNome,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
                       ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
@@ -158,7 +176,10 @@ class AppShell extends StatelessWidget {
           : AppBar(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
-              title: const Text('Caderneta'),
+              title: Text(
+                user.lojaNome.isEmpty ? 'Caderneta' : user.lojaNome,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
       body: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,

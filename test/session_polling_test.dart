@@ -37,6 +37,8 @@ class AuthStub implements AuthRepository {
 
   @override
   Future<void> ativar(Map<String, dynamic> dados) async {}
+  @override
+  Future<void> criarLoja(Map<String, dynamic> dados) async {}
 }
 
 class HistoricoStub implements HistoricoRepository {

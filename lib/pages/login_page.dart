@@ -116,6 +116,12 @@ class _LoginPageState extends State<LoginPage> {
                 onPressed: () => context.go('/ativar'),
                 child: const Text('Primeiro acesso'),
               ),
+              const Divider(height: Gap.lg),
+              OutlinedButton.icon(
+                onPressed: () => context.go('/criar-loja'),
+                icon: const Icon(Icons.storefront_outlined),
+                label: const Text('Criar minha loja'),
+              ),
             ],
           ),
         ),
