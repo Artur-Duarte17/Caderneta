@@ -53,7 +53,7 @@ void main() {
       );
       await _tocar(tester, find.widgetWithText(FilledButton, 'Restaurar'));
       expect(
-        find.text('A senha deve ter de 8 a 72 caracteres'),
+        find.text('A senha deve ter pelo menos 8 caracteres'),
         findsOneWidget,
       );
       await tester.enterText(

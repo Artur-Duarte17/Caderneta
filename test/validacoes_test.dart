@@ -20,6 +20,29 @@ String _digitar(List<TextInputFormatter> fs, String texto) {
 void main() {
   setUpAll(() => initializeDateFormatting('pt_BR'));
 
+  test('senha respeita 72 bytes UTF-8 sem proibir acentos ou emojis', () {
+    for (final senha in ['x' * 72, 'á' * 36, '😀' * 18]) {
+      expect(validarSenha(senha), isNull);
+    }
+    for (final senha in ['x' * 73, 'á' * 40, '😀' * 19]) {
+      expect(validarSenha(senha), contains('72 bytes'));
+    }
+    expect(validarSenha('curta'), contains('8 caracteres'));
+    expect(validarSenha(' ' * 8), isNotNull);
+  });
+
+  test('nome comercial preserva nomes longos, acentos e símbolos', () {
+    const nome = 'Mercado de Produtos Naturais e Alimentos da Cidade de Teste';
+    expect(_digitar(filtroNomeLoja, nome), nome);
+    expect(
+      _digitar(filtroNomeLoja, "João & Maria's – Filial 2"),
+      "João & Maria's – Filial 2",
+    );
+    expect(validarNomeLoja('x' * 120), isNull);
+    expect(validarNomeLoja('x' * 121), contains('120'));
+    expect(validarNomeLoja('  '), isNotNull);
+  });
+
   group('Nome', () {
     test('aceita nomes reais', () {
       for (final ok in [

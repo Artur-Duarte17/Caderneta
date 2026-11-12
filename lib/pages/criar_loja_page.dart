@@ -107,10 +107,8 @@ class _CriarLojaPageState extends State<CriarLojaPage> {
                 hintText: 'ex.: Mercado São José',
               ),
               textCapitalization: TextCapitalization.words,
-              inputFormatters: filtroCargo,
-              validator: (v) => (v ?? '').trim().length < 3
-                  ? 'Informe o nome da loja (mínimo 3 caracteres)'
-                  : null,
+              inputFormatters: filtroNomeLoja,
+              validator: validarNomeLoja,
             ),
           ),
           const FormSection('Seus dados'),

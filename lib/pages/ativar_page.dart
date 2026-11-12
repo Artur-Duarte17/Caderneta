@@ -8,15 +8,12 @@ import '../core/documentos.dart';
 import '../core/validacoes.dart';
 
 export '../core/documentos.dart' show cpfValido;
+export '../core/validacoes.dart' show validarSenha;
 
 String? validarLogin(String? value) =>
     RegExp(r'^[A-Za-z0-9._-]{3,50}$').hasMatch(value ?? '')
     ? null
     : 'Use 3 a 50 caracteres: letras, números, ponto, hífen ou sublinhado';
-String? validarSenha(String? value) =>
-    value != null && value.length >= 8 && value.length <= 72
-    ? null
-    : 'A senha deve ter de 8 a 72 caracteres';
 
 class AtivarPage extends StatefulWidget {
   const AtivarPage({super.key});

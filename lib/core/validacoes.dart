@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/services.dart';
 
 /// Regras de entrada de texto (exceto CPF/telefone, em documentos.dart, e números, em
@@ -45,6 +46,21 @@ String? validarCargo(String? v) {
 final List<TextInputFormatter> filtroCargo = [
   FilteringTextInputFormatter.allow(RegExp(r'[\p{L}0-9 ./\-]', unicode: true)),
   LengthLimitingTextInputFormatter(cargoMax),
+];
+
+// ---- Nome comercial -------------------------------------------------------------------------
+const nomeLojaMax = 120;
+
+String? validarNomeLoja(String? v) {
+  final t = (v ?? '').trim();
+  if (t.length < 3) return 'Informe o nome da loja (mínimo 3 caracteres)';
+  if (t.length > nomeLojaMax) return 'Use no máximo $nomeLojaMax caracteres';
+  return null;
+}
+
+final List<TextInputFormatter> filtroNomeLoja = [
+  FilteringTextInputFormatter.deny(RegExp(r'[\x00-\x1F\x7F]')),
+  LengthLimitingTextInputFormatter(nomeLojaMax),
 ];
 
 // ---- E-mail ----------------------------------------------------------------------------------
@@ -136,7 +152,17 @@ final List<TextInputFormatter> filtroLoginEntrada = [
   LengthLimitingTextInputFormatter(50),
 ];
 
-const senhaMax = 72; // limite do BCrypt
+const senhaMax = 72; // limite em bytes UTF-8 do BCrypt
+String? validarSenha(String? value) {
+  if (value == null || value.trim().isEmpty || value.length < 8) {
+    return 'A senha deve ter pelo menos 8 caracteres';
+  }
+  if (utf8.encode(value).length > senhaMax) {
+    return 'A senha deve ter no máximo 72 bytes (acentos e emojis ocupam mais espaço)';
+  }
+  return null;
+}
+
 final List<TextInputFormatter> filtroSenha = [
   LengthLimitingTextInputFormatter(senhaMax),
 ];

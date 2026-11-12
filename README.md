@@ -17,8 +17,7 @@ Este repositório é submódulo do integrador
 [`Projeto_Final_Caderneta`](https://github.com/LuisHRodrigues/Projeto_Final_Caderneta), onde ficam o
 Docker Compose, os testes de navegador (Playwright) e a documentação de operação.
 
-> O `.fvmrc` deste repositório aponta 3.47.6; a versão usada em todos os builds e testes é a
-> **3.47.9**. Ajuste o `.fvmrc` se usar FVM.
+> O `.fvmrc`, o Dockerfile e o CI usam Flutter **3.47.9**, também usado nos testes visuais.
 
 ---
 
@@ -165,7 +164,7 @@ digitação** (caracteres inválidos não entram, nem colando) e **validação a
 | Endereço, descrição do item | sem caracteres invisíveis, até 200 | conteúdo mínimo |
 | Cargo, matrícula | caracteres permitidos, até 50 | formato |
 | Login | só `A–Z a–z 0–9 . _ -` (na criação) | `^[A-Za-z0-9._-]{3,50}$` |
-| Senha | até 72 | 8–72; confirmação igual |
+| Senha | até 72 | mínimo de 8 caracteres, máximo de 72 bytes UTF-8; confirmação igual |
 | Código do convite | maiúsculas, alfabeto do servidor | 20 caracteres (sem 0, O, 1, I) |
 | Filtros da Auditoria | "venda criada" vira `VENDA_CRIADA` | — |
 

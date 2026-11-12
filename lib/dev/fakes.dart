@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import '../core/validacoes.dart' show validarSenha;
 
 http.Client criarClienteSimulado() => ServidorSimulado().client;
 
@@ -422,11 +423,11 @@ class ServidorSimulado {
             ..['excluidoEm'] = DateTime.now().toUtc().toIso8601String();
           return _json(null, 204);
         }
-        if ((body['senha'] as String? ?? '').length < 8) {
+        if (validarSenha(body['senha'] as String?) != null) {
           return _erro(
             400,
             'VALIDACAO',
-            'senha: deve ter de 8 a 72 caracteres',
+            'senha: ${validarSenha(body['senha'] as String?)}',
           );
         }
         conta
