@@ -8,6 +8,5 @@ docs/
 test/
 scripts/
 README.md
-pubspec.lock
 Dockerfile.local
 Dockerfile.local.dockerignore

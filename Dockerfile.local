@@ -1,0 +1,9 @@
+# Empacota o build feito FORA do Docker (flutter build web), em vez de compilar dentro da imagem.
+# Vantagens: usa o Flutter da própria máquina (versão reproduzível), poupa vários GB de RAM do Docker
+# e não depende de baixar a imagem do Flutter. Use via ./subir.sh (ele faz o build antes).
+FROM nginx:1.30-alpine
+# Correções de segurança do sistema publicadas depois da imagem base.
+RUN apk upgrade --no-cache
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY build/web /usr/share/nginx/html
+EXPOSE 80
