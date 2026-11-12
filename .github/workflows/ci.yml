@@ -1,7 +1,9 @@
-# Frontend (Flutter Web): análise, testes, build reproduzível e publicação no Firebase Hosting.
-# Sem chave JSON: Workload Identity Federation (o firebase-tools usa as credenciais padrão do gcloud).
+# Frontend (Flutter Web): análise, testes, build reproduzível e DEPLOY AUTOMÁTICO no Firebase Hosting
+# a cada push na main.
 #
-# Variáveis do repositório/ambiente (sem segredos): GCP_PROJECT_ID, GCP_WIF_PROVIDER, GCP_SA_HOSTING
+# Autenticação por Workload Identity Federation (sem chave JSON): o provedor só aceita tokens deste
+# repositório na branch main, e a conta github-hosting só publica no Firebase Hosting (e lê o Cloud
+# Run, exigido pelo rewrite /api). O firebase-tools usa as credenciais criadas pelo passo "auth".
 name: frontend
 
 on:
@@ -9,18 +11,17 @@ on:
     branches: [main, master]
   pull_request:
   workflow_dispatch:
-    inputs:
-      ambiente:
-        description: "Publicar em"
-        type: choice
-        options: [homologacao, producao]
-        default: homologacao
 
 permissions:
   contents: read
 
 env:
   FLUTTER_VERSION: "3.47.9"   # mesmo valor do Dockerfile e do subir.sh
+  # Configuração de produção (não são segredos).
+  GCP_PROJECT_ID: caderneta01
+  GCP_WIF_PROVIDER: projects/684719057324/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+  GCP_SA_HOSTING: github-hosting@caderneta01.iam.gserviceaccount.com
+  URL_PUBLICA: https://caderneta01.web.app
 
 jobs:
   testes:
@@ -46,13 +47,16 @@ jobs:
           retention-days: 7
 
   publicar:
-    if: github.event_name == 'workflow_dispatch'
+    # Só a main publica (push ou execução manual). Pull requests e a branch master só testam.
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: testes
     runs-on: ubuntu-24.04
-    environment: ${{ inputs.ambiente }}   # produção: exigir aprovação manual nas regras do ambiente
+    concurrency:
+      group: producao-frontend
+      cancel-in-progress: false
     permissions:
       contents: read
-      id-token: write
+      id-token: write                      # Workload Identity Federation
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -61,14 +65,12 @@ jobs:
           path: build/web
       - uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          service_account: ${{ vars.GCP_SA_HOSTING }}
-      - name: Firebase Hosting
+          workload_identity_provider: ${{ env.GCP_WIF_PROVIDER }}
+          service_account: ${{ env.GCP_SA_HOSTING }}
+      - name: Firebase Hosting (produção)
+        run: npx --yes firebase-tools@15.26.0 deploy --only hosting --project "$GCP_PROJECT_ID" --non-interactive
+      - name: Verificação pós-publicação
         run: |
-          # homologação = canal de pré-visualização (URL própria, expira); produção = site principal.
-          if [ "${{ inputs.ambiente }}" = producao ]; then
-            npx --yes firebase-tools@15.34.2 deploy --only hosting --project "${{ vars.GCP_PROJECT_ID }}" --non-interactive
-          else
-            npx --yes firebase-tools@15.34.2 hosting:channel:deploy homologacao --expires 7d \
-              --project "${{ vars.GCP_PROJECT_ID }}" --non-interactive
-          fi
+          curl -fsS --retry 5 --retry-all-errors --retry-delay 5 -o /dev/null "$URL_PUBLICA/"
+          curl -fsS -o /dev/null "$URL_PUBLICA/login"
+          curl -fsS --retry 5 --retry-all-errors --retry-delay 5 "$URL_PUBLICA/api/saude"
