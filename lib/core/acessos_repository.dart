@@ -16,7 +16,26 @@ abstract interface class AcessosRepository {
   /// Promove funcionário a gerente (ou o inverso). O login e a senha continuam os mesmos.
   Future<void> alterarPerfil(int id, Perfil perfil);
   Future<Convite> convite(int clienteId);
-  Future<void> criarFuncionario(Map<String, dynamic> dados);
+
+  /// Cria a conta; se o CPF for de um funcionário excluído, o backend reativa a conta antiga
+  /// (mesmo login) e responde reativado=true.
+  Future<ContaCriada> criarFuncionario(Map<String, dynamic> dados);
+
+  /// Exclusão lógica: desativa e esconde a conta; nada é apagado.
+  Future<void> excluir(int id);
+
+  /// Restaura conta excluída com senha nova.
+  Future<void> restaurar(int id, String senha);
+}
+
+class ContaCriada {
+  const ContaCriada({required this.login, required this.reativado});
+  final String login;
+  final bool reativado;
+  factory ContaCriada.fromJson(dynamic j) => ContaCriada(
+    login: j is Map ? '${j['login'] ?? ''}' : '',
+    reativado: j is Map && j['reativado'] == true,
+  );
 }
 
 class HttpAcessosRepository implements AcessosRepository {
@@ -62,12 +81,24 @@ class HttpAcessosRepository implements AcessosRepository {
   Future<Convite> convite(int clienteId) async =>
       Convite.fromJson(await http.send('POST', '/clientes/$clienteId/convite'));
   @override
-  Future<void> criarFuncionario(Map<String, dynamic> dados) async {
+  Future<ContaCriada> criarFuncionario(Map<String, dynamic> dados) async {
     if (!permiteCriarFuncionario) {
       throw const ApiException(
         'Cadastro de funcionário aguardando integração.',
       );
     }
-    await http.send('POST', '/auth/funcionarios', body: dados);
+    return ContaCriada.fromJson(
+      await http.send('POST', '/auth/funcionarios', body: dados),
+    );
+  }
+
+  @override
+  Future<void> excluir(int id) async {
+    await http.send('DELETE', '/usuarios/$id');
+  }
+
+  @override
+  Future<void> restaurar(int id, String senha) async {
+    await http.send('POST', '/usuarios/$id/restaurar', body: {'senha': senha});
   }
 }

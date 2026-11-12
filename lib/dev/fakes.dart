@@ -283,10 +283,11 @@ class ServidorSimulado {
         return _pagina(
           _contas.where(
             (c) =>
-                q['busca'] == null ||
-                '${c['nome']} ${c['login']}'.toLowerCase().contains(
-                  q['busca']!.toLowerCase(),
-                ),
+                (q['excluidas'] == 'true' || c['excluidoEm'] == null) &&
+                (q['busca'] == null ||
+                    '${c['nome']} ${c['login']}'.toLowerCase().contains(
+                      q['busca']!.toLowerCase(),
+                    )),
           ),
           q,
         );
@@ -346,18 +347,73 @@ class ServidorSimulado {
         return _json(null, 204);
       }
       if (path == '/auth/funcionarios') {
+        // Mesmo CPF de funcionário excluído: reativa a conta antiga (login antigo), como o backend.
+        final antiga = _contas
+            .where((c) => c['cpf'] != null && c['cpf'] == body['cpf'])
+            .firstOrNull;
+        if (antiga != null) {
+          if (antiga['excluidoEm'] == null) {
+            return _erro(
+              409,
+              'CONFLITO',
+              'Já existe um funcionário com o CPF informado.',
+            );
+          }
+          antiga
+            ..['nome'] = body['nome']
+            ..['perfil'] = 'FUNCIONARIO'
+            ..['ativo'] = true
+            ..['excluidoEm'] = null;
+          return _json({...antiga, 'reativado': true}, 201);
+        }
         if (_contas.any((c) => c['login'] == body['login'])) {
           return _erro(409, 'LOGIN_EM_USO', 'Login já cadastrado.');
         }
-        _contas.add({
+        final nova = {
           'id': ++_sequencia,
           'pessoaId': _sequencia,
           'nome': body['nome'],
+          'cpf': body['cpf'],
           'login': body['login'],
           'perfil': 'FUNCIONARIO',
           'ativo': true,
-        });
-        return _json(null, 201);
+        };
+        _contas.add(nova);
+        return _json({...nova, 'reativado': false}, 201);
+      }
+      if (path.startsWith('/usuarios/') &&
+          (method == 'DELETE' || path.endsWith('/restaurar'))) {
+        final id = int.tryParse(path.split('/')[2]);
+        final conta = _contas.where((c) => c['id'] == id).firstOrNull;
+        if (conta == null) return _erro(404);
+        if (conta['perfil'] == 'CLIENTE') {
+          return _erro(400, 'REGRA_DE_NEGOCIO', 'Somente contas da equipe.');
+        }
+        if (method == 'DELETE') {
+          if (conta['id'] == usuario?['id']) {
+            return _erro(
+              400,
+              'REGRA_DE_NEGOCIO',
+              'Você não pode excluir a própria conta.',
+            );
+          }
+          conta
+            ..['ativo'] = false
+            ..['excluidoEm'] = DateTime.now().toUtc().toIso8601String();
+          return _json(null, 204);
+        }
+        if ((body['senha'] as String? ?? '').length < 8) {
+          return _erro(
+            400,
+            'VALIDACAO',
+            'senha: deve ter de 8 a 72 caracteres',
+          );
+        }
+        conta
+          ..['ativo'] = true
+          ..['perfil'] = 'FUNCIONARIO'
+          ..['excluidoEm'] = null;
+        return _json(null, 204);
       }
       if (path == '/auditoria') {
         final rows = <Map<String, dynamic>>[

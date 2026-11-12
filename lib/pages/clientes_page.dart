@@ -639,9 +639,11 @@ class _ClienteFormState extends State<_ClienteForm> {
                       inputFormatters: [MascaraInputFormatter.cpf()],
                       validator: (v) => _editando && !_fiadorAlterado
                           ? null
-                          : cpfValido(v ?? '')
-                          ? null
-                          : 'Informe um CPF válido',
+                          : !cpfValido(v ?? '')
+                          ? 'Informe um CPF válido'
+                          : soDigitos(v) == soDigitos(_cpf.text)
+                          ? 'O cliente não pode ser fiador de si mesmo'
+                          : null,
                       decoration: const InputDecoration(
                         labelText: 'CPF do fiador *',
                         hintText: '000.000.000-00',

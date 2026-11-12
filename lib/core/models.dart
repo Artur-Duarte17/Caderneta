@@ -352,17 +352,22 @@ class ContaAcesso {
     required this.login,
     required this.perfil,
     required this.ativo,
+    this.excluido = false,
   });
   final int id;
   final String nome, login;
   final Perfil? perfil;
   final bool ativo;
+
+  /// Exclusão lógica: a conta some da lista, mas continua no banco (pode ser restaurada).
+  final bool excluido;
   factory ContaAcesso.fromJson(Map<String, dynamic> j) => ContaAcesso(
     id: (j['id'] as num).toInt(),
     nome: j['nome'] ?? '',
     login: j['login'] ?? '',
     perfil: Perfil.parse(j['perfil']),
     ativo: j['ativo'] == true,
+    excluido: j['excluidoEm'] != null,
   );
 }
 
