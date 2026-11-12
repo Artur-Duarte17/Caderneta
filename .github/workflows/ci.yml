@@ -1,0 +1,74 @@
+# Frontend (Flutter Web): análise, testes, build reproduzível e publicação no Firebase Hosting.
+# Sem chave JSON: Workload Identity Federation (o firebase-tools usa as credenciais padrão do gcloud).
+#
+# Variáveis do repositório/ambiente (sem segredos): GCP_PROJECT_ID, GCP_WIF_PROVIDER, GCP_SA_HOSTING
+name: frontend
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      ambiente:
+        description: "Publicar em"
+        type: choice
+        options: [homologacao, producao]
+        default: homologacao
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: "3.47.9"   # mesmo valor do Dockerfile e do subir.sh
+
+jobs:
+  testes:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+      - run: flutter analyze
+      - run: flutter test --concurrency=1
+      - name: Build de produção
+        run: flutter build web --release --no-web-resources-cdn --dart-define=MOCK_API=false
+      - name: Nenhum segredo no conteúdo publicado
+        run: docker run --rm -v "$PWD/build/web:/web:ro" zricethezav/gitleaks:v8.28.0 dir /web --redact --no-banner
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web
+          path: build/web
+          retention-days: 7
+
+  publicar:
+    if: github.event_name == 'workflow_dispatch'
+    needs: testes
+    runs-on: ubuntu-24.04
+    environment: ${{ inputs.ambiente }}   # produção: exigir aprovação manual nas regras do ambiente
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: web
+          path: build/web
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SA_HOSTING }}
+      - name: Firebase Hosting
+        run: |
+          # homologação = canal de pré-visualização (URL própria, expira); produção = site principal.
+          if [ "${{ inputs.ambiente }}" = producao ]; then
+            npx --yes firebase-tools@15.34.2 deploy --only hosting --project "${{ vars.GCP_PROJECT_ID }}" --non-interactive
+          else
+            npx --yes firebase-tools@15.34.2 hosting:channel:deploy homologacao --expires 7d \
+              --project "${{ vars.GCP_PROJECT_ID }}" --non-interactive
+          fi
