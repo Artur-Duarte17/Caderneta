@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../core/session.dart';
 import '../core/theme.dart';
+import '../core/validacoes.dart';
 import '../widgets/common.dart';
 
 class LoginPage extends StatefulWidget {
@@ -70,6 +71,8 @@ class _LoginPageState extends State<LoginPage> {
                 autofillHints: const [AutofillHints.username],
                 decoration: const InputDecoration(labelText: 'Login'),
                 textInputAction: TextInputAction.next,
+                autocorrect: false,
+                inputFormatters: filtroLoginEntrada,
                 validator: obrigatorio,
               ),
               const SizedBox(height: Gap.md),
@@ -78,6 +81,7 @@ class _LoginPageState extends State<LoginPage> {
                 obscureText: _oculta,
                 autofillHints: const [AutofillHints.password],
                 onFieldSubmitted: (_) => _entrar(),
+                inputFormatters: filtroSenha,
                 decoration: InputDecoration(
                   labelText: 'Senha',
                   suffixIcon: IconButton(

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../core/api.dart';
 import '../core/comprovante.dart';
+import '../core/documentos.dart';
+import '../core/entrada_numerica.dart';
+import '../core/validacoes.dart';
 import '../core/app_runtime.dart';
 import '../core/permissoes.dart';
 import '../core/format.dart';
@@ -408,7 +411,9 @@ DropdownButtonFormField<int> _clienteSelect(
     for (final c in [...clientes]..sort((a, b) => a.nome.compareTo(b.nome)))
       DropdownMenuItem(
         value: c.id,
-        child: Text('${c.nome}${c.telefone == null ? '' : ' · ${c.telefone}'}'),
+        child: Text(
+          '${c.nome}${c.telefone == null ? '' : ' · ${exibirTelefone(c.telefone)}'}',
+        ),
       ),
   ],
   onChanged: onChanged,
@@ -585,9 +590,10 @@ class _VendaFormState extends State<_VendaForm> {
         TextFormField(
           controller: i.desc,
           decoration: const InputDecoration(labelText: 'Descrição *'),
-          maxLength: 200,
-          validator: (v) =>
-              (v ?? '').trim().isEmpty ? 'Informe a descrição' : null,
+          maxLength: descricaoMax,
+          textCapitalization: TextCapitalization.sentences,
+          inputFormatters: filtroDescricao,
+          validator: validarDescricao,
         ),
         const SizedBox(height: Gap.sm),
         Row(
@@ -598,6 +604,7 @@ class _VendaFormState extends State<_VendaForm> {
                 controller: i.qtd,
                 decoration: const InputDecoration(labelText: 'Qtd *'),
                 keyboardType: TextInputType.number,
+                inputFormatters: somenteInteiro(maxDigitos: 7),
                 onChanged: (_) => setState(() {}),
                 validator: (v) {
                   final n = int.tryParse(v ?? '');
@@ -616,9 +623,8 @@ class _VendaFormState extends State<_VendaForm> {
                   labelText: 'Valor unitário *',
                   prefixText: r'R$ ',
                 ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType: tecladoValor,
+                inputFormatters: somenteValorMonetario(),
                 onChanged: (_) => setState(() {}),
                 validator: (v) => (parseCentavos(v ?? '') ?? 0) <= 0
                     ? 'Informe valor com até 2 casas'
@@ -661,7 +667,7 @@ class _VendaFormState extends State<_VendaForm> {
                 ),
               if (!_bloqueado) ...[
                 TextField(
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Buscar cliente por nome ou CPF',
                   ),
                   onChanged: _buscarClientes,
@@ -684,9 +690,8 @@ class _VendaFormState extends State<_VendaForm> {
                   labelText: 'Valor total *',
                   prefixText: r'R$ ',
                 ),
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
+                keyboardType: tecladoValor,
+                inputFormatters: somenteValorMonetario(),
                 onChanged: (_) => setState(() {}),
                 validator: (v) {
                   final n = parseCentavos(v ?? '');

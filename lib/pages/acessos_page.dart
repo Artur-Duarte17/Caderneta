@@ -5,8 +5,9 @@ import '../core/paged_controller.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 import '../widgets/paginacao.dart';
-import 'login_page.dart';
-import 'ativar_page.dart' show cpfValido, validarLogin, validarSenha;
+import 'ativar_page.dart' show validarLogin, validarSenha;
+import '../core/documentos.dart';
+import '../core/validacoes.dart';
 
 class AcessosPage extends StatefulWidget {
   const AcessosPage({super.key});
@@ -146,6 +147,7 @@ class _FuncionarioFormState extends State<_FuncionarioForm> {
     'login': 'Login',
     'senha': 'Senha',
   };
+  static const _opcionais = {'email', 'telefone', 'endereco', 'matricula'};
   final _form = GlobalKey<FormState>();
   final _campos = {for (final key in campos.keys) key: TextEditingController()};
   bool _busy = false;
@@ -157,8 +159,15 @@ class _FuncionarioFormState extends State<_FuncionarioForm> {
       _erro = null;
     });
     try {
+      String? valor(String chave, String texto) {
+        final t = chave == 'senha' ? texto : texto.trim();
+        final v = chave == 'cpf' || chave == 'telefone' ? soDigitos(t) : t;
+        // Opcionais vazios vão como null (não grava texto vazio no banco).
+        return v.isEmpty && _opcionais.contains(chave) ? null : v;
+      }
+
       await AppScope.of(context).acessos.criarFuncionario({
-        for (final e in _campos.entries) e.key: e.value.text,
+        for (final e in _campos.entries) e.key: valor(e.key, e.value.text),
       });
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
@@ -194,14 +203,54 @@ class _FuncionarioFormState extends State<_FuncionarioForm> {
                   child: TextFormField(
                     controller: _campos[e.key],
                     obscureText: e.key == 'senha',
-                    decoration: InputDecoration(labelText: e.value),
+                    decoration: InputDecoration(
+                      labelText: e.value,
+                      hintText: switch (e.key) {
+                        'cpf' => '000.000.000-00',
+                        'telefone' => '(00) 00000-0000',
+                        _ => null,
+                      },
+                    ),
+                    keyboardType: switch (e.key) {
+                      'cpf' || 'telefone' => TextInputType.number,
+                      'email' => TextInputType.emailAddress,
+                      _ => null,
+                    },
+                    textCapitalization: e.key == 'nome'
+                        ? TextCapitalization.words
+                        : TextCapitalization.none,
+                    autocorrect: !const {
+                      'login',
+                      'senha',
+                      'email',
+                    }.contains(e.key),
+                    inputFormatters: switch (e.key) {
+                      'cpf' => [MascaraInputFormatter.cpf()],
+                      'telefone' => [MascaraInputFormatter.telefone()],
+                      'nome' => filtroNome,
+                      'email' => filtroEmail,
+                      'endereco' => filtroEndereco,
+                      'matricula' => filtroMatricula,
+                      'cargo' => filtroCargo,
+                      'login' => filtroLoginNovo,
+                      'senha' => filtroSenha,
+                      _ => null,
+                    },
                     validator: switch (e.key) {
                       'cpf' =>
                         (v) =>
                             cpfValido(v ?? '') ? null : 'Informe um CPF válido',
+                      'telefone' =>
+                        (v) => (v ?? '').trim().isEmpty || telefoneValido(v)
+                            ? null
+                            : 'Informe um telefone com DDD',
                       'senha' => validarSenha,
                       'login' => validarLogin,
-                      'nome' || 'cargo' => obrigatorio,
+                      'nome' => validarNome,
+                      'cargo' => validarCargo,
+                      'email' => validarEmail,
+                      'endereco' => validarEndereco,
+                      'matricula' => validarMatricula,
                       _ => null,
                     },
                   ),

@@ -9,6 +9,7 @@ import '../core/paged_controller.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 import '../widgets/paginacao.dart';
+import '../core/validacoes.dart';
 
 class AuditoriaPage extends StatefulWidget {
   const AuditoriaPage({super.key});
@@ -61,14 +62,22 @@ class _AuditoriaPageState extends State<AuditoriaPage> {
             FilterField(
               child: TextField(
                 controller: _acao,
-                decoration: const InputDecoration(labelText: 'Ação'),
+                decoration: const InputDecoration(
+                  labelText: 'Ação',
+                  hintText: 'ex.: VENDA_CRIADA',
+                ),
+                inputFormatters: filtroCodigoAuditoria,
                 onSubmitted: (_) => _filtrar(),
               ),
             ),
             FilterField(
               child: TextField(
                 controller: _recurso,
-                decoration: const InputDecoration(labelText: 'Tipo de recurso'),
+                decoration: const InputDecoration(
+                  labelText: 'Tipo de recurso',
+                  hintText: 'ex.: CLIENTE',
+                ),
+                inputFormatters: filtroCodigoAuditoria,
                 onSubmitted: (_) => _filtrar(),
               ),
             ),

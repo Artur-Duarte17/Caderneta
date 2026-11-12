@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../core/api.dart';
+import '../core/documentos.dart';
 import '../core/format.dart';
 import '../core/models.dart';
 import '../core/theme.dart';
@@ -413,7 +414,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
             for (final c in r.clientes)
               [
                 Text(c.nome),
-                Text(c.telefone ?? '—'),
+                Text(exibirTelefone(c.telefone)),
                 Text(
                   moeda(
                     r.vendas
@@ -466,7 +467,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
           for (final c in r.clientes)
             [
               c.nome,
-              c.telefone ?? '',
+              exibirTelefone(c.telefone, vazio: ''),
               c.email ?? '',
               num2.format(c.limiteCredito),
             ],

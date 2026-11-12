@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../core/api.dart';
 import '../core/app_runtime.dart';
 import '../core/permissoes.dart';
-import 'ativar_page.dart' show cpfValido;
+import '../core/documentos.dart';
+import '../core/entrada_numerica.dart';
+import '../core/validacoes.dart';
 import '../widgets/convite_dialog.dart';
 import '../core/format.dart';
 import '../core/models.dart';
@@ -33,7 +35,8 @@ class _ClientesPageState extends State<ClientesPage> {
                 (c) =>
                     termo.isEmpty ||
                     c.nome.toLowerCase().contains(termo) ||
-                    (c.telefone ?? '').contains(termo),
+                    (soDigitos(termo).isNotEmpty &&
+                        soDigitos(c.telefone).contains(soDigitos(termo))),
               )
               .toList()
             ..sort(
@@ -120,9 +123,12 @@ class _ClientesPageState extends State<ClientesPage> {
             ),
             const SizedBox(height: Gap.md),
             const FormSection('Informações pessoais'),
-            InfoRow('Telefone', c.telefone ?? 'Não informado'),
+            InfoRow(
+              'Telefone',
+              exibirTelefone(c.telefone, vazio: 'Não informado'),
+            ),
             InfoRow('E-mail', c.email ?? 'Não informado'),
-            InfoRow('CPF', c.cpf ?? 'Não informado'),
+            InfoRow('CPF', exibirCpf(c.cpf, vazio: 'Não informado')),
             InfoRow('Endereço', c.endereco ?? 'Não informado'),
             const SizedBox(height: Gap.sm),
             const FormSection('Situação financeira'),
@@ -210,7 +216,7 @@ class _ClienteCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
-                      cliente.telefone ?? 'Sem telefone',
+                      exibirTelefone(cliente.telefone, vazio: 'Sem telefone'),
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -295,9 +301,13 @@ class _ClienteForm extends StatefulWidget {
 class _ClienteFormState extends State<_ClienteForm> {
   final _form = GlobalKey<FormState>();
   late final _nome = TextEditingController(text: widget.cliente?.nome);
-  late final _tel = TextEditingController(text: widget.cliente?.telefone);
+  late final _tel = TextEditingController(
+    text: exibirTelefone(widget.cliente?.telefone, vazio: ''),
+  );
   late final _email = TextEditingController(text: widget.cliente?.email);
-  late final _cpf = TextEditingController(text: widget.cliente?.cpf);
+  late final _cpf = TextEditingController(
+    text: exibirCpf(widget.cliente?.cpf, vazio: ''),
+  );
   late final _end = TextEditingController(text: widget.cliente?.endereco);
   late final _limite = TextEditingController(
     text: widget.cliente?.limiteCredito.toStringAsFixed(2).replaceAll('.', ','),
@@ -318,9 +328,9 @@ class _ClienteFormState extends State<_ClienteForm> {
     final f = widget.cliente?.fiador;
     if (f != null) {
       _fNome.text = f['nome'] ?? '';
-      _fTel.text = f['telefone'] ?? '';
+      _fTel.text = exibirTelefone(f['telefone'], vazio: '');
       _fEmail.text = f['email'] ?? '';
-      _fCpf.text = f['cpf'] ?? '';
+      _fCpf.text = exibirCpf(f['cpf'], vazio: '');
       _fEnd.text = f['endereco'] ?? '';
     }
   }
@@ -363,23 +373,25 @@ class _ClienteFormState extends State<_ClienteForm> {
       'email': _fEmail.text,
       'endereco': _fEnd.text,
     };
+    // CPF e telefone: compara só os dígitos (a tela mostra com máscara; o banco pode ter sem).
+    String norm(String chave, String? v) =>
+        chave == 'cpf' || chave == 'telefone' ? soDigitos(v) : (v ?? '').trim();
     return campos.entries.any(
-      (e) => (atual?[e.key] ?? '').toString().trim() != e.value.trim(),
+      (e) => norm(e.key, atual?[e.key]?.toString()) != norm(e.key, e.value),
     );
   }
 
-  String? _obrigatorio(String? v) =>
-      (v == null || v.trim().isEmpty) ? 'Campo obrigatório' : null;
+  String? _validarTelefone(String? v) {
+    if ((v ?? '').trim().isEmpty) return 'Campo obrigatório';
+    return telefoneValido(v)
+        ? null
+        : 'Informe um telefone com DDD, ex.: (64) 99999-1234';
+  }
+
   String? _opt(TextEditingController c) =>
       c.text.trim().isEmpty ? null : c.text.trim();
 
-  String? _validarEmail(String? value) {
-    final email = value?.trim() ?? '';
-    if (email.isEmpty) return null;
-    return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)
-        ? null
-        : 'Informe um e-mail válido';
-  }
+  String? _validarEmail(String? value) => validarEmail(value);
 
   Future<void> _salvar() async {
     if (_salvando || !_form.currentState!.validate()) return;
@@ -389,7 +401,7 @@ class _ClienteFormState extends State<_ClienteForm> {
     });
     final dados = {
       'nome': _nome.text.trim(),
-      'telefone': _tel.text.trim(),
+      'telefone': soDigitos(_tel.text),
       'email': _opt(_email),
       'endereco': _opt(_end),
       if (_gerente) 'limiteCredito': (parseCentavos(_limite.text) ?? 0) / 100,
@@ -397,11 +409,12 @@ class _ClienteFormState extends State<_ClienteForm> {
       if (!_editando || _fiadorAlterado)
         'fiador': _temFiador
             ? {
-                if (widget.cliente?.fiador?['cpf'] == _fCpf.text.trim())
+                if (soDigitos(widget.cliente?.fiador?['cpf']) ==
+                    soDigitos(_fCpf.text))
                   'id': widget.cliente?.fiador?['id'],
                 'nome': _fNome.text.trim(),
-                'cpf': _fCpf.text.trim(),
-                'telefone': _fTel.text.trim(),
+                'cpf': soDigitos(_fCpf.text),
+                'telefone': soDigitos(_fTel.text),
                 'email': _opt(_fEmail),
                 'endereco': _opt(_fEnd),
               }
@@ -411,7 +424,10 @@ class _ClienteFormState extends State<_ClienteForm> {
       if (_editando) {
         await Api.instance.atualizarCliente(widget.cliente!.id, dados);
       } else {
-        await Api.instance.criarCliente({...dados, 'cpf': _cpf.text.trim()});
+        await Api.instance.criarCliente({
+          ...dados,
+          'cpf': soDigitos(_cpf.text),
+        });
       }
       if (!mounted) return;
       toast(
@@ -488,18 +504,26 @@ class _ClienteFormState extends State<_ClienteForm> {
                   decoration: const InputDecoration(
                     labelText: 'Nome completo *',
                   ),
-                  validator: _obrigatorio,
+                  textCapitalization: TextCapitalization.words,
+                  inputFormatters: filtroNome,
+                  validator: validarNome,
                 ),
               ]),
               _row([
                 TextFormField(
                   controller: _tel,
-                  decoration: const InputDecoration(labelText: 'Telefone *'),
-                  validator: _obrigatorio,
+                  decoration: const InputDecoration(
+                    labelText: 'Telefone *',
+                    hintText: '(00) 00000-0000',
+                  ),
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [MascaraInputFormatter.telefone()],
+                  validator: _validarTelefone,
                 ),
                 TextFormField(
                   controller: _email,
                   validator: _validarEmail,
+                  inputFormatters: filtroEmail,
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(labelText: 'E-mail'),
                 ),
@@ -507,6 +531,8 @@ class _ClienteFormState extends State<_ClienteForm> {
               _row([
                 TextFormField(
                   controller: _cpf,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [MascaraInputFormatter.cpf()],
                   validator: (v) => _editando
                       ? null
                       : cpfValido(v ?? '')
@@ -515,6 +541,7 @@ class _ClienteFormState extends State<_ClienteForm> {
                   enabled: !_editando,
                   decoration: InputDecoration(
                     labelText: 'CPF *',
+                    hintText: '000.000.000-00',
                     helperText: _editando ? 'Não pode ser alterado' : null,
                   ),
                 ),
@@ -524,6 +551,8 @@ class _ClienteFormState extends State<_ClienteForm> {
                   controller: _end,
                   decoration: const InputDecoration(labelText: 'Endereço'),
                   maxLines: 2,
+                  inputFormatters: filtroEndereco,
+                  validator: validarEndereco,
                 ),
               ]),
               const FormSection('Crédito'),
@@ -531,6 +560,8 @@ class _ClienteFormState extends State<_ClienteForm> {
                 TextFormField(
                   controller: _limite,
                   enabled: _gerente,
+                  keyboardType: tecladoValor,
+                  inputFormatters: somenteValorMonetario(),
                   validator: (v) => !_gerente
                       ? null
                       : parseCentavos(v ?? '') == null
@@ -544,6 +575,8 @@ class _ClienteFormState extends State<_ClienteForm> {
                 TextFormField(
                   controller: _prazo,
                   enabled: _gerente,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: somenteInteiro(maxDigitos: 4),
                   validator: (v) {
                     final n = int.tryParse(v ?? '');
                     return !_gerente
@@ -573,7 +606,9 @@ class _ClienteFormState extends State<_ClienteForm> {
                       decoration: const InputDecoration(
                         labelText: 'Nome completo *',
                       ),
-                      validator: _obrigatorio,
+                      textCapitalization: TextCapitalization.words,
+                      inputFormatters: filtroNome,
+                      validator: validarNome,
                     ),
                   ]),
                   _row([
@@ -581,12 +616,16 @@ class _ClienteFormState extends State<_ClienteForm> {
                       controller: _fTel,
                       decoration: const InputDecoration(
                         labelText: 'Telefone *',
+                        hintText: '(00) 00000-0000',
                       ),
-                      validator: _obrigatorio,
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: [MascaraInputFormatter.telefone()],
+                      validator: _validarTelefone,
                     ),
                     TextFormField(
                       controller: _fEmail,
                       validator: _validarEmail,
+                      inputFormatters: filtroEmail,
                       keyboardType: TextInputType.emailAddress,
                       decoration: const InputDecoration(labelText: 'E-mail'),
                     ),
@@ -594,6 +633,8 @@ class _ClienteFormState extends State<_ClienteForm> {
                   _row([
                     TextFormField(
                       controller: _fCpf,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [MascaraInputFormatter.cpf()],
                       validator: (v) => _editando && !_fiadorAlterado
                           ? null
                           : cpfValido(v ?? '')
@@ -601,11 +642,14 @@ class _ClienteFormState extends State<_ClienteForm> {
                           : 'Informe um CPF válido',
                       decoration: const InputDecoration(
                         labelText: 'CPF do fiador *',
+                        hintText: '000.000.000-00',
                       ),
                     ),
                     TextFormField(
                       controller: _fEnd,
                       decoration: const InputDecoration(labelText: 'Endereço'),
+                      inputFormatters: filtroEndereco,
+                      validator: validarEndereco,
                     ),
                   ]),
                 ],

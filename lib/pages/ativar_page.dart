@@ -4,21 +4,10 @@ import '../core/app_runtime.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 import 'login_page.dart';
+import '../core/documentos.dart';
+import '../core/validacoes.dart';
 
-bool cpfValido(String value) {
-  final cpf = value.replaceAll(RegExp(r'\D'), '');
-  if (cpf.length != 11 || cpf.split('').toSet().length == 1) return false;
-  final nums = cpf.split('').map(int.parse).toList();
-  for (var n = 9; n <= 10; n++) {
-    var soma = 0;
-    for (var i = 0; i < n; i++) {
-      soma += nums[i] * (n + 1 - i);
-    }
-    final resto = (soma * 10) % 11;
-    if ((resto == 10 ? 0 : resto) != nums[n]) return false;
-  }
-  return true;
-}
+export '../core/documentos.dart' show cpfValido;
 
 String? validarLogin(String? value) =>
     RegExp(r'^[A-Za-z0-9._-]{3,50}$').hasMatch(value ?? '')
@@ -52,7 +41,7 @@ class _AtivarPageState extends State<AtivarPage> {
     });
     try {
       await AppScope.of(context).sessao.auth.ativar({
-        'cpf': _cpf.text.replaceAll(RegExp(r'\D'), ''),
+        'cpf': soDigitos(_cpf.text),
         'codigoConvite': _codigo.text.trim(),
         'login': _login.text.trim(),
         'senha': _senha.text,
@@ -85,21 +74,33 @@ class _AtivarPageState extends State<AtivarPage> {
         children: [
           TextFormField(
             controller: _cpf,
-            decoration: const InputDecoration(labelText: 'CPF'),
+            decoration: const InputDecoration(
+              labelText: 'CPF',
+              hintText: '000.000.000-00',
+            ),
             keyboardType: TextInputType.number,
+            inputFormatters: [MascaraInputFormatter.cpf()],
             validator: (v) =>
                 cpfValido(v ?? '') ? null : 'Informe um CPF válido',
           ),
           const SizedBox(height: Gap.md),
           TextFormField(
             controller: _codigo,
-            decoration: const InputDecoration(labelText: 'Código do convite'),
-            validator: obrigatorio,
+            decoration: const InputDecoration(
+              labelText: 'Código do convite',
+              hintText: '20 letras e números',
+            ),
+            textCapitalization: TextCapitalization.characters,
+            autocorrect: false,
+            inputFormatters: filtroConvite,
+            validator: validarConvite,
           ),
           const SizedBox(height: Gap.md),
           TextFormField(
             controller: _login,
             decoration: const InputDecoration(labelText: 'Login'),
+            autocorrect: false,
+            inputFormatters: filtroLoginNovo,
             validator: validarLogin,
           ),
           const SizedBox(height: Gap.md),
@@ -107,6 +108,7 @@ class _AtivarPageState extends State<AtivarPage> {
             controller: _senha,
             obscureText: true,
             decoration: const InputDecoration(labelText: 'Senha'),
+            inputFormatters: filtroSenha,
             validator: validarSenha,
           ),
           const SizedBox(height: Gap.md),
@@ -114,6 +116,7 @@ class _AtivarPageState extends State<AtivarPage> {
             controller: _confirmacao,
             obscureText: true,
             decoration: const InputDecoration(labelText: 'Confirmar senha'),
+            inputFormatters: filtroSenha,
             validator: (v) =>
                 v == _senha.text ? obrigatorio(v) : 'As senhas não coincidem',
             onFieldSubmitted: (_) => _ativar(),

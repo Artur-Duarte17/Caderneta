@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/api.dart';
 import '../core/app_runtime.dart';
 import '../core/comprovante.dart';
+import '../core/entrada_numerica.dart';
 import '../core/format.dart';
 import '../core/models.dart';
 import '../core/historico_service.dart';
@@ -420,6 +421,8 @@ class _PagamentoFormState extends State<_PagamentoForm> {
                 TextFormField(
                   controller: _valor,
                   autofocus: true,
+                  keyboardType: tecladoValor,
+                  inputFormatters: somenteValorMonetario(),
                   decoration: InputDecoration(
                     labelText: 'Valor pago *',
                     prefixText: r'R$ ',

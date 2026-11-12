@@ -187,7 +187,10 @@ class ServidorSimulado {
       return _json(null, 204);
     }
     if (path == '/auth/registro-cliente') {
-      final clienteId = _convites[body['codigoConvite']];
+      final codigoInformado = '${body['codigoConvite']}'
+          .replaceAll(RegExp(r'[\s-]'), '')
+          .toUpperCase();
+      final clienteId = _convites[codigoInformado];
       final cliente = _clientes
           .where((c) => c['id'] == clienteId && c['cpf'] == body['cpf'])
           .firstOrNull;
@@ -211,7 +214,7 @@ class ServidorSimulado {
         'perfil': 'CLIENTE',
         'ativo': true,
       });
-      _convites.remove(body['codigoConvite']);
+      _convites.remove(codigoInformado);
       return _json(null, 201);
     }
     if (usuario == null) return _erro(401);
@@ -374,7 +377,15 @@ class ServidorSimulado {
     if (path.startsWith('/clientes/') && path.endsWith('/convite')) {
       final id = int.tryParse(path.split('/')[2]);
       if (!_clientes.any((c) => c['id'] == id)) return _erro(404);
-      final codigo = 'DEV-${++_sequencia}';
+      // Mesmo formato do backend: 20 caracteres, alfabeto sem 0/O/1/I.
+      const alfabeto = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      var n = ++_sequencia;
+      final b = StringBuffer('DEVDEVDEVD');
+      for (var i = 0; i < 10; i++) {
+        b.write(alfabeto[n % alfabeto.length]);
+        n ~/= alfabeto.length;
+      }
+      final codigo = b.toString();
       _convites[codigo] = id!;
       return _json({
         'codigo': codigo,
