@@ -69,10 +69,11 @@ class _AtivarPageState extends State<AtivarPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const LegendaObrigatorios(),
           TextFormField(
             controller: _cpf,
             decoration: const InputDecoration(
-              labelText: 'CPF',
+              labelText: 'CPF *',
               hintText: '000.000.000-00',
             ),
             keyboardType: TextInputType.number,
@@ -84,7 +85,7 @@ class _AtivarPageState extends State<AtivarPage> {
           TextFormField(
             controller: _codigo,
             decoration: const InputDecoration(
-              labelText: 'Código do convite',
+              labelText: 'Código do convite *',
               hintText: '20 letras e números',
             ),
             textCapitalization: TextCapitalization.characters,
@@ -95,7 +96,7 @@ class _AtivarPageState extends State<AtivarPage> {
           const SizedBox(height: Gap.md),
           TextFormField(
             controller: _login,
-            decoration: const InputDecoration(labelText: 'Login'),
+            decoration: const InputDecoration(labelText: 'Login *'),
             autocorrect: false,
             inputFormatters: filtroLoginNovo,
             validator: validarLogin,
@@ -104,7 +105,7 @@ class _AtivarPageState extends State<AtivarPage> {
           TextFormField(
             controller: _senha,
             obscureText: true,
-            decoration: const InputDecoration(labelText: 'Senha'),
+            decoration: const InputDecoration(labelText: 'Senha *'),
             inputFormatters: filtroSenha,
             validator: validarSenha,
           ),
@@ -112,7 +113,7 @@ class _AtivarPageState extends State<AtivarPage> {
           TextFormField(
             controller: _confirmacao,
             obscureText: true,
-            decoration: const InputDecoration(labelText: 'Confirmar senha'),
+            decoration: const InputDecoration(labelText: 'Confirmar senha *'),
             inputFormatters: filtroSenha,
             validator: (v) =>
                 v == _senha.text ? obrigatorio(v) : 'As senhas não coincidem',

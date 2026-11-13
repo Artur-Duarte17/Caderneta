@@ -18,11 +18,11 @@ Future<void> _criarFuncionario(
   await _tocar(tester, find.text('Criar funcionário'));
   Future<void> campo(String rotulo, String valor) =>
       tester.enterText(find.widgetWithText(TextFormField, rotulo), valor);
-  await campo('Nome', nome);
-  await campo('CPF', '52998224725');
-  await campo('Cargo', 'Caixa');
-  await campo('Login', login);
-  await campo('Senha', 'Senha-Teste-1');
+  await campo('Nome *', nome);
+  await campo('CPF *', '52998224725');
+  await campo('Cargo *', 'Caixa');
+  await campo('Login *', login);
+  await campo('Senha *', 'Senha-Teste-1');
   await _tocar(tester, find.text('Criar acesso'));
 }
 
@@ -48,7 +48,7 @@ void main() {
 
       await _tocar(tester, find.text('Restaurar'));
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'Senha nova'),
+        find.widgetWithText(TextFormField, 'Senha nova *'),
         'curta',
       );
       await _tocar(tester, find.widgetWithText(FilledButton, 'Restaurar'));
@@ -57,11 +57,11 @@ void main() {
         findsOneWidget,
       );
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'Senha nova'),
+        find.widgetWithText(TextFormField, 'Senha nova *'),
         'Senha-Nova-12',
       );
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'Confirmar senha'),
+        find.widgetWithText(TextFormField, 'Confirmar senha *'),
         'Senha-Nova-12',
       );
       await _tocar(tester, find.widgetWithText(FilledButton, 'Restaurar'));

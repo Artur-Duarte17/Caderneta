@@ -56,7 +56,7 @@ void main() {
       );
       await tester.enterText(cpf, '52998224725');
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'Limite de crédito'),
+        find.widgetWithText(TextFormField, 'Limite de crédito *'),
         '100,00',
       );
       await tester.enterText(telefone, '99991234'); // sem DDD

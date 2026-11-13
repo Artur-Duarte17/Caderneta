@@ -31,6 +31,7 @@ class _HistoricoPageState extends State<HistoricoPage> {
         size: size,
         filtros: filtros,
       ),
+      cache: widget.pessoal ? 'historico-pessoal' : 'historico',
     )..atualizar();
     _service = runtime.historico;
     _service.revisao.addListener(_dadosMudaram);

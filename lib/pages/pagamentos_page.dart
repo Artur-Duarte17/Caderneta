@@ -25,6 +25,7 @@ class _PagamentosPageState extends State<PagamentosPage> {
 
   @override
   Widget build(BuildContext context) => AsyncView<Snapshot>(
+    cache: 'pagamentos',
     queryKey: (_page, _busca, _status, _periodo),
     mensagem: 'Carregando dívidas e pagamentos',
     mensagemAtualizando: 'Buscando dívidas',
@@ -414,6 +415,7 @@ class _PagamentoFormState extends State<_PagamentoForm> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const LegendaObrigatorios(),
                 InfoRow(
                   'Dívida',
                   '${widget.divida.vendaId == null ? '#${widget.divida.id}' : 'Venda #${widget.divida.vendaId}'} · ${widget.cliente}',

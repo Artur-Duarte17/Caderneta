@@ -4,6 +4,7 @@ import 'acessos_repository.dart';
 import 'api.dart';
 import 'auditoria_repository.dart';
 import 'auth_repository.dart';
+import 'cache_telas.dart';
 import 'historico_repository.dart';
 import 'historico_service.dart';
 import 'http_gateway.dart';
@@ -18,6 +19,8 @@ class AppRuntime {
   }) {
     gateway = HttpGateway(client: client, base: base);
     sessao = SessaoController(HttpAuthRepository(gateway));
+    cache = CacheTelas(sessao);
+    CacheTelas.instance = cache;
     gateway.epoca = () => sessao.epoca;
     gateway.usuarioId = () => sessao.usuario?.id;
     gateway.aoExpirar = () {
@@ -37,6 +40,7 @@ class AppRuntime {
   }
   late final HttpGateway gateway;
   late final SessaoController sessao;
+  late final CacheTelas cache;
   late final HistoricoRepository historicoRepo;
   late final MinhaCadernetaRepository minha;
   late final AcessosRepository acessos;
@@ -44,6 +48,7 @@ class AppRuntime {
   late final HistoricoService historico;
   void dispose() {
     historico.dispose();
+    cache.dispose();
     sessao.dispose();
     gateway.dispose();
   }

@@ -99,6 +99,8 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
       ),
       AsyncView<_Relatorio>(
         key: ValueKey(_periodo),
+        cache: 'relatorios',
+        queryKey: _periodo,
         mensagem: 'Gerando relatório',
         load: _load,
         builder: (context, r, _) => _conteudo(context, r),
@@ -157,10 +159,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
             ),
             SectionCard(
               titulo: 'Recebimentos por método',
-              child: SizedBox(
-                height: _alturaGrafico,
-                child: _graficoMetodos(r),
-              ),
+              child: _graficoMetodos(r),
             ),
           ],
         ),
@@ -287,62 +286,99 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     );
   }
 
+  /// Barras horizontais: cada método ocupa uma linha própria (nome, valor e
+  /// percentual), então os nomes nunca se sobrepõem, mesmo no celular.
   Widget _graficoMetodos(_Relatorio r) {
     final porMetodo = <MetodoPagamento, double>{};
     for (final p in r.pagamentos) {
       final m = p.metodo ?? MetodoPagamento.DINHEIRO;
       porMetodo[m] = (porMetodo[m] ?? 0) + p.valorPago;
     }
-    if (porMetodo.isEmpty) return _vazio();
-    final metodos = MetodoPagamento.values
-        .where(porMetodo.containsKey)
-        .toList();
-    return BarChart(
-      BarChartData(
-        gridData: const FlGridData(drawVerticalLine: false),
-        borderData: FlBorderData(show: false),
-        barTouchData: BarTouchData(
-          touchTooltipData: BarTouchTooltipData(
-            getTooltipItem: (g, _, rod, _) => BarTooltipItem(
-              '${metodos[g.x].label}\n${moeda(rod.toY)}',
-              const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-            ),
-          ),
-        ),
-        titlesData: FlTitlesData(
-          topTitles: const AxisTitles(),
-          rightTitles: const AxisTitles(),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 56,
-              getTitlesWidget: _eixoValor,
-            ),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (v, m) => _eixo(metodos[v.toInt()].label),
-            ),
-          ),
-        ),
-        barGroups: [
-          for (var i = 0; i < metodos.length; i++)
-            BarChartGroupData(
-              x: i,
-              barRods: [
-                BarChartRodData(
-                  toY: porMetodo[metodos[i]]!,
-                  color: AppColors.secondary,
-                  width: 28,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(4),
-                  ),
+    if (porMetodo.isEmpty) {
+      return SizedBox(height: _alturaGrafico, child: _vazio());
+    }
+    final linhas = porMetodo.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final total = linhas.fold<double>(0, (t, e) => t + e.value);
+    final maior = linhas.first.value;
+    final pct = NumberFormat.decimalPercentPattern(
+      locale: 'pt_BR',
+      decimalDigits: 0,
+    );
+    return Column(
+      key: const ValueKey('grafico-metodos'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final (i, e) in linhas.indexed)
+          Surgir(
+            ordem: i,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: Gap.sm),
+              child: Semantics(
+                label:
+                    '${e.key.label}: ${moeda(e.value)}, '
+                    '${pct.format(total == 0 ? 0 : e.value / total)} do total',
+                excludeSemantics: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            e.key.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        const SizedBox(width: Gap.sm),
+                        Text(
+                          moeda(e.value),
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        SizedBox(
+                          width: 48,
+                          child: Text(
+                            pct.format(total == 0 ? 0 : e.value / total),
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.muted,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: Gap.xs),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: Container(
+                        height: 10,
+                        color: AppColors.secondary.withValues(alpha: .12),
+                        alignment: Alignment.centerLeft,
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(
+                            begin: 0,
+                            end: maior == 0 ? 0 : e.value / maior,
+                          ),
+                          duration: const Duration(milliseconds: 600),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, f, _) => FractionallySizedBox(
+                            widthFactor: f.clamp(0, 1),
+                            heightFactor: 1,
+                            child: const ColoredBox(color: AppColors.secondary),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-        ],
-      ),
+          ),
+      ],
     );
   }
 

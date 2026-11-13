@@ -41,6 +41,7 @@ class _VendasPageState extends State<VendasPage> {
 
   @override
   Widget build(BuildContext context) => AsyncView<Snapshot>(
+    cache: 'vendas',
     queryKey: (_page, _busca, _status, _periodo),
     mensagem: 'Carregando vendas',
     mensagemAtualizando: 'Buscando vendas',
@@ -664,6 +665,7 @@ class _VendaFormState extends State<_VendaForm> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const LegendaObrigatorios(),
               if (_erro != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: Gap.md),

@@ -31,19 +31,23 @@ class DashboardPage extends StatelessWidget {
             child: const Text('Ver todas'),
           ),
           child: AsyncView<Snapshot>(
+            cache: 'dashboard-vendas',
             mensagem: 'Carregando visão geral',
             load: () => Snapshot.load(),
             builder: (context, s, _) => s.vendas.isEmpty
                 ? const Text('Nenhuma venda registrada.')
                 : Column(
                     children: [
-                      for (final v in s.vendas.take(5))
-                        ListTile(
-                          title: Text(
-                            'Venda #${v.id} · ${s.nomeCliente(v.clienteId)}',
+                      for (final (i, v) in s.vendas.take(5).indexed)
+                        Surgir(
+                          ordem: i,
+                          child: ListTile(
+                            title: Text(
+                              'Venda #${v.id} · ${s.nomeCliente(v.clienteId)}',
+                            ),
+                            subtitle: Text(dataHora(v.dataHora)),
+                            trailing: Text(moeda(v.valorTotal)),
                           ),
-                          subtitle: Text(dataHora(v.dataHora)),
-                          trailing: Text(moeda(v.valorTotal)),
                         ),
                     ],
                   ),

@@ -93,6 +93,7 @@ class _CriarLojaPageState extends State<CriarLojaPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          const LegendaObrigatorios(),
           const Text(
             'Cadastre seu comércio e comece a registrar suas vendas a prazo. '
             'Você será o gerente da loja; os dados dela são só seus.',
@@ -137,7 +138,9 @@ class _CriarLojaPageState extends State<CriarLojaPage> {
           _campo(
             TextFormField(
               controller: _email,
-              decoration: const InputDecoration(labelText: 'E-mail'),
+              decoration: const InputDecoration(
+                label: RotuloOpcional('E-mail'),
+              ),
               keyboardType: TextInputType.emailAddress,
               autocorrect: false,
               inputFormatters: filtroEmail,
@@ -148,7 +151,7 @@ class _CriarLojaPageState extends State<CriarLojaPage> {
             TextFormField(
               controller: _telefone,
               decoration: const InputDecoration(
-                labelText: 'Telefone',
+                label: RotuloOpcional('Telefone'),
                 hintText: '(00) 00000-0000',
               ),
               keyboardType: TextInputType.phone,

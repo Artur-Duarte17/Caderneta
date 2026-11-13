@@ -54,7 +54,7 @@ void main() {
         '52998224725',
       );
       await tester.enterText(
-        find.widgetWithText(TextFormField, 'Limite de crédito'),
+        find.widgetWithText(TextFormField, 'Limite de crédito *'),
         '100,00',
       );
       await tester.enterText(

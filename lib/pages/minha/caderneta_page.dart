@@ -162,7 +162,10 @@ class _MinhaListaState<T> extends State<_MinhaLista<T>> {
     super.didChangeDependencies();
     if (_c != null) return;
     _runtime = AppScope.of(context);
-    _c = PagedController((p, s, _) => widget.load(_runtime, p, s))..atualizar();
+    _c = PagedController(
+      (p, s, _) => widget.load(_runtime, p, s),
+      cache: 'minha-${widget.titulo}',
+    )..atualizar();
     _runtime.historico.revisao.addListener(_atualizar);
   }
 
@@ -204,17 +207,21 @@ class _Resumo extends StatelessWidget {
         SectionCard(
           titulo: 'Últimos eventos',
           child: AsyncView<Pagina<EventoHistorico>>(
+            cache: 'minha-ultimos-eventos',
             mensagem: 'Carregando histórico',
             load: () => runtime.historicoRepo.listar(pessoal: true, size: 5),
             builder: (context, eventos, _) => eventos.content.isEmpty
                 ? const Text('Nenhum evento registrado.')
                 : Column(
                     children: [
-                      for (final e in eventos.content)
-                        ListTile(
-                          leading: Icon(e.tipo?.icon ?? Icons.history),
-                          title: Text(e.mensagem),
-                          subtitle: Text(dataHora(e.dataEnvio)),
+                      for (final (i, e) in eventos.content.indexed)
+                        Surgir(
+                          ordem: i,
+                          child: ListTile(
+                            leading: Icon(e.tipo?.icon ?? Icons.history),
+                            title: Text(e.mensagem),
+                            subtitle: Text(dataHora(e.dataEnvio)),
+                          ),
                         ),
                     ],
                   ),

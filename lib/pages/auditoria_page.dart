@@ -23,7 +23,10 @@ class _AuditoriaPageState extends State<AuditoriaPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _c ??= PagedController(AppScope.of(context).auditoria.listar)..atualizar();
+    _c ??= PagedController(
+      AppScope.of(context).auditoria.listar,
+      cache: 'auditoria',
+    )..atualizar();
   }
 
   void _filtrar() {

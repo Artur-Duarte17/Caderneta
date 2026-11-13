@@ -63,7 +63,10 @@ class PaginatedSection<T> extends StatelessWidget {
                     ),
             )
           else
-            builder(r.content),
+            Surgir(
+              key: ValueKey((r.number, r.size, c.filtros.toString())),
+              child: builder(r.content),
+            ),
           if (r != null)
             Padding(
               padding: const EdgeInsets.only(top: Gap.md),

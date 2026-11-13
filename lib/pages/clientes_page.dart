@@ -25,6 +25,7 @@ class _ClientesPageState extends State<ClientesPage> {
 
   @override
   Widget build(BuildContext context) => AsyncView<Snapshot>(
+    cache: 'clientes',
     queryKey: (_page, _busca),
     mensagem: 'Carregando clientes',
     mensagemAtualizando: 'Buscando clientes',
@@ -488,6 +489,7 @@ class _ClienteFormState extends State<_ClienteForm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const LegendaObrigatorios(),
               if (_erro != null)
                 Semantics(
                   liveRegion: true,
@@ -527,7 +529,9 @@ class _ClienteFormState extends State<_ClienteForm> {
                   validator: _validarEmail,
                   inputFormatters: filtroEmail,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(labelText: 'E-mail'),
+                  decoration: const InputDecoration(
+                    label: RotuloOpcional('E-mail'),
+                  ),
                 ),
               ]),
               _row([
@@ -551,7 +555,9 @@ class _ClienteFormState extends State<_ClienteForm> {
               _row([
                 TextFormField(
                   controller: _end,
-                  decoration: const InputDecoration(labelText: 'Endereço'),
+                  decoration: const InputDecoration(
+                    label: RotuloOpcional('Endereço'),
+                  ),
                   maxLines: 2,
                   inputFormatters: filtroEndereco,
                   validator: validarEndereco,
@@ -570,7 +576,7 @@ class _ClienteFormState extends State<_ClienteForm> {
                       ? 'Informe limite com até 2 casas'
                       : null,
                   decoration: const InputDecoration(
-                    labelText: 'Limite de crédito',
+                    labelText: 'Limite de crédito *',
                     prefixText: r'R$ ',
                   ),
                 ),
@@ -588,7 +594,7 @@ class _ClienteFormState extends State<_ClienteForm> {
                         : null;
                   },
                   decoration: const InputDecoration(
-                    labelText: 'Prazo de pagamento',
+                    labelText: 'Prazo de pagamento *',
                     suffixText: 'dias',
                   ),
                 ),
@@ -629,7 +635,9 @@ class _ClienteFormState extends State<_ClienteForm> {
                       validator: _validarEmail,
                       inputFormatters: filtroEmail,
                       keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(labelText: 'E-mail'),
+                      decoration: const InputDecoration(
+                        label: RotuloOpcional('E-mail'),
+                      ),
                     ),
                   ]),
                   _row([
@@ -651,7 +659,9 @@ class _ClienteFormState extends State<_ClienteForm> {
                     ),
                     TextFormField(
                       controller: _fEnd,
-                      decoration: const InputDecoration(labelText: 'Endereço'),
+                      decoration: const InputDecoration(
+                        label: RotuloOpcional('Endereço'),
+                      ),
                       inputFormatters: filtroEndereco,
                       validator: validarEndereco,
                     ),

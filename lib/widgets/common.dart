@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../core/format.dart';
 import '../core/api.dart';
+import '../core/cache_telas.dart';
 import '../core/models.dart';
 import '../core/historico_service.dart';
 import '../core/theme.dart';
+import 'animacoes.dart';
 import 'carregando.dart';
 
+export 'animacoes.dart';
 export 'carregando.dart';
 
 // ===== Feedback =====
@@ -44,9 +47,15 @@ class AsyncView<T> extends StatefulWidget {
     this.queryKey,
     this.mensagem = 'Carregando dados',
     this.mensagemAtualizando = 'Atualizando',
+    this.cache,
   });
 
   final Object? queryKey;
+
+  /// Nome da tela no [CacheTelas]. Quando informado, os últimos dados vistos
+  /// (para a mesma [queryKey]) aparecem na hora e são atualizados em segundo
+  /// plano.
+  final String? cache;
 
   /// Texto do indicador na primeira carga (sem dados) e nas recargas (dados antigos na tela).
   final String mensagem, mensagemAtualizando;
@@ -92,15 +101,27 @@ class _AsyncViewState<T> extends State<AsyncView<T>> {
     super.dispose();
   }
 
+  T? _doCache() => widget.cache == null
+      ? null
+      : CacheTelas.instance?.ler<T>(widget.cache!, widget.queryKey);
+
   Future<void> _reload() async {
     final pedido = ++_pedido;
+    final guardado = _doCache();
     setState(() {
+      if (guardado != null) {
+        _data = guardado;
+        _erro = null;
+      }
       if (_data == null) _carregando = true;
       _atualizando = _data != null;
     });
     try {
       final d = await widget.load();
       if (mounted && pedido == _pedido) {
+        if (widget.cache != null) {
+          CacheTelas.instance?.gravar(widget.cache!, widget.queryKey, d);
+        }
         setState(() {
           _data = d;
           _erro = null;
@@ -135,7 +156,9 @@ class _AsyncViewState<T> extends State<AsyncView<T>> {
         if (_erro != null) ErrorState(mensagem: '$_erro', onRetry: _reload),
         KeyedSubtree(
           key: const ValueKey('async-content'),
-          child: widget.builder(context, _data as T, _reload),
+          // Anima só na primeira exibição: a busca/atualização mantém o
+          // estado (campo de busca, foco) e não repete a animação.
+          child: Surgir(child: widget.builder(context, _data as T, _reload)),
         ),
       ],
     );
@@ -288,7 +311,7 @@ class ResponsiveGrid extends StatelessWidget {
                     if (j > 0) SizedBox(width: spacing),
                     Expanded(
                       child: i + j < children.length
-                          ? children[i + j]
+                          ? Surgir(ordem: i + j, child: children[i + j])
                           : const SizedBox.shrink(),
                     ),
                   ],
@@ -685,6 +708,56 @@ class BusyButton extends StatelessWidget {
   );
 }
 
+/// Rótulo de campo OPCIONAL: o nome do campo com uma etiqueta discreta "opcional".
+/// Uso: `InputDecoration(label: const RotuloOpcional('E-mail'))`. Campos obrigatórios usam " *".
+class RotuloOpcional extends StatelessWidget {
+  const RotuloOpcional(this.texto, {super.key});
+  final String texto;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      // Em campos estreitos (celular), o nome encolhe com reticências; a etiqueta fica inteira.
+      Flexible(
+        child: Text(texto, overflow: TextOverflow.ellipsis, maxLines: 1),
+      ),
+      const SizedBox(width: Gap.xs + 2),
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+        decoration: BoxDecoration(
+          color: AppColors.muted.withValues(alpha: .12),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: const Text(
+          'opcional',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+            color: AppColors.muted,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+/// Legenda no topo dos formulários: explica o "*".
+class LegendaObrigatorios extends StatelessWidget {
+  const LegendaObrigatorios({super.key});
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: Gap.sm),
+    child: Text(
+      '* Campos obrigatórios',
+      style: Theme.of(
+        context,
+      ).textTheme.bodySmall?.copyWith(color: AppColors.muted),
+    ),
+  );
+}
+
 class FormSection extends StatelessWidget {
   const FormSection(this.titulo, {super.key});
   final String titulo;
@@ -794,6 +867,8 @@ class ResumoOperacional extends StatelessWidget {
   final bool pessoal, vendas;
   @override
   Widget build(BuildContext context) => AsyncView<Map<String, dynamic>>(
+    cache: 'resumo',
+    queryKey: pessoal,
     mensagem: 'Carregando resumo',
     load: () => Api.instance.resumo(pessoal: pessoal),
     builder: (context, r, _) => ResponsiveGrid(

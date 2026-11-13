@@ -22,7 +22,10 @@ class _AcessosPageState extends State<AcessosPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _c ??= PagedController(AppScope.of(context).acessos.listar)..atualizar();
+    _c ??= PagedController(
+      AppScope.of(context).acessos.listar,
+      cache: 'acessos',
+    )..atualizar();
   }
 
   Future<void> _ativo(ContaAcesso conta) async {
@@ -417,14 +420,21 @@ class _FuncionarioFormState extends State<_FuncionarioForm> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              const LegendaObrigatorios(),
               for (final e in campos.entries)
                 Padding(
                   padding: const EdgeInsets.only(bottom: Gap.md),
                   child: TextFormField(
                     controller: _campos[e.key],
                     obscureText: e.key == 'senha',
+                    // Obrigatório: " *"; opcional: etiqueta "opcional".
                     decoration: InputDecoration(
-                      labelText: e.value,
+                      labelText: _opcionais.contains(e.key)
+                          ? null
+                          : '${e.value} *',
+                      label: _opcionais.contains(e.key)
+                          ? RotuloOpcional(e.value)
+                          : null,
                       hintText: switch (e.key) {
                         'cpf' => '000.000.000-00',
                         'telefone' => '(00) 00000-0000',
@@ -536,7 +546,7 @@ class _RestaurarDialogState extends State<_RestaurarDialog> {
             TextFormField(
               controller: _senha,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'Senha nova'),
+              decoration: const InputDecoration(labelText: 'Senha nova *'),
               inputFormatters: filtroSenha,
               validator: validarSenha,
             ),
@@ -544,7 +554,7 @@ class _RestaurarDialogState extends State<_RestaurarDialog> {
             TextFormField(
               controller: _confirmacao,
               obscureText: true,
-              decoration: const InputDecoration(labelText: 'Confirmar senha'),
+              decoration: const InputDecoration(labelText: 'Confirmar senha *'),
               inputFormatters: filtroSenha,
               validator: (v) =>
                   v == _senha.text ? null : 'As senhas não coincidem',

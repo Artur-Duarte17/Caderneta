@@ -81,8 +81,8 @@ void main() {
     await abrir(tester, perfil: 'GERENTE', path: '/clientes');
     await tester.tap(find.text('Novo cliente'));
     await tester.pumpAndSettle();
-    final limite = find.widgetWithText(TextFormField, 'Limite de crédito');
-    final prazo = find.widgetWithText(TextFormField, 'Prazo de pagamento');
+    final limite = find.widgetWithText(TextFormField, 'Limite de crédito *');
+    final prazo = find.widgetWithText(TextFormField, 'Prazo de pagamento *');
     await tester.enterText(limite, 'abc');
     await tester.enterText(prazo, 'trinta');
     await tester.pump();
