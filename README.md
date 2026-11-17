@@ -201,12 +201,14 @@ lib/
 │   ├── csrf.dart             # token CSRF em memória
 │   ├── idempotencia*.dart    # chaves de idempotência (sessionStorage)
 │   ├── session.dart          # estado da sessão (verificando, autenticado, expirado)
-│   ├── api.dart  *_repository.dart   # chamadas por recurso
+│   ├── *_repository.dart     # contratos por domínio e adaptadores HTTP
+│   ├── snapshot.dart        # dados combinados de leitura, sem HTTP
+│   ├── app_runtime.dart     # composição das dependências por instância/sessão
 │   ├── models.dart  permissoes.dart  # modelos, perfis e matriz de permissões
 │   ├── documentos.dart  entrada_numerica.dart  validacoes.dart   # entrada de dados
 │   └── theme.dart  format.dart  dates.dart
-├── widgets/                  # app_shell (menu), common (tabelas, botões, AsyncView), carregando, paginacao
-├── pages/                    # uma tela por arquivo; pages/minha/ = área do cliente
+├── widgets/                  # common exporta layout, formulários, tabelas, AsyncView e feedback
+├── pages/                    # listas e navegação; pages/forms/ = formulários; pages/minha/ = área do cliente
 └── dev/fakes.dart            # servidor simulado (só desenvolvimento e testes)
 web/                          # index.html, manifest, favicon e ícones
 firebase.json                 # Hosting: rewrite /api/** → Cloud Run, SPA, cabeçalhos

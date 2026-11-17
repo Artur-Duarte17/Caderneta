@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../core/api.dart';
+import '../core/snapshot.dart';
 import '../core/format.dart';
 import '../core/app_runtime.dart';
 import '../core/permissoes.dart';
@@ -33,7 +33,7 @@ class DashboardPage extends StatelessWidget {
           child: AsyncView<Snapshot>(
             cache: 'dashboard-vendas',
             mensagem: 'Carregando visão geral',
-            load: () => Snapshot.load(),
+            load: () => AppScope.of(context).operacoes.carregar(),
             builder: (context, s, _) => s.vendas.isEmpty
                 ? const Text('Nenhuma venda registrada.')
                 : Column(

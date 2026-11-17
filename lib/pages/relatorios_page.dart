@@ -31,7 +31,7 @@ class DadosRelatoriosPageState extends State<RelatoriosPage> {
   _Tabela _tabela = _Tabela.vendas;
 
   Future<DadosRelatorio> _load() async {
-    final api = AppScope.of(context).api;
+    final api = AppScope.read(context).relatorios;
     final ini = isoDate(_periodo.start), fim = isoDate(_periodo.end);
     final r = await Future.wait([
       api.relatorioVendas(ini, fim),

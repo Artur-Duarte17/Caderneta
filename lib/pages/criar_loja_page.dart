@@ -6,7 +6,6 @@ import '../core/documentos.dart';
 import '../core/theme.dart';
 import '../core/validacoes.dart';
 import '../widgets/common.dart';
-import 'ativar_page.dart' show validarLogin;
 import 'login_page.dart';
 
 /// Cadastro público: cria uma loja nova e o dono dela (gerente). Cada loja só enxerga os próprios

@@ -1,0 +1,469 @@
+import 'package:flutter/material.dart';
+import '../../core/app_runtime.dart';
+import '../../core/documentos.dart';
+import '../../core/entrada_numerica.dart';
+import '../../core/validacoes.dart';
+import '../../core/format.dart';
+import '../../core/models.dart';
+import '../../core/theme.dart';
+import '../../widgets/common.dart';
+
+class ClienteForm extends StatefulWidget {
+  const ClienteForm({super.key, this.cliente});
+  final Cliente? cliente;
+  @override
+  State<ClienteForm> createState() => ClienteFormState();
+}
+
+class ClienteFormState extends State<ClienteForm> {
+  final _form = GlobalKey<FormState>();
+  late final _nome = TextEditingController(text: widget.cliente?.nome);
+  late final _tel = TextEditingController(
+    text: exibirTelefone(widget.cliente?.telefone, vazio: ''),
+  );
+  late final _email = TextEditingController(text: widget.cliente?.email);
+  late final _cpf = TextEditingController(
+    text: exibirCpf(widget.cliente?.cpf, vazio: ''),
+  );
+  late final _end = TextEditingController(text: widget.cliente?.endereco);
+  late final _limite = TextEditingController(
+    text: widget.cliente?.limiteCredito.toStringAsFixed(2).replaceAll('.', ','),
+  );
+  late final _prazo = TextEditingController(
+    text: '${widget.cliente?.prazoPagamentoPadraoDias ?? 30}',
+  );
+  final _fNome = TextEditingController(),
+      _fTel = TextEditingController(),
+      _fEmail = TextEditingController();
+  final _fCpf = TextEditingController(), _fEnd = TextEditingController();
+  late bool _temFiador = widget.cliente?.fiador != null;
+  bool get _gerente =>
+      AppScope.of(context).sessao.usuario?.perfil == Perfil.gerente;
+  @override
+  void initState() {
+    super.initState();
+    final f = widget.cliente?.fiador;
+    if (f != null) {
+      _fNome.text = f['nome'] ?? '';
+      _fTel.text = exibirTelefone(f['telefone'], vazio: '');
+      _fEmail.text = f['email'] ?? '';
+      _fCpf.text = exibirCpf(f['cpf'], vazio: '');
+      _fEnd.text = f['endereco'] ?? '';
+    }
+  }
+
+  AppRuntime? _runtime;
+  int? _epocaRascunho;
+  bool _descartarRascunho = false;
+  Map<String, TextEditingController> get _rascunhoCampos => {
+    'nome': _nome,
+    'telefone': _tel,
+    'email': _email,
+    'cpf': _cpf,
+    'endereco': _end,
+    'limite': _limite,
+    'prazo': _prazo,
+    'fNome': _fNome,
+    'fTel': _fTel,
+    'fEmail': _fEmail,
+    'fCpf': _fCpf,
+    'fEnd': _fEnd,
+  };
+  bool _padraoLido = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_padraoLido || widget.cliente != null) return;
+    _runtime = AppScope.of(context);
+    _epocaRascunho = _runtime!.sessao.epoca;
+    final draft = _runtime!.rascunhos['cliente'];
+    if (draft != null) {
+      for (final c in _rascunhoCampos.entries) {
+        c.value.text = draft[c.key] as String? ?? c.value.text;
+      }
+      _temFiador = draft['temFiador'] == true;
+    }
+    _padraoLido = true;
+    final loja = AppScope.of(context).loja;
+    loja
+        .limitePadrao()
+        .then((r) {
+          if (mounted && _limite.text.isEmpty) {
+            setState(
+              () => _limite.text = r.toStringAsFixed(2).replaceAll('.', ','),
+            );
+          }
+        })
+        .catchError((Object _) {
+          /* Erro será mostrado no envio; não substituir valor informado. */
+        });
+  }
+
+  bool _salvando = false;
+  String? _erro;
+  final _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    if (!_editando &&
+        _runtime != null &&
+        _epocaRascunho == _runtime!.sessao.epoca) {
+      if (_descartarRascunho) {
+        _runtime!.rascunhos.remove('cliente');
+      } else {
+        _runtime!.rascunhos['cliente'] = {
+          for (final c in _rascunhoCampos.entries) c.key: c.value.text,
+          'temFiador': _temFiador,
+        };
+      }
+    }
+    _scroll.dispose();
+    for (final c in [
+      _nome,
+      _tel,
+      _email,
+      _cpf,
+      _end,
+      _limite,
+      _prazo,
+      _fNome,
+      _fTel,
+      _fEmail,
+      _fCpf,
+      _fEnd,
+    ]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  bool get _editando => widget.cliente != null;
+  bool get _fiadorAlterado {
+    final atual = widget.cliente?.fiador;
+    if (_temFiador != (atual != null)) return true;
+    if (!_temFiador) return false;
+    final campos = {
+      'nome': _fNome.text,
+      'cpf': _fCpf.text,
+      'telefone': _fTel.text,
+      'email': _fEmail.text,
+      'endereco': _fEnd.text,
+    };
+    // CPF e telefone: compara só os dígitos (a tela mostra com máscara; o banco pode ter sem).
+    String norm(String chave, String? v) =>
+        chave == 'cpf' || chave == 'telefone' ? soDigitos(v) : (v ?? '').trim();
+    return campos.entries.any(
+      (e) => norm(e.key, atual?[e.key]?.toString()) != norm(e.key, e.value),
+    );
+  }
+
+  String? _validarTelefone(String? v) {
+    if ((v ?? '').trim().isEmpty) return 'Campo obrigatório';
+    return telefoneValido(v)
+        ? null
+        : 'Informe um telefone com DDD, ex.: (64) 99999-1234';
+  }
+
+  String? _opt(TextEditingController c) =>
+      c.text.trim().isEmpty ? null : c.text.trim();
+
+  String? _validarEmail(String? value) => validarEmail(value);
+
+  Future<void> _salvar() async {
+    if (_salvando || !_form.currentState!.validate()) return;
+    setState(() {
+      _salvando = true;
+      _erro = null;
+    });
+    final dados = {
+      'nome': _nome.text.trim(),
+      'telefone': soDigitos(_tel.text),
+      'email': _opt(_email),
+      'endereco': _opt(_end),
+      if (_gerente) 'limiteCredito': (parseCentavos(_limite.text) ?? 0) / 100,
+      if (_gerente) 'prazoPagamentoPadraoDias': int.tryParse(_prazo.text) ?? 30,
+      if (!_editando || _fiadorAlterado)
+        'fiador': _temFiador
+            ? {
+                if (soDigitos(widget.cliente?.fiador?['cpf']) ==
+                    soDigitos(_fCpf.text))
+                  'id': widget.cliente?.fiador?['id'],
+                'nome': _fNome.text.trim(),
+                'cpf': soDigitos(_fCpf.text),
+                'telefone': soDigitos(_fTel.text),
+                'email': _opt(_fEmail),
+                'endereco': _opt(_fEnd),
+              }
+            : null,
+    };
+    try {
+      if (_editando) {
+        await AppScope.read(
+          context,
+        ).clientes.atualizarCliente(widget.cliente!.id, dados);
+      } else {
+        await AppScope.read(
+          context,
+        ).clientes.criarCliente({...dados, 'cpf': soDigitos(_cpf.text)});
+      }
+      if (!mounted) return;
+      toast(
+        context,
+        _editando
+            ? 'Cliente atualizado com sucesso'
+            : 'Cliente cadastrado com sucesso',
+      );
+      _descartarRascunho = true;
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _salvando = false;
+        _erro = '$e';
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _scroll.hasClients) _scroll.jumpTo(0);
+      });
+    }
+  }
+
+  Widget _row(List<Widget> campos) => LayoutBuilder(
+    builder: (_, c) => c.maxWidth < 480
+        ? Column(
+            children: [
+              for (final f in campos)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: Gap.md),
+                  child: f,
+                ),
+            ],
+          )
+        : Padding(
+            padding: const EdgeInsets.only(bottom: Gap.md),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var i = 0; i < campos.length; i++) ...[
+                  if (i > 0) const SizedBox(width: Gap.md),
+                  Expanded(child: campos[i]),
+                ],
+              ],
+            ),
+          ),
+  );
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text(_editando ? 'Editar cliente' : 'Novo cliente'),
+    content: SizedBox(
+      width: 600,
+      child: Form(
+        key: _form,
+        child: SingleChildScrollView(
+          controller: _scroll,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const LegendaObrigatorios(),
+              if (_erro != null)
+                Semantics(
+                  liveRegion: true,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: Gap.md),
+                    child: Text(
+                      _erro!,
+                      style: const TextStyle(color: AppColors.danger),
+                    ),
+                  ),
+                ),
+              const FormSection('Dados pessoais'),
+              _row([
+                TextFormField(
+                  controller: _nome,
+                  decoration: const InputDecoration(
+                    labelText: 'Nome completo *',
+                  ),
+                  textCapitalization: TextCapitalization.words,
+                  inputFormatters: filtroNome,
+                  validator: validarNome,
+                ),
+              ]),
+              _row([
+                TextFormField(
+                  controller: _tel,
+                  decoration: const InputDecoration(
+                    labelText: 'Telefone *',
+                    hintText: '(00) 00000-0000',
+                  ),
+                  keyboardType: TextInputType.phone,
+                  inputFormatters: [MascaraInputFormatter.telefone()],
+                  validator: _validarTelefone,
+                ),
+                TextFormField(
+                  controller: _email,
+                  validator: _validarEmail,
+                  inputFormatters: filtroEmail,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    label: RotuloOpcional('E-mail'),
+                  ),
+                ),
+              ]),
+              _row([
+                TextFormField(
+                  controller: _cpf,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [MascaraInputFormatter.cpf()],
+                  validator: (v) => _editando
+                      ? null
+                      : cpfValido(v ?? '')
+                      ? null
+                      : 'Informe um CPF válido',
+                  enabled: !_editando,
+                  decoration: InputDecoration(
+                    labelText: 'CPF *',
+                    hintText: '000.000.000-00',
+                    helperText: _editando ? 'Não pode ser alterado' : null,
+                  ),
+                ),
+              ]),
+              _row([
+                TextFormField(
+                  controller: _end,
+                  decoration: const InputDecoration(
+                    label: RotuloOpcional('Endereço'),
+                  ),
+                  maxLines: 2,
+                  inputFormatters: filtroEndereco,
+                  validator: validarEndereco,
+                ),
+              ]),
+              const FormSection('Crédito'),
+              _row([
+                TextFormField(
+                  controller: _limite,
+                  enabled: _gerente,
+                  keyboardType: tecladoValor,
+                  inputFormatters: somenteValorMonetario(),
+                  validator: (v) => !_gerente
+                      ? null
+                      : parseCentavos(v ?? '') == null
+                      ? 'Informe limite com até 2 casas'
+                      : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Limite de crédito *',
+                    prefixText: r'R$ ',
+                  ),
+                ),
+                TextFormField(
+                  controller: _prazo,
+                  enabled: _gerente,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: somenteInteiro(maxDigitos: 4),
+                  validator: (v) {
+                    final n = int.tryParse(v ?? '');
+                    return !_gerente
+                        ? null
+                        : n == null || n < 0 || n > 3650
+                        ? 'Prazo de 0 a 3650 dias'
+                        : null;
+                  },
+                  decoration: const InputDecoration(
+                    labelText: 'Prazo de pagamento *',
+                    suffixText: 'dias',
+                  ),
+                ),
+              ]),
+              ...[
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Cliente possui fiador'),
+                  value: _temFiador,
+                  onChanged: (v) => setState(() => _temFiador = v),
+                ),
+                if (_temFiador) ...[
+                  const FormSection('Fiador'),
+                  _row([
+                    TextFormField(
+                      controller: _fNome,
+                      decoration: const InputDecoration(
+                        labelText: 'Nome completo *',
+                      ),
+                      textCapitalization: TextCapitalization.words,
+                      inputFormatters: filtroNome,
+                      validator: validarNome,
+                    ),
+                  ]),
+                  _row([
+                    TextFormField(
+                      controller: _fTel,
+                      decoration: const InputDecoration(
+                        labelText: 'Telefone *',
+                        hintText: '(00) 00000-0000',
+                      ),
+                      keyboardType: TextInputType.phone,
+                      inputFormatters: [MascaraInputFormatter.telefone()],
+                      validator: _validarTelefone,
+                    ),
+                    TextFormField(
+                      controller: _fEmail,
+                      validator: _validarEmail,
+                      inputFormatters: filtroEmail,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        label: RotuloOpcional('E-mail'),
+                      ),
+                    ),
+                  ]),
+                  _row([
+                    TextFormField(
+                      controller: _fCpf,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [MascaraInputFormatter.cpf()],
+                      validator: (v) => _editando && !_fiadorAlterado
+                          ? null
+                          : !cpfValido(v ?? '')
+                          ? 'Informe um CPF válido'
+                          : soDigitos(v) == soDigitos(_cpf.text)
+                          ? 'O cliente não pode ser fiador de si mesmo'
+                          : null,
+                      decoration: const InputDecoration(
+                        labelText: 'CPF do fiador *',
+                        hintText: '000.000.000-00',
+                      ),
+                    ),
+                    TextFormField(
+                      controller: _fEnd,
+                      decoration: const InputDecoration(
+                        label: RotuloOpcional('Endereço'),
+                      ),
+                      inputFormatters: filtroEndereco,
+                      validator: validarEndereco,
+                    ),
+                  ]),
+                ],
+              ],
+            ],
+          ),
+        ),
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: _salvando
+            ? null
+            : () {
+                _descartarRascunho = true;
+                Navigator.pop(context);
+              },
+        child: const Text('Cancelar'),
+      ),
+      BusyButton(
+        label: _editando ? 'Salvar alterações' : 'Cadastrar',
+        busyLabel: 'Salvando',
+        busy: _salvando,
+        onPressed: _salvar,
+      ),
+    ],
+  );
+}

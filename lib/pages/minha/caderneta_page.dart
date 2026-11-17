@@ -1,3 +1,4 @@
+import '../../widgets/apresentacao_status.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_runtime.dart';
 import '../../core/format.dart';
@@ -165,6 +166,7 @@ class _MinhaListaState<T> extends State<_MinhaLista<T>> {
     _c = PagedController(
       (p, s, _) => widget.load(_runtime, p, s),
       cache: 'minha-${widget.titulo}',
+      armazenamento: AppScope.of(context).cache,
     )..atualizar();
     _runtime.historico.revisao.addListener(_atualizar);
   }

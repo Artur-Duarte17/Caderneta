@@ -65,11 +65,7 @@ class _ConfiguracaoLojaPageState extends State<ConfiguracaoLojaPage> {
     if (endereco == null || !mounted) return;
     setState(() => _busy = true);
     try {
-      await runtime.gateway.send(
-        'POST',
-        '/auth/email/solicitar',
-        body: {'email': endereco},
-      );
+      await runtime.confirmacaoEmail.solicitar(endereco);
       await runtime.sessao.restaurar();
     } catch (e) {
       if (mounted) setState(() => _mensagem = '$e');
@@ -85,15 +81,11 @@ class _ConfiguracaoLojaPageState extends State<ConfiguracaoLojaPage> {
   }
 
   @override
-  Widget build(BuildContext context) => AsyncView<Map<String, dynamic>>(
-    load: () async => Map<String, dynamic>.from(
-      await AppScope.of(context).gateway.send('GET', '/loja/configuracao'),
-    ),
+  Widget build(BuildContext context) => AsyncView<double>(
+    load: () => AppScope.read(context).loja.limitePadrao(),
     builder: (context, dados, _) {
       if (!_carregado) {
-        _limite.text = (dados['limiteCreditoPadrao'] as num)
-            .toStringAsFixed(2)
-            .replaceAll('.', ',');
+        _limite.text = dados.toStringAsFixed(2).replaceAll('.', ',');
         _carregado = true;
       }
       return Column(
@@ -134,11 +126,7 @@ class _ConfiguracaoLojaPageState extends State<ConfiguracaoLojaPage> {
               }
               setState(() => _busy = true);
               try {
-                await AppScope.of(context).gateway.send(
-                  'PUT',
-                  '/loja/configuracao',
-                  body: {'limiteCreditoPadrao': centavos / 100},
-                );
+                await AppScope.read(context).loja.salvarLimite(centavos / 100);
                 if (mounted) {
                   setState(() => _mensagem = 'Limite padrão atualizado.');
                 }

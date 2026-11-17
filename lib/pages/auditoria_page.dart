@@ -25,6 +25,7 @@ class _AuditoriaPageState extends State<AuditoriaPage> {
     _c ??= PagedController(
       AppScope.of(context).auditoria.listar,
       cache: 'auditoria',
+      armazenamento: AppScope.of(context).cache,
     )..atualizar();
   }
 

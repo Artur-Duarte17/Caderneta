@@ -6,7 +6,7 @@ import 'package:http/testing.dart';
 import 'package:caderneta/core/api_error.dart';
 import 'package:caderneta/core/csrf.dart';
 import 'package:caderneta/core/http_gateway.dart';
-import 'package:caderneta/core/api.dart' show Api;
+import 'package:caderneta/core/vendas_repository.dart';
 import 'package:caderneta/core/models.dart' show ItemVenda;
 
 http.Response json(dynamic value, [int status = 200]) => http.Response(
@@ -29,7 +29,7 @@ void main() {
         }),
       );
       addTearDown(gateway.dispose);
-      final api = Api(gateway: gateway);
+      final api = HttpVendasRepository(gateway);
       await api.criarVenda(20, [
         ItemVenda(descricao: 'Produto', quantidade: 2, precoUnitario: 3),
       ], valorTotal: 6);

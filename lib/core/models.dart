@@ -1,28 +1,24 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 
 import 'format.dart';
 import 'dates.dart';
 import 'permissoes.dart';
 export 'permissoes.dart' show Perfil;
-import 'theme.dart';
 
 double _num(dynamic v) =>
     v == null ? 0 : (v is num ? v.toDouble() : double.tryParse('$v') ?? 0);
 
-// ===== Status (fonte única de verdade para rótulo e cor) =====
+// ===== Status do domínio; cores e ícones ficam na apresentação =====
 
 enum Status {
-  pendente('Pendente', AppColors.warning, Icons.schedule),
-  parcial('Parcial', AppColors.info, Icons.timelapse),
-  pago('Pago', AppColors.success, Icons.check_circle),
-  vencida('Vencida', AppColors.danger, Icons.error),
-  cancelada('Cancelada', AppColors.neutral, Icons.cancel);
+  pendente('Pendente'),
+  parcial('Parcial'),
+  pago('Pago'),
+  vencida('Vencida'),
+  cancelada('Cancelada');
 
-  const Status(this.label, this.color, this.icon);
+  const Status(this.label);
   final String label;
-  final Color color;
-  final IconData icon;
 
   String get backend => switch (this) {
     Status.pendente => 'ABERTA',
@@ -290,47 +286,17 @@ class Usuario {
 }
 
 enum TipoEvento {
-  LEMBRETE_PAGAMENTO(
-    'Lembrete de pagamento',
-    Icons.schedule,
-    AppColors.warning,
-  ),
-  AVISO_DIVIDA_VENCIDA('Dívida vencida', Icons.error_outline, AppColors.danger),
-  CONFIRMACAO_COMPRA(
-    'Compra confirmada',
-    Icons.shopping_bag_outlined,
-    AppColors.info,
-  ),
-  CONFIRMACAO_PAGAMENTO(
-    'Pagamento confirmado',
-    Icons.check_circle_outline,
-    AppColors.success,
-  ),
-  CADASTRO_CLIENTE(
-    'Cliente cadastrado',
-    Icons.person_add_outlined,
-    AppColors.secondary,
-  ),
-  PAGAMENTO_RECEBIDO(
-    'Pagamento recebido',
-    Icons.payments_outlined,
-    AppColors.success,
-  ),
-  COMPRA_REALIZADA(
-    'Compra realizada',
-    Icons.shopping_cart_outlined,
-    AppColors.info,
-  ),
-  LEMBRETE_VENCIMENTO(
-    'Vencimento próximo',
-    Icons.event_outlined,
-    AppColors.warning,
-  );
+  LEMBRETE_PAGAMENTO('Lembrete de pagamento'),
+  AVISO_DIVIDA_VENCIDA('Dívida vencida'),
+  CONFIRMACAO_COMPRA('Compra confirmada'),
+  CONFIRMACAO_PAGAMENTO('Pagamento confirmado'),
+  CADASTRO_CLIENTE('Cliente cadastrado'),
+  PAGAMENTO_RECEBIDO('Pagamento recebido'),
+  COMPRA_REALIZADA('Compra realizada'),
+  LEMBRETE_VENCIMENTO('Vencimento próximo');
 
-  const TipoEvento(this.label, this.icon, this.color);
+  const TipoEvento(this.label);
   final String label;
-  final IconData icon;
-  final Color color;
   static TipoEvento? parse(dynamic value) =>
       values.where((v) => v.name == value).firstOrNull;
   static Iterable<TipoEvento> permitidos(Perfil? perfil) =>

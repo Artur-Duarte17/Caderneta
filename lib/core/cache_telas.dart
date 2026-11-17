@@ -15,9 +15,6 @@ class CacheTelas {
     _sessao.addListener(_aoMudarSessao);
   }
 
-  /// Instância usada pelos widgets; trocada a cada [AppRuntime].
-  static CacheTelas? instance;
-
   final SessaoController _sessao;
   final int limite;
   final _itens = <String, Object>{}; // mantém a ordem de inserção (LRU)
@@ -63,6 +60,5 @@ class CacheTelas {
   void dispose() {
     _sessao.removeListener(_aoMudarSessao);
     _itens.clear();
-    if (identical(instance, this)) instance = null;
   }
 }

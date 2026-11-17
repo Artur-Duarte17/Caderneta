@@ -1,7 +1,13 @@
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'acessos_repository.dart';
-import 'api.dart';
+import 'clientes_repository.dart';
+import 'vendas_repository.dart';
+import 'dividas_repository.dart';
+import 'relatorios_repository.dart';
+import 'operacoes_repository.dart';
+import 'loja_repository.dart';
+import 'confirmacao_email_repository.dart';
 import 'catalogo_repository.dart';
 import 'auditoria_repository.dart';
 import 'auth_repository.dart';
@@ -22,7 +28,6 @@ class AppRuntime {
     sessao = SessaoController(HttpAuthRepository(gateway));
     sessao.addListener(_aoMudarSessao);
     cache = CacheTelas(sessao);
-    CacheTelas.instance = cache;
     gateway.epoca = () => sessao.epoca;
     gateway.usuarioId = () => sessao.usuario?.id;
     gateway.aoExpirar = () {
@@ -33,8 +38,13 @@ class AppRuntime {
       await gateway.send('GET', '/auth/me');
     };
     gateway.aoEmailPendente = sessao.restaurar;
-    api = Api(gateway: gateway);
-    Api.instance = api;
+    clientes = HttpClientesRepository(gateway);
+    vendas = HttpVendasRepository(gateway);
+    dividas = HttpDividasRepository(gateway);
+    relatorios = HttpRelatoriosRepository(gateway);
+    operacoes = HttpOperacoesRepository(gateway);
+    loja = HttpLojaRepository(gateway);
+    confirmacaoEmail = HttpConfirmacaoEmailRepository(gateway);
     final catalogo = HttpCatalogoRepository(gateway);
     catalogoConsulta = catalogo;
     catalogoManutencao = catalogo;
@@ -43,7 +53,6 @@ class AppRuntime {
     acessos = HttpAcessosRepository(gateway, suportaBusca: simulado);
     auditoria = HttpAuditoriaRepository(gateway);
     historico = HistoricoService(sessao, historicoRepo);
-    HistoricoService.instance = historico;
   }
   final rascunhos = <String, Map<String, dynamic>>{};
   int _epocaRascunhos = 0;
@@ -54,7 +63,13 @@ class AppRuntime {
     }
   }
 
-  late final Api api;
+  late final ClientesRepository clientes;
+  late final VendasRepository vendas;
+  late final DividasRepository dividas;
+  late final RelatoriosRepository relatorios;
+  late final OperacoesRepository operacoes;
+  late final LojaRepository loja;
+  late final ConfirmacaoEmailRepository confirmacaoEmail;
   late final ConsultaCatalogo catalogoConsulta;
   late final ManutencaoCatalogo catalogoManutencao;
   late final HttpGateway gateway;
@@ -80,6 +95,8 @@ class AppScope extends InheritedWidget {
   final AppRuntime runtime;
   static AppRuntime of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<AppScope>()!.runtime;
+  static AppRuntime read(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<AppScope>()!.runtime;
   @override
   bool updateShouldNotify(AppScope oldWidget) => runtime != oldWidget.runtime;
 }

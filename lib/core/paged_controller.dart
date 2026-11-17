@@ -6,7 +6,8 @@ typedef PageLoader<T> =
     Future<Pagina<T>> Function(int page, int size, Map<String, String> filtros);
 
 class PagedController<T> extends ChangeNotifier {
-  PagedController(this.load, {this.cache});
+  PagedController(this.load, {this.cache, this.armazenamento});
+  final CacheTelas? armazenamento;
   final PageLoader<T> load;
 
   /// Nome da tela no [CacheTelas]: a página já vista aparece na hora e é
@@ -25,7 +26,7 @@ class PagedController<T> extends ChangeNotifier {
     final consulta = _consulta();
     final guardado = cache == null
         ? null
-        : CacheTelas.instance?.ler<Pagina<T>>(cache!, consulta);
+        : armazenamento?.ler<Pagina<T>>(cache!, consulta);
     if (guardado != null) dados = guardado;
     carregando = true;
     erro = null;
@@ -34,7 +35,7 @@ class PagedController<T> extends ChangeNotifier {
       final r = await load(page, size, Map.of(filtros));
       if (_disposed || pedido != _pedido) return;
       if (cache != null && r.content.isNotEmpty) {
-        CacheTelas.instance?.gravar(cache!, consulta, r);
+        armazenamento?.gravar(cache!, consulta, r);
       }
       if (r.content.isEmpty &&
           page > 0 &&

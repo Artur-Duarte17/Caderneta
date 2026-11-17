@@ -225,3 +225,8 @@ final List<TextInputFormatter> filtroCodigoAuditoria = [
   _CodigoAuditoria(),
   LengthLimitingTextInputFormatter(50),
 ];
+
+String? validarLogin(String? value) =>
+    RegExp(r'^[A-Za-z0-9._-]{3,50}$').hasMatch(value ?? '')
+    ? null
+    : 'Use 3 a 50 caracteres: letras, números, ponto, hífen ou sublinhado';

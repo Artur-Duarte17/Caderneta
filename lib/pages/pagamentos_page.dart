@@ -1,15 +1,15 @@
+import '../widgets/apresentacao_status.dart';
+import 'forms/pagamentos_form.dart';
 import 'package:flutter/material.dart';
 
-import '../core/api.dart';
+import '../core/snapshot.dart';
 import '../core/app_runtime.dart';
 import '../core/comprovante.dart';
-import '../core/entrada_numerica.dart';
 import '../core/format.dart';
 import '../core/models.dart';
-import '../core/historico_service.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
-import 'vendas_page.dart' show periodos, dentroDoPeriodo;
+import '../core/periodos.dart';
 
 class PagamentosPage extends StatefulWidget {
   const PagamentosPage({super.key});
@@ -29,8 +29,7 @@ class _PagamentosPageState extends State<PagamentosPage> {
     queryKey: (_page, _busca, _status, _periodo),
     mensagem: 'Carregando dívidas e pagamentos',
     mensagemAtualizando: 'Buscando dívidas',
-    load: () => Snapshot.load(
-      clienteApi: AppScope.of(context).api,
+    load: () => AppScope.of(context).operacoes.carregar(
       recurso: 'dividas',
       page: _page,
       q: _busca,
@@ -144,9 +143,11 @@ class _PagamentosPageState extends State<PagamentosPage> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) =>
-          _PagamentoForm(divida: d, cliente: s.nomeCliente(d.clienteId)),
+          PagamentoForm(divida: d, cliente: s.nomeCliente(d.clienteId)),
     );
-    if (ok == true) HistoricoService.instance.dadosAlterados();
+    if (ok == true && context.mounted) {
+      AppScope.read(context).historico.dadosAlterados();
+    }
   }
 }
 
@@ -274,9 +275,13 @@ class _DividaCard extends StatelessWidget {
                           await executarComCarregamento(
                             context,
                             'Atualizando vencimento',
-                            () => Api.instance.renegociar(d.id, escolhido),
+                            () => AppScope.read(
+                              context,
+                            ).dividas.renegociar(d.id, escolhido),
                           );
-                          HistoricoService.instance.dadosAlterados();
+                          if (context.mounted) {
+                            AppScope.read(context).historico.dadosAlterados();
+                          }
                           if (context.mounted) {
                             toast(context, 'Vencimento atualizado');
                           }
@@ -349,153 +354,6 @@ class _DividaCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _PagamentoForm extends StatefulWidget {
-  const _PagamentoForm({required this.divida, required this.cliente});
-  final Divida divida;
-  final String cliente;
-  @override
-  State<_PagamentoForm> createState() => _PagamentoFormState();
-}
-
-class _PagamentoFormState extends State<_PagamentoForm> {
-  final _form = GlobalKey<FormState>();
-  final _valor = TextEditingController();
-  MetodoPagamento? _metodo;
-  bool _salvando = false;
-
-  @override
-  void dispose() {
-    _valor.dispose();
-    super.dispose();
-  }
-
-  double get _pendente => widget.divida.valorPendente;
-
-  Future<void> _salvar() async {
-    if (_salvando || !_form.currentState!.validate()) return;
-    setState(() => _salvando = true);
-    try {
-      await Api.instance.registrarPagamento(
-        widget.divida.id,
-        parseCentavos(_valor.text)! / 100,
-        _metodo!,
-      );
-      if (!mounted) return;
-      toast(context, 'Pagamento registrado com sucesso');
-      Navigator.pop(context, true);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _salvando = false);
-      toast(context, '$e', erro: true);
-    }
-  }
-
-  Widget? _aviso() {
-    final cents = parseCentavos(_valor.text);
-    final v = cents == null ? null : cents / 100;
-    if (v == null || v <= 0 || v > _pendente + .001) return null;
-    final quita = (v - _pendente).abs() < .01;
-    return Pill(
-      cor: quita ? AppColors.success : AppColors.info,
-      icon: quita ? Icons.check_circle : Icons.timelapse,
-      label: quita
-          ? 'Este pagamento quita a dívida'
-          : 'Pagamento parcial · restará ${moeda(_pendente - v)}',
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final aviso = _aviso();
-    return AlertDialog(
-      title: const Text('Registrar pagamento'),
-      content: SizedBox(
-        width: 440,
-        child: SingleChildScrollView(
-          child: Form(
-            key: _form,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const LegendaObrigatorios(),
-                InfoRow(
-                  'Dívida',
-                  '${widget.divida.vendaId == null ? '#${widget.divida.id}' : 'Venda #${widget.divida.vendaId}'} · ${widget.cliente}',
-                ),
-                InfoRow(
-                  'Valor pendente',
-                  moeda(_pendente),
-                  destaque: AppColors.danger,
-                ),
-                const SizedBox(height: Gap.md),
-                TextFormField(
-                  controller: _valor,
-                  autofocus: true,
-                  keyboardType: tecladoValor,
-                  inputFormatters: somenteValorMonetario(),
-                  decoration: InputDecoration(
-                    labelText: 'Valor pago *',
-                    prefixText: r'R$ ',
-                    suffixIcon: TextButton(
-                      onPressed: () => setState(
-                        () => _valor.text = _pendente
-                            .toStringAsFixed(2)
-                            .replaceAll('.', ','),
-                      ),
-                      child: const Text('Total'),
-                    ),
-                  ),
-                  onChanged: (_) => setState(() {}),
-                  validator: (t) {
-                    final cents = parseCentavos(t ?? '');
-                    final v = cents == null ? null : cents / 100;
-                    if (v == null || v <= 0) return 'Informe um valor válido';
-                    if (cents! > (_pendente * 100).round()) {
-                      return 'Valor maior que o pendente';
-                    }
-                    return null;
-                  },
-                ),
-                if (aviso != null) ...[
-                  const SizedBox(height: Gap.sm),
-                  Align(alignment: Alignment.centerLeft, child: aviso),
-                ],
-                const SizedBox(height: Gap.md),
-                DropdownButtonFormField<MetodoPagamento>(
-                  isExpanded: true,
-                  initialValue: _metodo,
-                  decoration: const InputDecoration(
-                    labelText: 'Método de pagamento *',
-                  ),
-                  validator: (v) => v == null ? 'Selecione o método' : null,
-                  items: [
-                    for (final m in MetodoPagamento.values)
-                      DropdownMenuItem(value: m, child: Text(m.label)),
-                  ],
-                  onChanged: (v) => setState(() => _metodo = v),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _salvando ? null : () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-        BusyButton(
-          label: 'Confirmar pagamento',
-          busyLabel: 'Registrando pagamento',
-          busy: _salvando,
-          onPressed: _salvar,
-        ),
-      ],
     );
   }
 }

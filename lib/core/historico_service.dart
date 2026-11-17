@@ -19,7 +19,6 @@ class HistoricoService extends ChangeNotifier {
     sessao.addListener(_sessaoMudou);
     _sessaoMudou();
   }
-  static late HistoricoService instance;
   final SessaoController sessao;
   final HistoricoRepository repo;
   final bool Function() visivel;

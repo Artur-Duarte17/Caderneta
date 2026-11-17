@@ -32,14 +32,9 @@ class _ConfirmarEmailPageState extends State<ConfirmarEmailPage> {
     try {
       if (confirmar) {
         final args = widget.parametros;
-        await runtime.gateway.send(
-          'POST',
-          '/auth/email/confirmar',
-          autenticado: false,
-          body: {
-            'lojaId': int.tryParse(args['loja'] ?? ''),
-            'token': args['token'] ?? '',
-          },
+        await runtime.confirmacaoEmail.confirmar(
+          int.tryParse(args['loja'] ?? ''),
+          args['token'] ?? '',
         );
         if (!mounted) return;
         if (runtime.sessao.autenticado) await runtime.sessao.restaurar();
@@ -51,12 +46,10 @@ class _ConfirmarEmailPageState extends State<ConfirmarEmailPage> {
               : '/login',
         );
       } else {
-        final r = await runtime.gateway.send(
-          'POST',
-          '/auth/email/solicitar',
-          body: {'email': _email.text.trim()},
+        final mensagem = await runtime.confirmacaoEmail.solicitar(
+          _email.text.trim(),
         );
-        if (mounted) setState(() => _mensagem = r['message']);
+        if (mounted) setState(() => _mensagem = mensagem);
       }
     } catch (e) {
       if (mounted) setState(() => _mensagem = '$e');
