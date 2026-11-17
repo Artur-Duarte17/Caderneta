@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import '../widgets/campo_senha.dart';
 import 'package:go_router/go_router.dart';
 import '../core/app_runtime.dart';
 import '../core/documentos.dart';
 import '../core/theme.dart';
 import '../core/validacoes.dart';
 import '../widgets/common.dart';
-import 'ativar_page.dart' show validarLogin, validarSenha;
+import 'ativar_page.dart' show validarLogin;
 import 'login_page.dart';
 
 /// Cadastro público: cria uma loja nova e o dono dela (gerente). Cada loja só enxerga os próprios
@@ -54,7 +55,7 @@ class _CriarLojaPageState extends State<CriarLojaPage> {
       context.go('/login');
       toast(
         context,
-        'Loja "${_loja.text.trim()}" criada. Entre com seu login e senha.',
+        'Loja "${_loja.text.trim()}" criada. Entre e confirme seu e-mail para usar a loja.',
       );
     } catch (e) {
       if (mounted) setState(() => _erro = '$e');
@@ -138,13 +139,13 @@ class _CriarLojaPageState extends State<CriarLojaPage> {
           _campo(
             TextFormField(
               controller: _email,
-              decoration: const InputDecoration(
-                label: RotuloOpcional('E-mail'),
-              ),
+              decoration: const InputDecoration(labelText: 'E-mail *'),
               keyboardType: TextInputType.emailAddress,
               autocorrect: false,
               inputFormatters: filtroEmail,
-              validator: validarEmail,
+              validator: (v) => (v ?? '').trim().isEmpty
+                  ? 'Informe seu e-mail para confirmar a loja'
+                  : validarEmail(v),
             ),
           ),
           _campo(
@@ -171,22 +172,11 @@ class _CriarLojaPageState extends State<CriarLojaPage> {
               validator: validarLogin,
             ),
           ),
-          _campo(
-            TextFormField(
-              controller: _senha,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Senha *'),
-              inputFormatters: filtroSenha,
-              validator: validarSenha,
-            ),
-          ),
-          TextFormField(
+          _campo(CampoSenha(controller: _senha)),
+          CampoSenha(
             controller: _confirmacao,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'Confirmar senha *'),
-            inputFormatters: filtroSenha,
-            validator: (v) =>
-                v == _senha.text ? obrigatorio(v) : 'As senhas não coincidem',
+            confirmar: _senha,
+            label: 'Confirmar senha *',
             onFieldSubmitted: (_) => _criar(),
           ),
           if (_erro != null)

@@ -4,35 +4,13 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../core/api.dart';
+import '../core/app_runtime.dart';
+import '../core/dados_relatorio.dart';
 import '../core/documentos.dart';
 import '../core/format.dart';
 import '../core/models.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
-
-class _Relatorio {
-  _Relatorio(
-    this.vendas,
-    this.dividas,
-    this.clientes,
-    this.pagamentos,
-    this.resumo,
-  ) : _clientes = {for (final c in clientes) c.id: c};
-  final Map<String, dynamic> resumo;
-  final List<Venda> vendas;
-  final List<Divida> dividas;
-  final List<Cliente> clientes;
-  final List<Pagamento> pagamentos;
-  final Map<int, Cliente> _clientes;
-  String nome(int id) =>
-      _clientes[id]?.nome ??
-      vendas.where((v) => v.clienteId == id).firstOrNull?.clienteNome ??
-      dividas.where((d) => d.clienteId == id).firstOrNull?.clienteNome ??
-      'Cliente #$id';
-  Status? statusVenda(Venda v) =>
-      dividas.where((d) => d.id == v.dividaId).firstOrNull?.status;
-}
 
 const _alturaGrafico =
     260.0; // Área útil dos gráficos; dimensão, não espaçamento.
@@ -42,18 +20,18 @@ enum _Tabela { vendas, dividas, clientes }
 class RelatoriosPage extends StatefulWidget {
   const RelatoriosPage({super.key});
   @override
-  State<RelatoriosPage> createState() => _RelatoriosPageState();
+  State<RelatoriosPage> createState() => DadosRelatoriosPageState();
 }
 
-class _RelatoriosPageState extends State<RelatoriosPage> {
+class DadosRelatoriosPageState extends State<RelatoriosPage> {
   late DateTimeRange _periodo = DateTimeRange(
     start: DateTime(DateTime.now().year, DateTime.now().month),
     end: hoje(),
   );
   _Tabela _tabela = _Tabela.vendas;
 
-  Future<_Relatorio> _load() async {
-    final api = Api.instance;
+  Future<DadosRelatorio> _load() async {
+    final api = AppScope.of(context).api;
     final ini = isoDate(_periodo.start), fim = isoDate(_periodo.end);
     final r = await Future.wait([
       api.relatorioVendas(ini, fim),
@@ -62,7 +40,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
       api.clientesRelatorio(ini, fim),
       api.resumoRelatorio(ini, fim),
     ]);
-    return _Relatorio(
+    return DadosRelatorio(
       r[0] as List<Venda>,
       r[1] as List<Divida>,
       r[3] as List<Cliente>,
@@ -97,7 +75,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
           ),
         ],
       ),
-      AsyncView<_Relatorio>(
+      AsyncView<DadosRelatorio>(
         key: ValueKey(_periodo),
         cache: 'relatorios',
         queryKey: _periodo,
@@ -108,7 +86,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     ],
   );
 
-  Widget _conteudo(BuildContext context, _Relatorio r) {
+  Widget _conteudo(BuildContext context, DadosRelatorio r) {
     final totalVendido = (r.resumo['vendido'] as num).toDouble();
     final totalRecebido = (r.resumo['recebido'] as num).toDouble();
     final totalPendente = (r.resumo['saldo'] as num).toDouble();
@@ -216,7 +194,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     titulo: 'Sem dados no período',
   );
 
-  Widget _graficoVendas(_Relatorio r) {
+  Widget _graficoVendas(DadosRelatorio r) {
     final porDia = <DateTime, double>{};
     for (final v in r.vendas.where((v) => v.dataHora != null)) {
       final local = v.dataNegocio ?? v.dataHora!.toLocal();
@@ -288,7 +266,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
 
   /// Barras horizontais: cada método ocupa uma linha própria (nome, valor e
   /// percentual), então os nomes nunca se sobrepõem, mesmo no celular.
-  Widget _graficoMetodos(_Relatorio r) {
+  Widget _graficoMetodos(DadosRelatorio r) {
     final porMetodo = <MetodoPagamento, double>{};
     for (final p in r.pagamentos) {
       final m = p.metodo ?? MetodoPagamento.DINHEIRO;
@@ -395,7 +373,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     ),
   );
 
-  Widget _tabelaWidget(_Relatorio r) {
+  Widget _tabelaWidget(DadosRelatorio r) {
     switch (_tabela) {
       case _Tabela.vendas:
         if (r.vendas.isEmpty) return _vazio();
@@ -452,13 +430,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
               [
                 Text(c.nome),
                 Text(exibirTelefone(c.telefone)),
-                Text(
-                  moeda(
-                    r.vendas
-                        .where((v) => v.clienteId == c.id)
-                        .fold<double>(0, (t, v) => t + v.valorTotal),
-                  ),
-                ),
+                Text(moeda(r.totalCliente(c.id))),
                 Text(moeda(c.limiteCredito)),
               ],
           ],
@@ -466,7 +438,7 @@ class _RelatoriosPageState extends State<RelatoriosPage> {
     }
   }
 
-  void _exportar(_Relatorio r) {
+  void _exportar(DadosRelatorio r) {
     final num2 = NumberFormat('0.00', 'pt_BR');
     final (cab, linhas, nome) = switch (_tabela) {
       _Tabela.vendas => (

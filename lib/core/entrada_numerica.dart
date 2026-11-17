@@ -16,7 +16,7 @@ class ValorMonetarioInputFormatter extends TextInputFormatter {
 
   final int maxCaracteres;
   static final _naoPermitido = RegExp(r'[^0-9.,]');
-  static final _formato = RegExp(r'^$|^\d[\d.]*(,\d{0,2})?$');
+  static final _formato = RegExp(r'^[\d.]*(,\d{0,2})?$');
 
   @override
   TextEditingValue formatEditUpdate(

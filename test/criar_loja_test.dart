@@ -26,6 +26,7 @@ void main() {
     await campo('Nome da loja *', 'Mercado São José');
     await campo('Seu nome *', 'José da Silva');
     await campo('CPF *', '52998224725');
+    await campo('E-mail *', 'loja@example.com');
     await campo('Login *', 'jose.mercado');
     await campo('Senha *', 'Senha-Loja-1');
     await campo('Confirmar senha *', 'outra-senha');
@@ -43,8 +44,8 @@ void main() {
     await tester.enterText(find.byType(TextFormField).at(0), 'jose.mercado');
     await tester.enterText(find.byType(TextFormField).at(1), 'Senha-Loja-1');
     await _tocar(tester, find.text('Entrar'));
-    expect(find.text('Mercado São José'), findsWidgets);
-    expect(find.text('Visão Geral'), findsWidgets);
+    expect(find.text('Confirme o e-mail da loja'), findsOneWidget);
+    expect(find.text('Visão Geral'), findsNothing);
     await fechar(tester);
   });
 
@@ -55,6 +56,7 @@ void main() {
     await campo('Nome da loja *', 'Loja Repetida');
     await campo('Seu nome *', 'Maria Souza');
     await campo('CPF *', '52998224725');
+    await campo('E-mail *', 'loja@example.com');
     await campo('Login *', 'gerente'); // já existe no simulador
     await campo('Senha *', 'Senha-Loja-1');
     await campo('Confirmar senha *', 'Senha-Loja-1');

@@ -91,8 +91,8 @@ void main() {
     await _abrirLento(tester, perfil: 'GERENTE', path: '/clientes');
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Cliente');
-    // A busca dispara na hora; a resposta leva 300 ms.
-    await tester.pump(const Duration(milliseconds: 100));
+    // Debounce de 300 ms; a resposta ainda está pendente.
+    await tester.pump(const Duration(milliseconds: 350));
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
     expect(find.textContaining('Buscando clientes'), findsOneWidget);
     expect(find.text('Novo cliente'), findsOneWidget, reason: 'tela continua');

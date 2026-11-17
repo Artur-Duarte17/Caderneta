@@ -30,6 +30,7 @@ class _PagamentosPageState extends State<PagamentosPage> {
     mensagem: 'Carregando dívidas e pagamentos',
     mensagemAtualizando: 'Buscando dívidas',
     load: () => Snapshot.load(
+      clienteApi: AppScope.of(context).api,
       recurso: 'dividas',
       page: _page,
       q: _busca,
@@ -128,7 +129,9 @@ class _PagamentosPageState extends State<PagamentosPage> {
                   _DividaCard(
                     divida: d,
                     cliente: s.nomeCliente(d.clienteId),
-                    onPagar: () => _pagar(context, s, d),
+                    onPagar: d.clienteAtivo
+                        ? () => _pagar(context, s, d)
+                        : null,
                   ),
               ],
             ),
@@ -155,7 +158,7 @@ class _DividaCard extends StatelessWidget {
   });
   final Divida divida;
   final String cliente;
-  final VoidCallback onPagar;
+  final VoidCallback? onPagar;
 
   Widget _valor(
     BuildContext context,
@@ -255,28 +258,32 @@ class _DividaCard extends StatelessWidget {
               TextButton.icon(
                 icon: const Icon(Icons.event),
                 label: const Text('Renegociar vencimento'),
-                onPressed: () async {
-                  final escolhido = await showDatePicker(
-                    context: context,
-                    initialDate: d.dataVencimento ?? DateTime.now(),
-                    firstDate: d.dataEmissao ?? DateTime(2000),
-                    lastDate: DateTime.now().add(const Duration(days: 3650)),
-                  );
-                  if (escolhido == null || !context.mounted) return;
-                  try {
-                    await executarComCarregamento(
-                      context,
-                      'Atualizando vencimento',
-                      () => Api.instance.renegociar(d.id, escolhido),
-                    );
-                    HistoricoService.instance.dadosAlterados();
-                    if (context.mounted) {
-                      toast(context, 'Vencimento atualizado');
-                    }
-                  } catch (e) {
-                    if (context.mounted) toast(context, '$e', erro: true);
-                  }
-                },
+                onPressed: !d.clienteAtivo
+                    ? null
+                    : () async {
+                        final escolhido = await showDatePicker(
+                          context: context,
+                          initialDate: d.dataVencimento ?? DateTime.now(),
+                          firstDate: d.dataEmissao ?? DateTime(2000),
+                          lastDate: DateTime.now().add(
+                            const Duration(days: 3650),
+                          ),
+                        );
+                        if (escolhido == null || !context.mounted) return;
+                        try {
+                          await executarComCarregamento(
+                            context,
+                            'Atualizando vencimento',
+                            () => Api.instance.renegociar(d.id, escolhido),
+                          );
+                          HistoricoService.instance.dadosAlterados();
+                          if (context.mounted) {
+                            toast(context, 'Vencimento atualizado');
+                          }
+                        } catch (e) {
+                          if (context.mounted) toast(context, '$e', erro: true);
+                        }
+                      },
               ),
             if (d.pagamentos.isNotEmpty) ...[
               const SizedBox(height: Gap.md),

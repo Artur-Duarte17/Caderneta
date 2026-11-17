@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/format.dart';
@@ -562,10 +563,12 @@ class SearchField extends StatefulWidget {
 }
 
 class _SearchFieldState extends State<SearchField> {
+  Timer? _debounce;
   final _controller = TextEditingController();
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -575,7 +578,10 @@ class _SearchFieldState extends State<SearchField> {
     controller: _controller,
     onChanged: (value) {
       setState(() {});
-      widget.onChanged(value);
+      _debounce?.cancel();
+      _debounce = Timer(const Duration(milliseconds: 300), () {
+        if (mounted) widget.onChanged(value);
+      });
     },
     decoration: InputDecoration(
       hintText: widget.hint,
@@ -585,6 +591,7 @@ class _SearchFieldState extends State<SearchField> {
           : IconButton(
               tooltip: 'Limpar busca',
               onPressed: () {
+                _debounce?.cancel();
                 setState(_controller.clear);
                 widget.onChanged('');
               },
@@ -646,6 +653,8 @@ Future<T?> showAppDialog<T>(
               onPressed: () => Navigator.pop(ctx),
               icon: const Icon(Icons.close),
               tooltip: 'Fechar',
+              constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
+              iconSize: 28,
             ),
           ],
         ),

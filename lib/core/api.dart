@@ -203,13 +203,14 @@ class Snapshot {
   final Map<int, Divida> _dividaPorId;
 
   static Future<Snapshot> load({
+    Api? clienteApi,
     String recurso = 'vendas',
     int page = 0,
     String q = '',
     String? status,
     int periodo = 0,
   }) async {
-    final api = Api.instance;
+    final api = clienteApi ?? Api.instance;
     final raw = await api.gateway.send(
       'GET',
       '/$recurso',

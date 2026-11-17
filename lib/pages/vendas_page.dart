@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import '../widgets/busca_sugestoes.dart';
+import '../core/catalogo_repository.dart';
 
 import '../core/api.dart';
 import '../core/comprovante.dart';
-import '../core/documentos.dart';
 import '../core/entrada_numerica.dart';
 import '../core/validacoes.dart';
 import '../core/app_runtime.dart';
@@ -46,6 +47,7 @@ class _VendasPageState extends State<VendasPage> {
     mensagem: 'Carregando vendas',
     mensagemAtualizando: 'Buscando vendas',
     load: () => Snapshot.load(
+      clienteApi: AppScope.of(context).api,
       recurso: 'vendas',
       page: _page,
       q: _busca,
@@ -148,10 +150,11 @@ class _VendasPageState extends State<VendasPage> {
                     status: s.statusVenda(v),
                     onDetalhes: () => _detalhes(context, s, v),
                     onEditar:
-                        pode(
-                          AppScope.of(context).sessao.usuario?.perfil,
-                          Acao.editarVenda,
-                        )
+                        v.clienteAtivo &&
+                            pode(
+                              AppScope.of(context).sessao.usuario?.perfil,
+                              Acao.editarVenda,
+                            )
                         ? () => _form(context, s, v)
                         : null,
                   ),
@@ -180,12 +183,16 @@ class _VendasPageState extends State<VendasPage> {
                     style: Theme.of(ctx).textTheme.titleMedium,
                   ),
                 ),
-                StatusBadge(d?.status),
+                StatusBadge(s.statusVenda(v)),
               ],
             ),
             const SizedBox(height: Gap.sm),
             InfoRow('Data da venda', dataHora(v.dataHora)),
             InfoRow('Valor total', moeda(v.valorTotal)),
+            if (v.funcionarioNome != null)
+              InfoRow('Vendedor', v.funcionarioNome!),
+            if (!v.clienteAtivo)
+              const Text('Cliente desativado — somente consulta'),
             Wrap(
               spacing: Gap.md,
               children: [
@@ -197,7 +204,8 @@ class _VendasPageState extends State<VendasPage> {
                 ),
                 if (AppScope.of(context).sessao.usuario?.perfil ==
                         Perfil.gerente &&
-                    !v.temPagamentos)
+                    !v.temPagamentos &&
+                    v.clienteAtivo)
                   TextButton(
                     onPressed: () async {
                       final confirmar = await showDialog<bool>(
@@ -224,7 +232,7 @@ class _VendasPageState extends State<VendasPage> {
                           await executarComCarregamento(
                             ctx,
                             'Excluindo venda',
-                            () => Api.instance.excluirVenda(v.id),
+                            () => AppScope.of(context).api.excluirVenda(v.id),
                           );
                           if (ctx.mounted) Navigator.pop(ctx);
                           HistoricoService.instance.dadosAlterados();
@@ -293,9 +301,10 @@ class _VendasPageState extends State<VendasPage> {
   }
 
   Future<void> _form(BuildContext context, Snapshot s, Venda? v) async {
-    final clientes = await Api.instance.clientes();
+    final api = AppScope.of(context).api;
+    final clientes = (await api.clientes()).where((c) => c.ativo).toList();
     if (v != null && !clientes.any((c) => c.id == v.clienteId)) {
-      clientes.add(await Api.instance.cliente(v.clienteId));
+      clientes.add(await api.cliente(v.clienteId));
     }
     if (!context.mounted) return;
     final ok = await showDialog<bool>(
@@ -377,6 +386,13 @@ class _VendaCard extends StatelessWidget {
               color: AppColors.primary,
             ),
           ),
+          if (venda.funcionarioNome != null)
+            Text(
+              'Vendedor: ${venda.funcionarioNome}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           const SizedBox(height: Gap.md),
           const Spacer(),
           Row(
@@ -404,27 +420,6 @@ class _VendaCard extends StatelessWidget {
     ),
   );
 }
-
-DropdownButtonFormField<int> _clienteSelect(
-  List<Cliente> clientes,
-  int? valor,
-  ValueChanged<int?> onChanged,
-) => DropdownButtonFormField<int>(
-  initialValue: valor,
-  isExpanded: true,
-  decoration: const InputDecoration(labelText: 'Cliente *'),
-  validator: (v) => v == null ? 'Selecione um cliente' : null,
-  items: [
-    for (final c in [...clientes]..sort((a, b) => a.nome.compareTo(b.nome)))
-      DropdownMenuItem(
-        value: c.id,
-        child: Text(
-          '${c.nome}${c.telefone == null ? '' : ' · ${exibirTelefone(c.telefone)}'}',
-        ),
-      ),
-  ],
-  onChanged: onChanged,
-);
 
 class _ItemCtrl {
   _ItemCtrl([ItemVenda? item]) {
@@ -472,36 +467,7 @@ class _VendaForm extends StatefulWidget {
 
 class _VendaFormState extends State<_VendaForm> {
   final _form = GlobalKey<FormState>();
-  late List<Cliente> _clientes = List.of(widget.clientes);
-  int _buscaCliente = 0;
-  bool _buscandoClientes = false;
-
-  Future<void> _buscarClientes(String q) async {
-    final pedido = ++_buscaCliente;
-    setState(() => _buscandoClientes = true);
-    try {
-      final encontrados = (await Api.instance.pagina(
-        '/clientes',
-        Cliente.fromJson,
-        q: q,
-        size: 100,
-      )).content;
-      if (!mounted || pedido != _buscaCliente) return;
-      final atual = _clientes.where((c) => c.id == _cliente).firstOrNull;
-      if (atual != null && !encontrados.any((c) => c.id == atual.id)) {
-        encontrados.add(atual);
-      }
-      setState(() => _clientes = encontrados);
-    } catch (e) {
-      if (mounted) toast(context, '$e', erro: true);
-    } finally {
-      // Só a busca mais recente desliga o indicador.
-      if (mounted && pedido == _buscaCliente) {
-        setState(() => _buscandoClientes = false);
-      }
-    }
-  }
-
+  late final List<Cliente> _clientes = List.of(widget.clientes);
   late int? _cliente = widget.venda?.clienteId;
   late DateTime? _data = widget.venda?.dataHora?.toLocal();
   late final _valor = TextEditingController(
@@ -510,6 +476,30 @@ class _VendaFormState extends State<_VendaForm> {
   late final _itens = <_ItemCtrl>[
     for (final i in widget.venda?.itens ?? <ItemVenda>[]) _ItemCtrl(i),
   ];
+  AppRuntime? _runtime;
+  int? _epocaRascunho;
+  bool _descartarRascunho = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_runtime != null) return;
+    _runtime = AppScope.of(context);
+    _epocaRascunho = _runtime!.sessao.epoca;
+    if (_editando) return;
+    final d = _runtime!.rascunhos['venda'];
+    if (d != null) {
+      _valor.text = d['valor'] as String? ?? '';
+      _cliente = d['clienteId'] as int?;
+      for (final i in (d['itens'] as List? ?? [])) {
+        final item = _ItemCtrl();
+        item.desc.text = i['descricao'];
+        item.qtd.text = i['quantidade'];
+        item.valor.text = i['preco'];
+        _itens.add(item);
+      }
+    }
+  }
+
   bool _salvando = false, _dataAlterada = false;
   String? _erro;
   bool get _editando => widget.venda != null;
@@ -518,6 +508,26 @@ class _VendaFormState extends State<_VendaForm> {
   int get _total => parseCentavos(_valor.text) ?? 0;
   @override
   void dispose() {
+    if (!_editando &&
+        _runtime != null &&
+        _epocaRascunho == _runtime!.sessao.epoca) {
+      if (_descartarRascunho) {
+        _runtime!.rascunhos.remove('venda');
+      } else {
+        _runtime!.rascunhos['venda'] = {
+          'valor': _valor.text,
+          'clienteId': _cliente,
+          'itens': [
+            for (final i in _itens)
+              {
+                'descricao': i.desc.text,
+                'quantidade': i.qtd.text,
+                'preco': i.valor.text,
+              },
+          ],
+        };
+      }
+    }
     _valor.dispose();
     for (final i in _itens) {
       i.dispose();
@@ -547,7 +557,7 @@ class _VendaFormState extends State<_VendaForm> {
     ];
     try {
       if (_editando) {
-        await Api.instance.atualizarVenda(
+        await AppScope.of(context).api.atualizarVenda(
           widget.venda!.id,
           clienteId: _cliente!,
           valorTotal: _total / 100,
@@ -556,11 +566,9 @@ class _VendaFormState extends State<_VendaForm> {
           data: _dataAlterada ? _data : null,
         );
       } else {
-        await Api.instance.criarVenda(
-          _cliente!,
-          itens,
-          valorTotal: _total / 100,
-        );
+        await AppScope.of(
+          context,
+        ).api.criarVenda(_cliente!, itens, valorTotal: _total / 100);
       }
       if (!mounted) return;
       toast(
@@ -569,6 +577,7 @@ class _VendaFormState extends State<_VendaForm> {
             ? 'Venda atualizada com sucesso'
             : 'Venda registrada com sucesso',
       );
+      _descartarRascunho = true;
       Navigator.pop(context, true);
     } catch (e) {
       if (mounted) {
@@ -602,13 +611,23 @@ class _VendaFormState extends State<_VendaForm> {
             ),
           ],
         ),
-        TextFormField(
+        BuscaSugestoes<ItemCatalogo>(
           controller: i.desc,
-          decoration: const InputDecoration(labelText: 'Descrição *'),
-          maxLength: descricaoMax,
-          textCapitalization: TextCapitalization.sentences,
-          inputFormatters: filtroDescricao,
-          validator: validarDescricao,
+          label: 'Descrição *',
+          texto: (item) => item.descricao,
+          buscar: (q) async => (await AppScope.of(
+            context,
+          ).catalogoConsulta.listar(q: q)).content,
+          onSelecionar: (item) => setState(() {
+            if (item.precoSugerido != null) {
+              i.valor.text = item.precoSugerido!
+                  .toStringAsFixed(2)
+                  .replaceAll('.', ',');
+            }
+          }),
+          validator: (v) => (v ?? '').length > descricaoMax
+              ? 'Descrição muito longa'
+              : validarDescricao(v),
         ),
         const SizedBox(height: Gap.sm),
         Row(
@@ -681,34 +700,29 @@ class _VendaFormState extends State<_VendaForm> {
                     'Esta venda possui pagamentos. Você pode corrigir apenas o detalhamento dos itens.',
                   ),
                 ),
-              if (!_bloqueado) ...[
-                TextField(
-                  decoration: InputDecoration(
-                    labelText: 'Buscar cliente por nome ou CPF',
-                    suffixIcon: _buscandoClientes
-                        ? const Padding(
-                            padding: EdgeInsets.all(12),
-                            child: SizedBox.square(
-                              dimension: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          )
-                        : null,
-                    helper: _buscandoClientes
-                        ? const TextoCarregando('Buscando clientes')
-                        : null,
-                  ),
-                  onChanged: _buscarClientes,
-                ),
-                const SizedBox(height: Gap.sm),
-              ],
-              AbsorbPointer(
-                absorbing: _bloqueado || _salvando,
-                child: _clienteSelect(
-                  _clientes,
-                  _cliente,
-                  (v) => setState(() => _cliente = v),
-                ),
+              BuscaSugestoes<Cliente>(
+                label: 'Cliente *',
+                enabled: !_bloqueado && !_salvando,
+                inicial:
+                    _clientes
+                        .where((c) => c.id == _cliente)
+                        .firstOrNull
+                        ?.nome ??
+                    '',
+                texto: (c) => c.nome,
+                buscar: (q) async => (await AppScope.of(context).api.pagina(
+                  '/clientes',
+                  Cliente.fromJson,
+                  q: q,
+                )).content.where((c) => c.ativo).toList(),
+                onChanged: (_) => setState(() => _cliente = null),
+                onSelecionar: (c) => setState(() {
+                  _cliente = c.id;
+                  if (!_clientes.any((e) => e.id == c.id)) _clientes.add(c);
+                }),
+                validator: (_) => _cliente == null
+                    ? 'Selecione um cliente nas sugestões'
+                    : null,
               ),
               const SizedBox(height: Gap.md),
               TextFormField(
@@ -785,6 +799,19 @@ class _VendaFormState extends State<_VendaForm> {
               ),
               const SizedBox(height: Gap.md),
               InfoRow('Soma dos itens', moeda(_soma / 100)),
+              if (_itens.isNotEmpty && !_bloqueado)
+                OutlinedButton.icon(
+                  onPressed: _salvando
+                      ? null
+                      : () => setState(
+                          () => _valor.text = (_soma / 100)
+                              .toStringAsFixed(2)
+                              .replaceAll('.', ','),
+                        ),
+                  icon: const Icon(Icons.calculate_outlined),
+                  label: const Text('Usar soma dos itens'),
+                ),
+
               InfoRow(
                 'Valor não detalhado',
                 moeda((_total - _soma) / 100),
@@ -797,7 +824,12 @@ class _VendaFormState extends State<_VendaForm> {
     ),
     actions: [
       TextButton(
-        onPressed: _salvando ? null : () => Navigator.pop(context),
+        onPressed: _salvando
+            ? null
+            : () {
+                _descartarRascunho = true;
+                Navigator.pop(context);
+              },
         child: const Text('Cancelar'),
       ),
       BusyButton(

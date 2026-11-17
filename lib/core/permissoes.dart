@@ -32,6 +32,8 @@ const rotasAcoes = {
   '/relatorios': Acao.gerencial,
   '/auditoria': Acao.gerencial,
   '/acessos': Acao.gerencial,
+  '/catalogo': Acao.gerencial,
+  '/configuracao-loja': Acao.gerencial,
   '/minha': Acao.minhaCaderneta,
   '/minha/compras': Acao.minhaCaderneta,
   '/minha/dividas': Acao.minhaCaderneta,

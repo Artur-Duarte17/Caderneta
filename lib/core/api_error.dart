@@ -56,6 +56,13 @@ ApiException erroApi(int status, dynamic body, {bool login = false}) {
   if (status == 401) {
     return login ? const CredenciaisInvalidas() : const SessaoExpirada();
   }
+  if (status == 403 && code == 'EMAIL_PENDENTE') {
+    return const ApiException(
+      'Confirme o e-mail da loja antes de usar o sistema.',
+      status: 403,
+      code: 'EMAIL_PENDENTE',
+    );
+  }
   if (status == 403) {
     return code == 'CSRF_INVALID' ? const CsrfInvalido() : const AcessoNegado();
   }

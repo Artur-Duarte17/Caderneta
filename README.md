@@ -1,5 +1,7 @@
 # Caderneta — Frontend (Flutter Web)
 
+Evolução local de 16/11/2026, ainda não publicada: confirmação de e-mail da loja, configurações de limite padrão, itens frequentes opcionais, sugestões nas vendas e clientes desativados somente para consulta. Depende da API compatível com a V13; configure SMTP no backend antes de publicar. Texto livre e venda apenas pelo total continuam permitidos. No integrador, consulte `docs/execucao-plano-2026-11-16.md` para testes e limites desta entrega.
+
 Interface web do **Caderneta**, sistema para comércios registrarem **vendas a prazo** ("fiado").
 Escrita em **Flutter** (só web), funciona no computador e no celular, e conversa com a API
 [`api-caderneta`](https://github.com/EduardoBR2003/api-caderneta) pela **mesma origem** (`/api`).

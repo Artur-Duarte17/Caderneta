@@ -16,6 +16,12 @@ const navItems = [
   NavItem('/clientes', 'Clientes', Icons.people_outline),
   NavItem('/vendas', 'Vendas', Icons.receipt_long_outlined),
   NavItem('/pagamentos', 'Pagamentos', Icons.payments_outlined),
+  NavItem('/catalogo', 'Itens frequentes', Icons.inventory_2_outlined),
+  NavItem(
+    '/configuracao-loja',
+    'Configurações da loja',
+    Icons.settings_outlined,
+  ),
   NavItem('/relatorios', 'Relatórios', Icons.bar_chart_outlined),
   NavItem('/historico', 'Histórico', Icons.history),
   NavItem('/auditoria', 'Auditoria', Icons.policy_outlined),
@@ -137,7 +143,11 @@ class AppShell extends StatelessWidget {
                           ),
                           Text(
                             user.perfil?.label ?? 'Perfil desconhecido',
-                            style: const TextStyle(color: Colors.white70),
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ],
                       ),

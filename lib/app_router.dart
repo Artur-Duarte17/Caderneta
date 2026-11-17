@@ -12,6 +12,9 @@ import 'pages/criar_loja_page.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/historico_page.dart';
 import 'pages/login_page.dart';
+import 'pages/catalogo_page.dart';
+import 'pages/configuracao_loja_page.dart';
+import 'pages/confirmar_email_page.dart';
 import 'pages/minha/caderneta_page.dart';
 import 'pages/pagamentos_page.dart';
 import 'pages/relatorios_page.dart';
@@ -32,10 +35,19 @@ GoRouter criarRouter(AppRuntime runtime, {String? initialLocation}) {
       if (sessao.estado == EstadoSessao.verificando) return null;
       final path = state.uri.path;
       final publica =
-          path == '/login' || path == '/ativar' || path == '/criar-loja';
+          path == '/login' ||
+          path == '/ativar' ||
+          path == '/criar-loja' ||
+          path == '/confirmar-email';
       // Sem sessão: vai para o login SEM lembrar a tela atual. Assim quem entra em seguida
       // (outro usuário, ou o mesmo depois de sair) começa sempre na tela inicial do perfil.
       if (!sessao.autenticado) return publica ? null : '/login';
+      if (!sessao.usuario!.emailConfirmado) {
+        return path == '/confirmar-email' ? null : '/confirmar-email';
+      }
+      if (path == '/confirmar-email' && state.uri.fragment.contains('token=')) {
+        return null;
+      }
       final perfil = sessao.usuario?.perfil;
       // Acabou de entrar: tela inicial do perfil (Visão Geral; cliente: Minha caderneta).
       if (publica) return entrada(perfil);
@@ -50,6 +62,12 @@ GoRouter criarRouter(AppRuntime runtime, {String? initialLocation}) {
       GoRoute(
         path: '/login',
         builder: (_, _) => LoginPage(sessao: sessao),
+      ),
+      GoRoute(
+        path: '/confirmar-email',
+        builder: (_, state) => ConfirmarEmailPage(
+          parametros: Uri.splitQueryString(state.uri.fragment),
+        ),
       ),
       _rota('/ativar', const AtivarPage()),
       _rota('/criar-loja', const CriarLojaPage()),
@@ -69,6 +87,8 @@ GoRouter criarRouter(AppRuntime runtime, {String? initialLocation}) {
           _rota('/notificacoes', const SizedBox.shrink()),
           _rota('/auditoria', const AuditoriaPage()),
           _rota('/acessos', const AcessosPage()),
+          _rota('/catalogo', const CatalogoPage()),
+          _rota('/configuracao-loja', const ConfiguracaoLojaPage()),
           _rota('/acesso-negado', const AcessoNegadoPage()),
           _rota('/minha', const MinhaCadernetaPage(secao: MinhaSecao.resumo)),
           _rota(

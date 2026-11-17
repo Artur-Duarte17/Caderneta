@@ -29,22 +29,14 @@ class _ClientesPageState extends State<ClientesPage> {
     queryKey: (_page, _busca),
     mensagem: 'Carregando clientes',
     mensagemAtualizando: 'Buscando clientes',
-    load: () => Snapshot.load(recurso: 'clientes', page: _page, q: _busca),
+    load: () => Snapshot.load(
+      clienteApi: AppScope.of(context).api,
+      recurso: 'clientes',
+      page: _page,
+      q: _busca,
+    ),
     builder: (context, s, reload) {
-      final termo = _busca.toLowerCase();
-      final lista =
-          s.clientes
-              .where(
-                (c) =>
-                    termo.isEmpty ||
-                    c.nome.toLowerCase().contains(termo) ||
-                    (soDigitos(termo).isNotEmpty &&
-                        soDigitos(c.telefone).contains(soDigitos(termo))),
-              )
-              .toList()
-            ..sort(
-              (a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase()),
-            );
+      final lista = s.clientes;
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -63,7 +55,7 @@ class _ClientesPageState extends State<ClientesPage> {
           FilterField(
             width: 360,
             child: SearchField(
-              hint: 'Buscar por nome ou telefone',
+              hint: 'Buscar por nome, CPF ou telefone',
               onChanged: (v) => setState(() {
                 _busca = v;
                 _page = 0;
@@ -147,6 +139,61 @@ class _ClientesPageState extends State<ClientesPage> {
               destaque: disponivel < 0 ? AppColors.danger : null,
             ),
             InfoRow('Prazo padrão', '${c.prazoPagamentoPadraoDias} dias'),
+            InfoRow(
+              'Cadastro',
+              c.ativo ? 'Ativo' : 'Desativado — somente consulta',
+            ),
+            OutlinedButton.icon(
+              icon: Icon(
+                c.ativo ? Icons.person_off_outlined : Icons.person_add_alt,
+              ),
+              label: Text(c.ativo ? 'Desativar cliente' : 'Reativar cliente'),
+              onPressed:
+                  c.ativo &&
+                      AppScope.of(context).sessao.usuario?.perfil !=
+                          Perfil.gerente
+                  ? null
+                  : () async {
+                      final runtime = AppScope.of(context);
+                      final ok = await showDialog<bool>(
+                        context: ctx,
+                        builder: (d) => AlertDialog(
+                          title: Text(
+                            c.ativo
+                                ? 'Desativar cliente?'
+                                : 'Reativar cliente?',
+                          ),
+                          content: Text(
+                            c.ativo
+                                ? 'O histórico será mantido. Vendas, edições e recebimentos ficarão bloqueados até reativar.'
+                                : 'O cliente voltará a permitir operações. Histórico e limite serão mantidos.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(d, false),
+                              child: const Text('Cancelar'),
+                            ),
+                            FilledButton(
+                              onPressed: () => Navigator.pop(d, true),
+                              child: const Text('Confirmar'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (ok != true || !ctx.mounted) return;
+                      try {
+                        await runtime.gateway.send(
+                          'PATCH',
+                          '/clientes/${c.id}/ativo',
+                          body: {'ativo': !c.ativo},
+                        );
+                        if (ctx.mounted) Navigator.pop(ctx);
+                        runtime.historico.dadosAlterados();
+                      } catch (e) {
+                        if (ctx.mounted) toast(ctx, '$e', erro: true);
+                      }
+                    },
+            ),
           ],
         );
       },
@@ -154,6 +201,10 @@ class _ClientesPageState extends State<ClientesPage> {
   }
 
   Future<void> _abrirForm(BuildContext context, Cliente? c) async {
+    if (c != null && !c.ativo) {
+      toast(context, 'Cliente desativado: somente consulta.', erro: true);
+      return;
+    }
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => _ClienteForm(cliente: c),
@@ -266,17 +317,18 @@ class _ClienteCard extends StatelessWidget {
               const SizedBox(width: Gap.sm),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: onEditar,
+                  onPressed: cliente.ativo ? onEditar : null,
                   icon: const Icon(Icons.edit_outlined, size: 18),
                   label: const Text('Editar'),
                 ),
               ),
             ],
           ),
-          if (pode(
-            AppScope.of(context).sessao.usuario?.perfil,
-            Acao.gerarConvite,
-          )) ...[
+          if (cliente.ativo &&
+              pode(
+                AppScope.of(context).sessao.usuario?.perfil,
+                Acao.gerarConvite,
+              )) ...[
             const SizedBox(height: Gap.sm),
             OutlinedButton.icon(
               onPressed: () => showDialog(
@@ -338,12 +390,73 @@ class _ClienteFormState extends State<_ClienteForm> {
     }
   }
 
+  AppRuntime? _runtime;
+  int? _epocaRascunho;
+  bool _descartarRascunho = false;
+  Map<String, TextEditingController> get _rascunhoCampos => {
+    'nome': _nome,
+    'telefone': _tel,
+    'email': _email,
+    'cpf': _cpf,
+    'endereco': _end,
+    'limite': _limite,
+    'prazo': _prazo,
+    'fNome': _fNome,
+    'fTel': _fTel,
+    'fEmail': _fEmail,
+    'fCpf': _fCpf,
+    'fEnd': _fEnd,
+  };
+  bool _padraoLido = false;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_padraoLido || widget.cliente != null) return;
+    _runtime = AppScope.of(context);
+    _epocaRascunho = _runtime!.sessao.epoca;
+    final draft = _runtime!.rascunhos['cliente'];
+    if (draft != null) {
+      for (final c in _rascunhoCampos.entries) {
+        c.value.text = draft[c.key] as String? ?? c.value.text;
+      }
+      _temFiador = draft['temFiador'] == true;
+    }
+    _padraoLido = true;
+    final api = AppScope.of(context).gateway;
+    api
+        .send('GET', '/loja/configuracao')
+        .then((r) {
+          if (mounted && _limite.text.isEmpty) {
+            setState(
+              () => _limite.text = (r['limiteCreditoPadrao'] as num)
+                  .toStringAsFixed(2)
+                  .replaceAll('.', ','),
+            );
+          }
+        })
+        .catchError((Object _) {
+          /* Erro será mostrado no envio; não substituir valor informado. */
+        });
+  }
+
   bool _salvando = false;
   String? _erro;
   final _scroll = ScrollController();
 
   @override
   void dispose() {
+    if (!_editando &&
+        _runtime != null &&
+        _epocaRascunho == _runtime!.sessao.epoca) {
+      if (_descartarRascunho) {
+        _runtime!.rascunhos.remove('cliente');
+      } else {
+        _runtime!.rascunhos['cliente'] = {
+          for (final c in _rascunhoCampos.entries) c.key: c.value.text,
+          'temFiador': _temFiador,
+        };
+      }
+    }
     _scroll.dispose();
     for (final c in [
       _nome,
@@ -439,6 +552,7 @@ class _ClienteFormState extends State<_ClienteForm> {
             ? 'Cliente atualizado com sucesso'
             : 'Cliente cadastrado com sucesso',
       );
+      _descartarRascunho = true;
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
@@ -675,7 +789,12 @@ class _ClienteFormState extends State<_ClienteForm> {
     ),
     actions: [
       TextButton(
-        onPressed: _salvando ? null : () => Navigator.pop(context),
+        onPressed: _salvando
+            ? null
+            : () {
+                _descartarRascunho = true;
+                Navigator.pop(context);
+              },
         child: const Text('Cancelar'),
       ),
       BusyButton(

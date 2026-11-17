@@ -39,6 +39,7 @@ class HttpGateway {
   int Function() epoca = () => 0;
   int? Function() usuarioId = () => null;
   void Function()? aoExpirar;
+  Future<void> Function()? aoEmailPendente;
   Future<void> Function()? verificarSessao;
 
   Future<http.Response> _enviar(http.Request req) async =>
@@ -101,6 +102,10 @@ class HttpGateway {
         json,
         login: path == '/auth/login',
       );
+      if (error.code == 'EMAIL_PENDENTE') {
+        await aoEmailPendente?.call();
+        conferir();
+      }
       if (error.code == 'CSRF_INVALID') {
         csrf.limpar();
         try {

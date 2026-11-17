@@ -64,6 +64,7 @@ class Cliente {
     this.fiador,
     this.saldoDevedor = 0,
     this.emAtraso = false,
+    this.ativo = true,
   });
 
   final int id;
@@ -74,6 +75,7 @@ class Cliente {
   final Map<String, dynamic>? fiador;
   final double saldoDevedor;
   final bool emAtraso;
+  final bool ativo;
 
   factory Cliente.fromJson(Map<String, dynamic> j) => Cliente(
     id: j['id'],
@@ -87,6 +89,7 @@ class Cliente {
     fiador: j['fiador'],
     saldoDevedor: _num(j['saldoDevedor']),
     emAtraso: j['emAtraso'] == true,
+    ativo: j['ativo'] != false,
   );
 }
 
@@ -128,6 +131,8 @@ class Venda {
     this.versao = 0,
     this.temPagamentos = false,
     this.clienteNome,
+    this.funcionarioNome,
+    this.clienteAtivo = true,
     this.statusDivida,
     this.itens = const [],
   });
@@ -142,6 +147,8 @@ class Venda {
   final bool temPagamentos;
   final String? statusDivida;
   final String? clienteNome;
+  final String? funcionarioNome;
+  final bool clienteAtivo;
   final List<ItemVenda> itens;
 
   factory Venda.fromJson(Map<String, dynamic> j) => Venda(
@@ -155,6 +162,8 @@ class Venda {
     temPagamentos: j['temPagamentos'] == true,
     statusDivida: j['statusDivida'],
     clienteNome: j['clienteNome'],
+    funcionarioNome: j['funcionarioNome'],
+    clienteAtivo: j['clienteAtivo'] != false,
     itens: ((j['itens'] as List?) ?? [])
         .map((e) => ItemVenda.fromJson(e))
         .toList(),
@@ -196,6 +205,7 @@ class Divida {
     required this.clienteId,
     this.vendaId,
     this.clienteNome,
+    this.clienteAtivo = true,
     this.pagamentos = const [],
   });
 
@@ -206,6 +216,7 @@ class Divida {
   final int clienteId;
   final int? vendaId;
   final String? clienteNome;
+  final bool clienteAtivo;
   final List<Pagamento> pagamentos;
 
   double get valorPago => pagamentos.fold<double>(0, (s, p) => s + p.valorPago);
@@ -243,6 +254,7 @@ class Divida {
     clienteId: j['clienteId'],
     vendaId: j['vendaId'],
     clienteNome: j['clienteNome'],
+    clienteAtivo: j['clienteAtivo'] != false,
     pagamentos: ((j['pagamentos'] as List?) ?? [])
         .map((e) => Pagamento.fromJson(e))
         .toList(),
@@ -257,6 +269,7 @@ class Usuario {
     required this.perfil,
     this.login = '',
     this.lojaNome = '',
+    this.emailConfirmado = true,
   });
   final int id, pessoaId;
   final String nome, login;
@@ -264,6 +277,7 @@ class Usuario {
 
   /// Loja da conta (cada loja só enxerga os próprios dados).
   final String lojaNome;
+  final bool emailConfirmado;
   factory Usuario.fromJson(Map<String, dynamic> j) => Usuario(
     id: (j['id'] as num?)?.toInt() ?? 0,
     pessoaId: (j['pessoaId'] as num?)?.toInt() ?? 0,
@@ -271,6 +285,7 @@ class Usuario {
     login: j['login'] as String? ?? '',
     perfil: Perfil.parse(j['perfil']),
     lojaNome: j['lojaNome'] as String? ?? '',
+    emailConfirmado: j['emailConfirmado'] != false,
   );
 }
 

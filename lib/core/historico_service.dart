@@ -33,15 +33,26 @@ class HistoricoService extends ChangeNotifier {
   int novosEventos = 0;
 
   void _sessaoMudou() {
-    if (_epoca != sessao.epoca || !sessao.autenticado) {
+    if (_epoca != sessao.epoca ||
+        !sessao.autenticado ||
+        sessao.usuario?.emailConfirmado != true) {
       parar();
       _epoca = sessao.epoca;
     }
-    if (sessao.autenticado && sessao.usuario?.perfil != null) iniciar();
+    if (sessao.autenticado &&
+        sessao.usuario?.perfil != null &&
+        sessao.usuario?.emailConfirmado == true) {
+      iniciar();
+    }
   }
 
   void iniciar() {
-    if (_timer != null || !sessao.autenticado || _disposed) return;
+    if (_timer != null ||
+        !sessao.autenticado ||
+        sessao.usuario?.emailConfirmado != true ||
+        _disposed) {
+      return;
+    }
     _timer = Timer.periodic(intervalo, (_) => consultar());
     unawaited(consultar());
   }

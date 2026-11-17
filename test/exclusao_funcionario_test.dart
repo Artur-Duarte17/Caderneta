@@ -23,6 +23,7 @@ Future<void> _criarFuncionario(
   await campo('Cargo *', 'Caixa');
   await campo('Login *', login);
   await campo('Senha *', 'Senha-Teste-1');
+  await campo('Confirmar senha *', 'Senha-Teste-1');
   await _tocar(tester, find.text('Criar acesso'));
 }
 

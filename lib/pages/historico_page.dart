@@ -71,7 +71,8 @@ class _HistoricoPageState extends State<HistoricoPage> {
         children: [
           const PageHeader(
             titulo: 'Histórico',
-            subtitulo: 'Eventos da caderneta, do mais recente ao mais antigo',
+            subtitulo:
+                'Compras, recebimentos e lembretes registrados, do mais recente ao mais antigo',
           ),
           Wrap(
             spacing: Gap.md,

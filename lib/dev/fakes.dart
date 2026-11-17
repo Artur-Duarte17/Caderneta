@@ -52,6 +52,8 @@ class ServidorSimulado {
       'ativo': true,
     },
   ];
+  double _limitePadrao = 0;
+  final _catalogo = <Map<String, dynamic>>[];
   final _clientes = <Map<String, dynamic>>[
     {
       'id': 20,
@@ -200,6 +202,7 @@ class ServidorSimulado {
         'perfil': 'GERENTE',
         'ativo': true,
         'lojaNome': body['nomeLoja'],
+        'emailConfirmado': false,
       });
       return _json({
         'lojaId': id,
@@ -238,10 +241,61 @@ class ServidorSimulado {
       _convites.remove(codigoInformado);
       return _json(null, 201);
     }
+    if (path == '/auth/email/confirmar' && method == 'POST') {
+      if (!RegExp(r'^[a-f0-9]{64}$').hasMatch('${body['token']}') ||
+          body['lojaId'] == null) {
+        return _erro(400);
+      }
+      if (usuario != null) usuario!['emailConfirmado'] = true;
+      return _json({'message': 'E-mail confirmado.'});
+    }
     if (usuario == null) return _erro(401);
     final perfil = usuario!['perfil'];
     final gerente = perfil == 'GERENTE', cliente = perfil == 'CLIENTE';
     if (path == '/auth/me') return _json({'usuario': usuario});
+    if (path == '/loja/configuracao') {
+      if (method == 'PUT') {
+        if (!gerente) return _erro(403);
+        _limitePadrao = (body['limiteCreditoPadrao'] as num).toDouble();
+      }
+      return _json({'limiteCreditoPadrao': _limitePadrao});
+    }
+    if (path.startsWith('/catalogo')) {
+      if (method == 'GET') {
+        return _pagina(
+          _catalogo.where(
+            (i) =>
+                (gerente && q['incluirInativos'] == 'true' ||
+                    i['ativo'] == true) &&
+                i['descricao'].toString().toLowerCase().contains(
+                  (q['q'] ?? '').toLowerCase(),
+                ),
+          ),
+          q,
+        );
+      }
+      if (!gerente) return _erro(403);
+      if (method == 'POST') {
+        final novo = {'id': ++_sequencia, ...body};
+        _catalogo.add(novo);
+        return _json(novo, 201);
+      }
+      final id = int.tryParse(path.split('/').last);
+      final item = _catalogo.where((i) => i['id'] == id).firstOrNull;
+      if (item == null) return _erro(404);
+      item.addAll(body);
+      return _json(item);
+    }
+    if (path.startsWith('/clientes/') &&
+        path.endsWith('/ativo') &&
+        method == 'PATCH') {
+      final id = int.tryParse(path.split('/')[2]);
+      final c = _clientes.where((c) => c['id'] == id).firstOrNull;
+      if (c == null) return _erro(404);
+      if (body['ativo'] == false && !gerente) return _erro(403);
+      c['ativo'] = body['ativo'];
+      return _json(c);
+    }
     if (path == '/resumo' || path == '/me/resumo') {
       return _json({
         'saldo': 150.0,
@@ -515,9 +569,9 @@ class ServidorSimulado {
         _clientes.where(
           (c) =>
               (q['q'] ?? '').isEmpty ||
-              c['nome'].toString().toLowerCase().contains(
-                q['q']!.toLowerCase(),
-              ),
+              ('${c['nome']} ${c['cpf']} ${c['telefone']}')
+                  .toLowerCase()
+                  .contains(q['q']!.toLowerCase()),
         ),
         q,
       );

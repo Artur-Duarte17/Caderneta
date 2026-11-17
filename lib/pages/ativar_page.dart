@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/campo_senha.dart';
 import 'package:go_router/go_router.dart';
 import '../core/app_runtime.dart';
 import '../core/theme.dart';
@@ -102,21 +103,12 @@ class _AtivarPageState extends State<AtivarPage> {
             validator: validarLogin,
           ),
           const SizedBox(height: Gap.md),
-          TextFormField(
-            controller: _senha,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'Senha *'),
-            inputFormatters: filtroSenha,
-            validator: validarSenha,
-          ),
+          CampoSenha(controller: _senha),
           const SizedBox(height: Gap.md),
-          TextFormField(
+          CampoSenha(
             controller: _confirmacao,
-            obscureText: true,
-            decoration: const InputDecoration(labelText: 'Confirmar senha *'),
-            inputFormatters: filtroSenha,
-            validator: (v) =>
-                v == _senha.text ? obrigatorio(v) : 'As senhas não coincidem',
+            confirmar: _senha,
+            label: 'Confirmar senha *',
             onFieldSubmitted: (_) => _ativar(),
           ),
           if (_erro != null)

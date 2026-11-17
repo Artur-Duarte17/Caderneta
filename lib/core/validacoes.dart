@@ -157,6 +157,21 @@ String? validarSenha(String? value) {
   if (value == null || value.trim().isEmpty || value.length < 8) {
     return 'A senha deve ter pelo menos 8 caracteres';
   }
+  if (const {
+    '12345678',
+    '123456789',
+    '1234567890',
+    'password',
+    'password123',
+    'senha123',
+    'qwerty123',
+    'abcdefgh',
+    '11111111',
+    '00000000',
+    '87654321',
+  }.contains(value.toLowerCase())) {
+    return 'Escolha uma senha menos comum';
+  }
   if (utf8.encode(value).length > senhaMax) {
     return 'A senha deve ter no máximo 72 bytes (acentos e emojis ocupam mais espaço)';
   }

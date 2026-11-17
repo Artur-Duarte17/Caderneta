@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'acessos_repository.dart';
 import 'api.dart';
+import 'catalogo_repository.dart';
 import 'auditoria_repository.dart';
 import 'auth_repository.dart';
 import 'cache_telas.dart';
@@ -19,6 +20,7 @@ class AppRuntime {
   }) {
     gateway = HttpGateway(client: client, base: base);
     sessao = SessaoController(HttpAuthRepository(gateway));
+    sessao.addListener(_aoMudarSessao);
     cache = CacheTelas(sessao);
     CacheTelas.instance = cache;
     gateway.epoca = () => sessao.epoca;
@@ -30,7 +32,12 @@ class AppRuntime {
     gateway.verificarSessao = () async {
       await gateway.send('GET', '/auth/me');
     };
-    Api.instance = Api(gateway: gateway);
+    gateway.aoEmailPendente = sessao.restaurar;
+    api = Api(gateway: gateway);
+    Api.instance = api;
+    final catalogo = HttpCatalogoRepository(gateway);
+    catalogoConsulta = catalogo;
+    catalogoManutencao = catalogo;
     historicoRepo = HttpHistoricoRepository(gateway);
     minha = HttpMinhaCadernetaRepository(gateway);
     acessos = HttpAcessosRepository(gateway, suportaBusca: simulado);
@@ -38,6 +45,18 @@ class AppRuntime {
     historico = HistoricoService(sessao, historicoRepo);
     HistoricoService.instance = historico;
   }
+  final rascunhos = <String, Map<String, dynamic>>{};
+  int _epocaRascunhos = 0;
+  void _aoMudarSessao() {
+    if (_epocaRascunhos != sessao.epoca || !sessao.autenticado) {
+      _epocaRascunhos = sessao.epoca;
+      rascunhos.clear();
+    }
+  }
+
+  late final Api api;
+  late final ConsultaCatalogo catalogoConsulta;
+  late final ManutencaoCatalogo catalogoManutencao;
   late final HttpGateway gateway;
   late final SessaoController sessao;
   late final CacheTelas cache;
@@ -47,6 +66,8 @@ class AppRuntime {
   late final AuditoriaRepository auditoria;
   late final HistoricoService historico;
   void dispose() {
+    sessao.removeListener(_aoMudarSessao);
+    rascunhos.clear();
     historico.dispose();
     cache.dispose();
     sessao.dispose();

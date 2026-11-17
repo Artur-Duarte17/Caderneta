@@ -1,7 +1,6 @@
-import 'dart:convert';
+import '../widgets/detalhes_auditoria.dart';
 import 'package:flutter/material.dart';
 import '../core/app_runtime.dart';
-import '../core/auditoria_repository.dart';
 import '../core/dates.dart';
 import '../core/format.dart';
 import '../core/models.dart';
@@ -136,11 +135,7 @@ class _AuditoriaPageState extends State<AuditoriaPage> {
                     onPressed: () => showAppDialog(
                       context,
                       titulo: 'Detalhes da auditoria',
-                      builder: (_, _) => SelectableText(
-                        const JsonEncoder.withIndent(
-                          '  ',
-                        ).convert(semSegredos(e.json)),
-                      ),
+                      builder: (_, _) => DetalhesAuditoria(e.json),
                     ),
                     child: const Text('Ver'),
                   ),
