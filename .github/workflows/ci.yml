@@ -1,5 +1,5 @@
-# Frontend (Flutter Web): análise, testes, build reproduzível e DEPLOY AUTOMÁTICO no Firebase Hosting
-# a cada push na main.
+# Frontend (Flutter Web): análise, testes e build em todo push.
+# Publicação manual, depois de confirmar que o backend compatível já está disponível.
 #
 # Autenticação por Workload Identity Federation (sem chave JSON): o provedor só aceita tokens deste
 # repositório na branch main, e a conta github-hosting só publica no Firebase Hosting (e lê o Cloud
@@ -11,6 +11,11 @@ on:
     branches: [main, master]
   pull_request:
   workflow_dispatch:
+    inputs:
+      confirmo_backend:
+        description: "Confirmo que a API compatível foi publicada e validada"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -47,8 +52,8 @@ jobs:
           retention-days: 7
 
   publicar:
-    # Só a main publica (push ou execução manual). Pull requests e a branch master só testam.
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    # Enviar código não publica o site antes da API/migrations correspondentes.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch' && inputs.confirmo_backend
     needs: testes
     runs-on: ubuntu-24.04
     concurrency:

@@ -259,9 +259,10 @@ extraído e publicado com `firebase deploy --only hosting --project caderneta01`
 [`firebase.json`](firebase.json) define o rewrite `/api/**` → serviço Cloud Run `caderneta-api`
 (`southamerica-east1`), o fallback da SPA e os cabeçalhos de segurança.
 
-**Deploy automático:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda
-análise, testes, build e gitleaks em todo push e pull request; **a cada push na `main`**, se tudo
-passar, publica sozinho no Firebase Hosting e verifica o site. Autenticação por **Workload Identity
+**Publicação coordenada:** o workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda
+análise, testes, build e gitleaks em todo push e pull request. Para publicar, após validar a API
+compatível, execute **Actions → frontend → Run workflow → main**, marcando `confirmo_backend`.
+Sem essa confirmação, só valida e gera o artefato; não altera o site. Autenticação por **Workload Identity
 Federation** (sem chave JSON; o provedor só aceita este repositório na `main`; a conta
 `github-hosting` só pode publicar no Hosting). Pushes na `master` e pull requests só testam.
 
