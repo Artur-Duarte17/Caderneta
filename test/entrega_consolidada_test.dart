@@ -213,6 +213,33 @@ void main() {
     expect(find.text('Novo cliente'), findsNothing);
     await fechar(t);
   });
+  testWidgets('confirmação de e-mail mantém campo espaçado e cartão responsivo', (
+    t,
+  ) async {
+    const descricao =
+        'A loja só poderá ser utilizada depois da confirmação. Confira também a pasta de spam.';
+    for (final width in [360.0, 1190.0]) {
+      final fake = ServidorSimulado(latencia: Duration.zero)
+        ..usuario = {...user('GERENTE'), 'emailConfirmado': false};
+      await abrir(t, servidor: fake, path: '/confirmar-email', width: width);
+
+      final cartao = t.getRect(find.byType(Card));
+      expect(
+        cartao.width,
+        lessThanOrEqualTo(width < 528 ? width - 48 : 480),
+        reason: 'cartão em $width px',
+      );
+      await t.tap(find.byType(TextField));
+      await t.pumpAndSettle();
+      expect(
+        t.getRect(find.text('E-mail da loja')).top,
+        greaterThan(t.getRect(find.text(descricao)).bottom),
+        reason: 'rótulo flutuante em $width px',
+      );
+      expect(t.takeException(), isNull);
+      await fechar(t);
+    }
+  });
   testWidgets('logout limpa rascunho em memória', (t) async {
     final runtime = await abrir(t, perfil: 'GERENTE');
     runtime.rascunhos['venda'] = {'valor': '120,00'};

@@ -61,7 +61,10 @@ void main() {
     test('recusa a edição que quebra o formato (mantém o valor anterior)', () {
       expect(_aplicar(f, '10,50', '10,505'), '10,50'); // 3 casas
       expect(_aplicar(f, '10,5', '10,5,'), '10,5'); // duas vírgulas
-      expect(_aplicar(f, '', ',5'), ',5'); // estado intermediário durante edição
+      expect(
+        _aplicar(f, '', ',5'),
+        ',5',
+      ); // estado intermediário durante edição
       expect(_aplicar(f, '1', '12345678901234567'), '1'); // longo demais
     });
 
