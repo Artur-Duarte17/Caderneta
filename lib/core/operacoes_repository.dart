@@ -33,7 +33,12 @@ class HttpOperacoesRepository implements OperacoesRepository {
     final raw = await http.send(
       'GET',
       '/$recurso',
-      query: consultaPaginada(page: page, q: q, status: status, periodo: periodo),
+      query: consultaPaginada(
+        page: page,
+        q: q,
+        status: status,
+        periodo: periodo,
+      ),
     );
     final rows = (raw['content'] as List).cast<Map<String, dynamic>>();
     final clientes = recurso == 'clientes'

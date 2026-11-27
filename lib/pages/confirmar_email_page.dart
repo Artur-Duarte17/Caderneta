@@ -68,77 +68,83 @@ class _ConfirmarEmailPageState extends State<ConfirmarEmailPage> {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
-            child: SizedBox(
-              width: 480,
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Confirme o e-mail da loja',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'A loja só poderá ser utilizada depois da confirmação. Confira também a pasta de spam.',
-                      ),
-                      if (link)
-                        BusyButton(
-                          label: 'Confirmar e-mail',
-                          busyLabel: 'Confirmando',
-                          busy: _busy,
-                          onPressed: () => _executar(true),
-                        )
-                      else if (gerente) ...[
-                        TextField(
-                          controller: _email,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                            labelText: 'E-mail da loja',
-                          ),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: SizedBox(
+                width: double.infinity,
+                child: Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Confirme o e-mail da loja',
+                          style: Theme.of(context).textTheme.headlineSmall,
                         ),
-                        BusyButton(
-                          label: 'Enviar / reenviar confirmação',
-                          busyLabel: 'Enviando',
-                          busy: _busy,
-                          onPressed: () => _executar(false),
-                        ),
-                      ] else
+                        const SizedBox(height: 16),
                         const Text(
-                          'Peça ao gerente para confirmar o e-mail da loja.',
+                          'A loja só poderá ser utilizada depois da confirmação. Confira também a pasta de spam.',
                         ),
-                      if (_mensagem != null)
-                        Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Semantics(
-                            liveRegion: true,
-                            child: Text(_mensagem!),
+                        if (link)
+                          BusyButton(
+                            label: 'Confirmar e-mail',
+                            busyLabel: 'Confirmando',
+                            busy: _busy,
+                            onPressed: () => _executar(true),
+                          )
+                        else if (gerente) ...[
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: _email,
+                            keyboardType: TextInputType.emailAddress,
+                            decoration: const InputDecoration(
+                              labelText: 'E-mail da loja',
+                            ),
                           ),
-                        ),
-                      if (runtime.sessao.autenticado) ...[
-                        TextButton(
-                          onPressed: _busy
-                              ? null
-                              : () async {
-                                  await runtime.sessao.restaurar();
-                                },
-                          child: const Text(
-                            'Já confirmei: verificar novamente',
+                          BusyButton(
+                            label: 'Enviar / reenviar confirmação',
+                            busyLabel: 'Enviando',
+                            busy: _busy,
+                            onPressed: () => _executar(false),
                           ),
-                        ),
-                        TextButton(
-                          onPressed: _busy ? null : () => runtime.sessao.sair(),
-                          child: const Text('Sair'),
-                        ),
-                      ] else
-                        TextButton(
-                          onPressed: () => context.go('/login'),
-                          child: const Text('Ir para o login'),
-                        ),
-                    ],
+                        ] else
+                          const Text(
+                            'Peça ao gerente para confirmar o e-mail da loja.',
+                          ),
+                        if (_mensagem != null)
+                          Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Semantics(
+                              liveRegion: true,
+                              child: Text(_mensagem!),
+                            ),
+                          ),
+                        if (runtime.sessao.autenticado) ...[
+                          TextButton(
+                            onPressed: _busy
+                                ? null
+                                : () async {
+                                    await runtime.sessao.restaurar();
+                                  },
+                            child: const Text(
+                              'Já confirmei: verificar novamente',
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: _busy
+                                ? null
+                                : () => runtime.sessao.sair(),
+                            child: const Text('Sair'),
+                          ),
+                        ] else
+                          TextButton(
+                            onPressed: () => context.go('/login'),
+                            child: const Text('Ir para o login'),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
